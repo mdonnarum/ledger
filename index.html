@@ -920,6 +920,22 @@ input,select,textarea{font-family:inherit;color:inherit}
         </div>
       </div>
 
+      <!-- API KEY SETUP -->
+      <div class="zone" style="border-color:rgba(155,140,255,.28);background:rgba(155,140,255,.04)">
+        <h4 style="color:var(--violet)">Insights API key</h4>
+        <div class="zone-row">
+          <div class="zt">
+            <b id="akeyLabel">Not configured</b>
+            <span id="akeyDetail">Paste your Anthropic API key to enable Insights and Weekly Review AI features. Stored only on this device — never in the code.</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input type="password" id="akeyInput" placeholder="sk-ant-api03-..." style="flex:1;background:var(--panel);border:1px solid var(--line-soft);border-radius:7px;height:34px;padding:0 11px;font-size:13px;outline:none;color:var(--text);font-family:var(--mono)">
+          <button class="btn btn-sm" id="akeySave" style="color:var(--violet);border-color:rgba(155,140,255,.3)">Save key</button>
+          <button class="btn btn-sm" id="akeyRemove" style="color:var(--text-dim)">Remove</button>
+        </div>
+      </div>
+
       <!-- MANUAL BACKUP -->
       <div class="zone">
         <h4>Manual backup</h4>
@@ -963,6 +979,8 @@ input,select,textarea{font-family:inherit;color:inherit}
 <script>
 /* ================= STATE ================= */
 const SKEY='ledger:v5:shared';
+const AKEY_STORE='ledger:api-key';
+function getAKey(){return localStorage.getItem(AKEY_STORE)||''}
 
 /* ================= FIREBASE (cross-device sync) ================= */
 const FB_CFG={
@@ -1370,7 +1388,36 @@ async function openSettings(){
   $('zc3').textContent=`All ${S.bills.length} bill${S.bills.length===1?'':'s'} and their payment history removed.`;
   $('setModal').classList.add('on');
 
-  // Check local snapshot for auto-backup display
+  // API key status
+  const existingKey=getAKey();
+  if(existingKey){
+    $('akeyLabel').textContent='API key configured ✓';
+    $('akeyLabel').style.color='var(--mint)';
+    $('akeyDetail').textContent='Insights and Weekly Review AI are active on this device.';
+    $('akeyInput').placeholder='Paste new key to replace…';
+  }else{
+    $('akeyLabel').textContent='Not configured';
+    $('akeyLabel').style.color='var(--text-mid)';
+    $('akeyDetail').textContent='Paste your Anthropic API key to enable Insights and Weekly Review AI. Stored only on this device — never in the code.';
+  }
+  $('akeySave').onclick=()=>{
+    const k=$('akeyInput').value.trim();
+    if(!k){toast('Paste your API key first');return}
+    if(!k.startsWith('sk-ant-')){toast('That doesn\'t look like an Anthropic key — should start with sk-ant-');return}
+    localStorage.setItem(AKEY_STORE,k);
+    $('akeyInput').value='';
+    $('akeyLabel').textContent='API key saved ✓';
+    $('akeyLabel').style.color='var(--mint)';
+    $('akeyDetail').textContent='Insights and Weekly Review AI are now active on this device.';
+    toast('API key saved — Insights is ready');
+  };
+  $('akeyRemove').onclick=()=>{
+    localStorage.removeItem(AKEY_STORE);
+    $('akeyLabel').textContent='Not configured';
+    $('akeyLabel').style.color='var(--text-mid)';
+    $('akeyInput').value='';
+    toast('API key removed');
+  };
   try{
     const raw=localStorage.getItem('ledger:local-snapshot');
     if(raw){
@@ -2103,6 +2150,7 @@ $('wkNext').onclick=()=>{if(wkOffset<0){wkOffset++;$('revOut').innerHTML='';rend
 
 $('bRev').onclick=async()=>{
   const b=$('bRev'),out=$('revOut'),w=weekData(wkOffset);
+  if(!getAKey()){out.innerHTML=`<div class="ins-err">No API key configured. Open ⚙ Settings and paste your Anthropic API key to enable this feature.</div>`;return;}
   b.disabled=true;b.innerHTML=`<span class="spin"></span> Looking back…`;out.innerHTML='';
   const payload={
     week:`${w.start.toDateString()} to ${new Date(w.end.getTime()-DAY).toDateString()}`,
@@ -2128,8 +2176,8 @@ Respond with ONLY JSON, no fences, no preamble:
 Rules: wins 1-3 (if the week was genuinely empty, say so honestly rather than inventing praise). drags 1-3. next_week exactly 3, drawn from week_ahead or still_stalled. Reference real titles. Be specific, not generic.`;
   try{
     const r=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1400,messages:[{role:"user",content:prompt}]})
+      method:"POST",headers:{"Content-Type":"application/json","x-api-key":getAKey(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1400,messages:[{role:"user",content:prompt}]})
     });
     const d=await r.json();
     const txt=d.content.filter(x=>x.type==='text').map(x=>x.text).join('\n').replace(/```json|```/g,'').trim();
@@ -2226,6 +2274,7 @@ function applyBreakdown(titleKey,subs,btn){
 }
 $('bGen').onclick=async()=>{
   const b=$('bGen'),out=$('insOut');
+  if(!getAKey()){out.innerHTML=`<div class="ins-err">No API key configured. Open ⚙ Settings and paste your Anthropic API key to enable this feature.</div>`;return;}
   const open=S.tasks.filter(t=>!t.done);
   if(!open.length&&!S.bills.length){out.innerHTML=`<div class="ins-err">Nothing to analyze — add some tasks or bills first.</div>`;return}
   b.disabled=true;b.innerHTML=`<span class="spin"></span> Reading the board…`;out.innerHTML='';
@@ -2279,8 +2328,8 @@ Rules:
 - Titles must match exactly. Be direct. No generic productivity advice.`;
   try{
     const r=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:2200,messages:[{role:"user",content:prompt}]})
+      method:"POST",headers:{"Content-Type":"application/json","x-api-key":getAKey(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:2200,messages:[{role:"user",content:prompt}]})
     });
     const d=await r.json();
     const txt=d.content.filter(x=>x.type==='text').map(x=>x.text).join('\n').replace(/```json|```/g,'').trim();
