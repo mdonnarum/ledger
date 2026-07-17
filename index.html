@@ -92,7 +92,9 @@ input,select,textarea{font-family:inherit;color:inherit}
 .stage-add input{width:100%;background:var(--panel-hi);border:1px solid var(--line);border-radius:7px;height:32px;padding:0 10px;font-size:12.5px;outline:none;margin-top:6px}
 .stage-add input:focus{border-color:var(--mint)}
 .cat-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:13px;border-top:1px solid var(--line-soft)}
-.cat-tag{display:inline-flex;align-items:center;gap:6px;background:var(--panel-hi);border:1px solid var(--line);border-radius:20px;padding:4px 10px;font-size:11.5px;color:var(--text-mid)}
+.cat-tag{display:inline-flex;align-items:center;gap:6px;background:var(--panel-hi);border:1px solid var(--line);border-radius:20px;padding:4px 10px;font-size:11.5px;color:var(--text-mid);cursor:pointer;transition:.14s;user-select:none}
+.cat-tag:hover{border-color:var(--text-dim);color:var(--text)}
+.cat-tag.active{background:var(--panel-hover);border-color:var(--text);color:var(--text);font-weight:600}
 .cat-tag .swatch{width:8px;height:8px;border-radius:2px}
 .cat-mgr{display:none;margin-top:12px;background:var(--panel-hi);border:1px solid var(--line);border-radius:9px;padding:12px}
 .cat-mgr.on{display:block}
@@ -636,8 +638,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 .focus-bar{flex:1;min-width:120px;display:flex;align-items:center;gap:10px}
 .focus-bar-track{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
 .focus-bar-fill{height:100%;background:var(--mint);border-radius:3px;transition:width .6s ease}
-.focus-btn{position:fixed;bottom:90px;left:22px;width:42px;height:42px;border-radius:50%;background:var(--panel);border:1px solid var(--line-soft);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);z-index:60;transition:.2s}
-.focus-btn:hover{transform:scale(1.08);border-color:var(--mint)}
+.focus-btn{display:none}
 .task{transition:transform .15s ease,border-color .15s,opacity .15s}
 .task.swiping{transition:none}
 .swipe-hint-right{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--mint);font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;opacity:0;pointer-events:none;transition:opacity .15s}
@@ -1225,7 +1226,7 @@ const DEFCATS=[
  {id:'health',name:'Health',color:'#F2586A'}
 ];
 let S={tasks:[],bills:[],cats:DEFCATS.slice(),notes:[]};
-let staged=[], uiStatus='open', uiSort='due', uiQuery='';
+let staged=[], uiStatus='open', uiSort='due', uiQuery='', uiCat='';
 let hzFilter=null, openTasks=new Set(), openBills=new Set(), openSubs=new Set(), editing=null;
 let wkOffset=0;
 const $=id=>document.getElementById(id);
@@ -1693,9 +1694,13 @@ function fillCatSelect(){
 }
 function renderCatBar(){
  $('catBar').innerHTML=S.cats.map(c=>
- `<span class="cat-tag"><span class="swatch" style="background:${c.color}"></span>${esc(c.name)}</span>`).join('')
+ `<span class="cat-tag ${uiCat===c.id?'active':''}" data-catf="${c.id}" style="border-color:${uiCat===c.id?c.color:'var(--line)'}"><span class="swatch" style="background:${c.color}"></span>${esc(c.name)}${uiCat===c.id?' ×':''}</span>`).join('')
  +`<button class="btn btn-sm" id="bCatMgr" style="border-radius:20px">⚙ Manage categories</button>`;
  $('bCatMgr').onclick=()=>$('catMgr').classList.toggle('on');
+ $('catBar').querySelectorAll('[data-catf]').forEach(el=>el.onclick=()=>{
+   uiCat=uiCat===el.dataset.catf?'':el.dataset.catf;
+   renderCatBar();renderTasks();
+ });
 }
 function renderCatMgr(){
  const el=$('catMgr');
@@ -1761,6 +1766,7 @@ function visibleTasks(){
  if(uiStatus==='open')t=t.filter(x=>!x.done);
  else if(uiStatus==='done')t=t.filter(x=>x.done);
  else if(uiStatus==='stalled')t=t.filter(isStalled);
+ if(uiCat)t=t.filter(x=>x.cat===uiCat);
  if(uiQuery){
  const q=uiQuery.toLowerCase();
  t=t.filter(x=>x.title.toLowerCase().includes(q)||(x.notes||'').toLowerCase().includes(q)
@@ -1771,7 +1777,10 @@ function visibleTasks(){
 function renderTasks(){
  const zone=$('taskZone'),list=visibleTasks();
  if(!list.length){
- const m=uiStatus==='stalled'?['Nothing stalled.','EVERYTHING IS MOVING']:['Nothing here.','ADD A TASK ABOVE TO BEGIN'];
+ const catName=uiCat?catOf(uiCat).name:'';
+ const m=uiStatus==='stalled'?['Nothing stalled.','EVERYTHING IS MOVING']:
+   catName?[`No ${catName} tasks.`,`ADD ONE ABOVE OR CLEAR THE FILTER`]:
+   ['Nothing here.','ADD A TASK ABOVE TO BEGIN'];
  zone.innerHTML=`<div class="empty"><div class="big" style="${uiStatus==='stalled'?'color:var(--mint)':''}">${m[0]}</div><div class="small">${m[1]}</div></div>`;
  return;
  }
