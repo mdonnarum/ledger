@@ -744,7 +744,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v12</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v13</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -1960,7 +1960,7 @@ function taskHTML(t){
  <svg viewBox="0 0 24 24"><rect class="bx" x="2.5" y="2.5" width="19" height="19" rx="5"/><path class="ck" d="M6.5 12.5l3.6 3.6 7.4-8.2"/></svg>
  </div>
  <div class="t-body">
- <div class="t-title" data-edit="${t.id}" style="cursor:pointer" title="Click to edit">${esc(t.title)}</div>
+ <div class="t-title" data-tedit="${t.id}" style="cursor:pointer" title="Click to edit">${esc(t.title)}</div>
  <div class="t-meta">
  <span class="chip-cat"><span class="swatch" style="background:${c.color}"></span>${esc(c.name)}</span>
  ${dl2?`<span class="chip-due ${dcls}">${dl2}</span>`:''}
@@ -2032,7 +2032,8 @@ function completeTask(t){
 }
 function wireTasks(){
  const Q=s=>document.querySelectorAll(s);
- Q('[data-tog]').forEach(el=>el.onclick=()=>{
+ Q('[data-tog]').forEach(el=>el.onclick=e=>{
+ e.stopPropagation();
  const t=S.tasks.find(x=>x.id===el.dataset.tog);
  if(t.done){t.done=false;t.completed=null;touch(t)}else completeTask(t);
  save();renderAll();
@@ -2054,6 +2055,10 @@ function wireTasks(){
  });
  Q('[data-edit]').forEach(el=>el.onclick=()=>{
  const id=el.dataset.edit;editing=editing===id?null:id;openTasks.delete(id);renderTasks();
+ });
+ Q('[data-tedit]').forEach(el=>el.onclick=e=>{
+ e.stopPropagation();
+ const id=el.dataset.tedit;editing=editing===id?null:id;openTasks.delete(id);renderTasks();
  });
  Q('[data-ecancel]').forEach(el=>el.onclick=()=>{editing=null;renderTasks()});
  Q('[data-esave]').forEach(el=>el.onclick=()=>{
