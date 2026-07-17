@@ -657,6 +657,59 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 .staple-sec-h::after{content:'';flex:1;height:1px;background:var(--line-soft)}
 .auto-link{color:var(--mint);text-decoration:none;font-weight:500;border-bottom:1px solid rgba(77,217,176,.3);word-break:break-all}
 .auto-link:hover{border-bottom-color:var(--mint)}
+/* ---- TASK TEMPLATES ---- */
+.tmpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:18px}
+.tmpl-card{background:var(--panel);border:1px solid var(--line-soft);border-radius:9px;padding:13px;cursor:pointer;transition:.15s}
+.tmpl-card:hover{border-color:var(--line);transform:translateY(-1px)}
+.tmpl-icon{font-size:22px;margin-bottom:7px}
+.tmpl-name{font-size:13.5px;font-weight:500;margin-bottom:4px}
+.tmpl-desc{font-size:11.5px;color:var(--text-dim);line-height:1.45}
+.tmpl-count{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:6px}
+.tmpl-modal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(6,8,11,.8);backdrop-filter:blur(4px)}
+.tmpl-modal.on{display:flex}
+.tmpl-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;width:min(500px,100%);max-height:80vh;display:flex;flex-direction:column}
+.tmpl-head{padding:18px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.tmpl-head h3{font-family:var(--display);font-size:18px;font-weight:600}
+.tmpl-body{padding:16px;overflow-y:auto}
+.tmpl-item{display:flex;align-items:flex-start;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line-soft)}
+.tmpl-item:last-child{border-bottom:none}
+.tmpl-item .dash{color:var(--text-dim);font-family:var(--mono);font-size:11px;padding-top:2px}
+.tmpl-item .tt{font-size:13px;color:var(--text-mid);flex:1;line-height:1.4}
+.tmpl-foot{padding:14px 18px;border-top:1px solid var(--line-soft);display:flex;gap:8px;justify-content:flex-end}
+
+/* ---- STREAKS ---- */
+.streak-badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;letter-spacing:.04em;padding:3px 8px;border-radius:20px;background:rgba(240,162,60,.1);border:1px solid rgba(240,162,60,.28);color:var(--amber);font-weight:600}
+.streak-widget{background:var(--panel);border:1px solid var(--line-soft);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.streak-fire{font-size:28px;line-height:1}
+.streak-info{flex:1;min-width:120px}
+.streak-num{font-family:var(--display);font-size:26px;font-weight:600;letter-spacing:-0.02em;line-height:1}
+.streak-label{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-top:4px}
+.streak-dots{display:flex;gap:4px;flex-wrap:wrap}
+.streak-dot{width:10px;height:10px;border-radius:3px;background:var(--line)}
+.streak-dot.on{background:var(--amber)}
+.streak-dot.today{background:var(--mint);box-shadow:0 0 6px var(--mint)}
+
+/* ---- BILL HISTORY CHART ---- */
+.bill-chart-wrap{margin-top:16px}
+.bchart-svg{width:100%;height:140px;display:block}
+.bchart-foot{display:flex;justify-content:space-between;margin-top:6px;font-family:var(--mono);font-size:10px;color:var(--text-dim)}
+.bchart-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}
+.bchart-leg{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-mid)}
+.bchart-leg .swatch{width:10px;height:4px;border-radius:2px}
+
+/* ---- PDF EXPORT ---- */
+.pdf-modal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(6,8,11,.8);backdrop-filter:blur(4px)}
+.pdf-modal.on{display:flex}
+.pdf-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;width:min(480px,100%);display:flex;flex-direction:column}
+.pdf-head{padding:18px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.pdf-head h3{font-family:var(--display);font-size:18px;font-weight:600}
+.pdf-body{padding:18px;display:flex;flex-direction:column;gap:10px}
+.pdf-opt{background:var(--panel-hi);border:1px solid var(--line-soft);border-radius:9px;padding:13px;cursor:pointer;transition:.15s;display:flex;gap:12px;align-items:flex-start}
+.pdf-opt:hover{border-color:var(--line);background:var(--panel-hover)}
+.pdf-opt .ico{font-size:20px;flex-shrink:0}
+.pdf-opt .ot{font-size:13.5px;font-weight:500;margin-bottom:4px}
+.pdf-opt .od{font-size:12px;color:var(--text-dim);line-height:1.45}
+.pdf-foot{padding:14px 18px;border-top:1px solid var(--line-soft);display:flex;justify-content:flex-end}
 </style>
 </head>
 <body>
@@ -690,7 +743,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v11</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v12</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -715,6 +768,8 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
       <button class="tab" data-v="ins">Insights</button>
     </div>
     <button class="btn btn-sm" id="bFocus" style="white-space:nowrap">🎯 Focus mode</button>
+    <button class="btn btn-sm" id="bTemplates" style="white-space:nowrap">📋 Templates</button>
+    <button class="btn btn-sm" id="bPdfExport" style="white-space:nowrap">📄 Export PDF</button>
   </div>
 
   <!-- FOCUS MODE OVERLAY -->
@@ -905,6 +960,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 
   <!-- ===== DASHBOARD ===== -->
   <div class="view" id="v-dash">
+    <div class="streak-widget" id="streakWidget"></div>
     <div class="kpis" id="kpis"></div>
     <div class="horizon">
       <div class="hz-head"><div class="p-title">Horizon — load across time</div><div class="hint" id="hzHint">Click a column to filter</div></div>
@@ -933,6 +989,15 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
     <div class="panel">
       <div class="p-head"><div class="p-title">Open by priority</div></div>
       <div class="p-body"><div class="pmx" id="pmx"></div></div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <div class="p-head">
+        <div class="p-title">Monthly bill spend — last 6 months</div>
+        <div class="hint">Total recurring bills per month</div>
+      </div>
+      <div class="p-body">
+        <div class="bill-chart-wrap" id="billChart"></div>
+      </div>
     </div>
   </div>
 
@@ -1008,6 +1073,71 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
     <button class="asst-send" id="asstSend" disabled>
       <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
+  </div>
+</div>
+
+<!-- TEMPLATES MODAL -->
+<div class="tmpl-modal" id="tmplModal">
+  <div class="tmpl-box">
+    <div class="tmpl-head">
+      <div>
+        <h3>Task templates</h3>
+        <p style="font-size:12.5px;color:var(--text-mid);margin-top:5px">Pick a template to instantly create a task with pre-built subtasks.</p>
+      </div>
+      <button class="dw-close" id="tmplClose">✕</button>
+    </div>
+    <div class="tmpl-body">
+      <div class="tmpl-grid" id="tmplGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TEMPLATE PREVIEW MODAL -->
+<div class="tmpl-modal" id="tmplPreview">
+  <div class="tmpl-box">
+    <div class="tmpl-head">
+      <div>
+        <h3 id="tmplPreviewName">—</h3>
+        <p style="font-size:12.5px;color:var(--text-mid);margin-top:5px" id="tmplPreviewDesc">—</p>
+      </div>
+      <button class="dw-close" id="tmplPreviewClose">✕</button>
+    </div>
+    <div class="tmpl-body" id="tmplPreviewBody"></div>
+    <div class="tmpl-foot">
+      <button class="btn" id="tmplPreviewBack">‹ Back</button>
+      <button class="btn btn-go" id="tmplPreviewAdd">＋ Create this task</button>
+    </div>
+  </div>
+</div>
+
+<!-- PDF EXPORT MODAL -->
+<div class="pdf-modal" id="pdfModal">
+  <div class="pdf-box">
+    <div class="pdf-head">
+      <div><h3>Export to PDF</h3></div>
+      <button class="dw-close" id="pdfClose">✕</button>
+    </div>
+    <div class="pdf-body">
+      <div class="pdf-opt" id="pdfOptTasks">
+        <div class="ico">✅</div>
+        <div><div class="ot">Open task list</div><div class="od">All open tasks grouped by category, with priority and due dates. Good for printing and working offline.</div></div>
+      </div>
+      <div class="pdf-opt" id="pdfOptAll">
+        <div class="ico">📋</div>
+        <div><div class="ot">Full board (open + done)</div><div class="od">Everything on your board including completed tasks. Good for a weekly archive.</div></div>
+      </div>
+      <div class="pdf-opt" id="pdfOptBills">
+        <div class="ico">💰</div>
+        <div><div class="ot">Bills summary</div><div class="od">All active bills with amounts, due dates, and payment status.</div></div>
+      </div>
+      <div class="pdf-opt" id="pdfOptWeek">
+        <div class="ico">📅</div>
+        <div><div class="ot">Weekly review</div><div class="od">This week's completed tasks, what slipped, and what's coming next week.</div></div>
+      </div>
+    </div>
+    <div class="pdf-foot">
+      <button class="btn" id="pdfCancel">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -2225,7 +2355,7 @@ function renderPmx(){
  }).join('');
  document.querySelectorAll('[data-pri]').forEach(el=>el.onclick=()=>drillPri(el.dataset.pri));
 }
-function renderDash(){renderKPIs();renderHorizon();renderDonut();renderPbars();renderAging();renderMomentum();renderPmx()}
+function renderDash(){renderStreak();renderKPIs();renderHorizon();renderDonut();renderPbars();renderAging();renderMomentum();renderPmx();renderBillChart();}
 
 function weekBounds(offset){
  const d=today0();
@@ -3205,19 +3335,6 @@ Rules:
  asstBusy=false;
  $('asstSend').disabled=false;
 }
-function buildBoardSnapshot(){
- const open=S.tasks.filter(t=>!t.done);
- const od=open.filter(t=>bucketOf(t)==='overdue');
- const today=open.filter(t=>bucketOf(t)==='today');
- const stalled=open.filter(isStalled);
- const bills=S.bills.filter(b=>!b.paused&&['overdue','soon'].includes(billStatus(b)));
- return `Open tasks: ${open.length} (${od.length} overdue, ${today.length} due today, ${stalled.length} stalled)
-Bills needing attention: ${bills.length}${bills.length?'\n'+bills.map(b=>`  - ${b.name} ${money(b.amount)} ${billStatus(b)==='overdue'?'OVERDUE':'due soon'}`).join('\n'):''}
-Top overdue tasks:${od.slice(0,5).map(t=>`\n  - ${t.title} (${Math.abs(dayDiff(parseDue(t.due)))}d late, ${catOf(t.cat).name}, ${t.pri})`).join('')}
-Due today:${today.map(t=>`\n  - ${t.title} (${catOf(t.cat).name}, ${t.pri})`).join('')}
-Stalled:${stalled.slice(0,4).map(t=>`\n  - ${t.title} (pushed ${t.pushes||0}x, ${idleDays(t)}d untouched)`).join('')}
-All open tasks:${open.map(t=>`\n  - [${catOf(t.cat).name}/${t.pri}] ${t.title}${t.due?' due '+t.due:''}`).join('')}`;
-}
 $('bReadBoard').onclick=()=>{
  const msg='Read my board and tell me where I stand. What should I focus on?';
  $('asstInput').value=msg;
@@ -3481,12 +3598,316 @@ function initTabs(){
  if(b.dataset.v==='recipes'){renderRecipes();renderStaples();}
  });
 }
+/* ================= TASK TEMPLATES ================= */
+const TEMPLATES=[
+  {id:'taxes',icon:'🧾',name:'File taxes',cat:'finance',pri:'high',desc:'Multi-year tax filing with document checklist',
+   subtasks:['Gather W-2s and 1099s','Collect investment statements (1099-B)','Find last year\'s return for reference','Gather receipts for deductions','Contact broker/employer for missing docs','File federal return','File state return (if applicable)','Set up IRS payment plan if owed','Store copies of filed returns']},
+  {id:'move',icon:'📦',name:'Plan the move',cat:'home',pri:'high',desc:'Full moving checklist from planning to settling in',
+   subtasks:['Get quotes from 3+ movers','Book moving company or truck rental','Notify USPS of address change','Update address with bank and credit cards','Transfer utilities to new address','Cancel/transfer internet service','Pack non-essentials first','Label all boxes by room','Pack an overnight essentials bag','Do final walkthrough of old place','Set up new home — utilities and internet']},
+  {id:'job',icon:'💼',name:'Job application',cat:'work',pri:'high',desc:'Track a single job application end to end',
+   subtasks:['Research the company and role','Tailor resume for this position','Write cover letter','Submit application','Send follow-up email after 1 week','Prepare for phone screen','Research interview questions for this role','Send thank-you email after interview','Follow up on decision timeline']},
+  {id:'health',icon:'🏥',name:'Annual health checkup',cat:'health',pri:'med',desc:'Yearly health maintenance tasks',
+   subtasks:['Schedule annual physical','Schedule dental cleaning','Schedule eye exam','Get bloodwork done','Review and update prescriptions','Check health insurance coverage','Review beneficiary designations']},
+  {id:'budget',icon:'📊',name:'Monthly budget review',cat:'finance',pri:'med',desc:'End-of-month financial review',
+   subtasks:['Pull bank and credit card statements','Categorize all spending','Compare actual vs budgeted spend','Review recurring subscriptions','Check savings progress','Review investment accounts','Set budget for next month','Pay any outstanding bills']},
+  {id:'project',icon:'🚀',name:'New project kickoff',cat:'work',pri:'high',desc:'Start a new work project the right way',
+   subtasks:['Define project goals and success criteria','Identify stakeholders','Create project timeline','Set up project folder / workspace','Schedule kickoff meeting','Document requirements','Assign responsibilities','Set up weekly check-in cadence','Create first status update template']},
+  {id:'home_repair',icon:'🔧',name:'Home repair / maintenance',cat:'home',pri:'med',desc:'Track a home repair from quote to completion',
+   subtasks:['Define the problem clearly','Get 3 quotes from contractors','Check contractor reviews and references','Sign contract and confirm timeline','Clear the work area','Supervise or check in during work','Inspect completed work','Make final payment','File paperwork and warranty info']},
+  {id:'vacation',icon:'✈️',name:'Plan a trip',cat:'personal',pri:'low',desc:'Trip planning from idea to return',
+   subtasks:['Choose destination and dates','Set total budget','Book flights','Book accommodation','Research things to do','Make restaurant reservations','Arrange pet/house sitter','Check passport validity','Pack','Set up out-of-office reply','Enjoy the trip','Unpack and do laundry on return']},
+];
+
+let activeTemplate=null;
+
+function openTemplates(){
+  $('tmplGrid').innerHTML=TEMPLATES.map(t=>`
+    <div class="tmpl-card" data-tmpl="${t.id}">
+      <div class="tmpl-icon">${t.icon}</div>
+      <div class="tmpl-name">${esc(t.name)}</div>
+      <div class="tmpl-desc">${esc(t.desc)}</div>
+      <div class="tmpl-count">${t.subtasks.length} subtasks</div>
+    </div>`).join('');
+  $('tmplGrid').querySelectorAll('[data-tmpl]').forEach(el=>el.onclick=()=>{
+    activeTemplate=TEMPLATES.find(t=>t.id===el.dataset.tmpl);
+    openTemplatePreview(activeTemplate);
+  });
+  $('tmplModal').classList.add('on');
+}
+function openTemplatePreview(t){
+  $('tmplPreviewName').textContent=`${t.icon} ${t.name}`;
+  $('tmplPreviewDesc').textContent=t.desc;
+  $('tmplPreviewBody').innerHTML=t.subtasks.map(s=>`
+    <div class="tmpl-item"><span class="dash">└</span><span class="tt">${esc(s)}</span></div>`).join('');
+  $('tmplModal').classList.remove('on');
+  $('tmplPreview').classList.add('on');
+}
+$('bTemplates').onclick=openTemplates;
+$('tmplClose').onclick=()=>$('tmplModal').classList.remove('on');
+$('tmplPreviewClose').onclick=()=>$('tmplPreview').classList.remove('on');
+$('tmplPreviewBack').onclick=()=>{$('tmplPreview').classList.remove('on');openTemplates()};
+$('tmplPreviewAdd').onclick=()=>{
+  if(!activeTemplate)return;
+  const t=activeTemplate;
+  const today=iso(today0());
+  S.tasks.unshift({
+    id:uid(),title:t.name,cat:t.cat,pri:t.pri,due:'',repeat:'none',
+    notes:`Created from template: ${t.name}`,
+    done:false,created:Date.now(),touched:Date.now(),pushes:0,
+    subtasks:t.subtasks.map(s=>({id:uid(),title:s,done:false,notes:''}))
+  });
+  $('tmplPreview').classList.remove('on');
+  // switch to tasks tab
+  $('tabBar').querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  $('tabBar').querySelector('[data-v="tasks"]').classList.add('on');
+  $('v-tasks').classList.add('on');
+  save();renderAll();
+  openTasks.add(S.tasks[0].id); // auto-expand the new task
+  renderTasks();
+  toast(`✓ "${t.name}" created with ${t.subtasks.length} subtasks`);
+};
+$('tmplModal').onclick=e=>{if(e.target===$('tmplModal'))$('tmplModal').classList.remove('on')};
+$('tmplPreview').onclick=e=>{if(e.target===$('tmplPreview'))$('tmplPreview').classList.remove('on')};
+
+/* ================= TASK STREAKS ================= */
+const STREAK_KEY='ledger:streak';
+function getStreak(){
+  try{
+    const raw=localStorage.getItem(STREAK_KEY);
+    if(!raw)return{current:0,best:0,lastDate:''};
+    return JSON.parse(raw);
+  }catch(e){return{current:0,best:0,lastDate:''}}
+}
+function updateStreak(){
+  const todayStr=iso(today0());
+  const data=getStreak();
+  const yesterday=iso(new Date(today0().getTime()-DAY));
+  if(data.lastDate===todayStr)return; // already updated today
+  if(data.lastDate===yesterday){
+    data.current++;
+  }else if(data.lastDate!==todayStr){
+    data.current=1; // reset — but only if they completed something today
+  }
+  // only count if they actually completed something today
+  const completedToday=S.tasks.filter(t=>t.done&&t.completed&&iso(new Date(t.completed))===todayStr).length;
+  if(completedToday>0){
+    if(data.lastDate===yesterday)data.current++;
+    else if(data.lastDate!==todayStr)data.current=1;
+    data.lastDate=todayStr;
+    data.best=Math.max(data.best,data.current);
+    try{localStorage.setItem(STREAK_KEY,JSON.stringify(data))}catch(e){}
+  }
+}
+function renderStreak(){
+  const data=getStreak();
+  const todayStr=iso(today0());
+  // build last 7 days
+  const days=[];
+  for(let i=6;i>=0;i--){
+    const d=iso(new Date(today0().getTime()-i*DAY));
+    const hadCompletion=S.tasks.some(t=>t.done&&t.completed&&iso(new Date(t.completed))===d);
+    days.push({d,had:hadCompletion,isToday:d===todayStr});
+  }
+  const cur=data.current;
+  const best=data.best;
+  if(cur===0&&best===0){
+    $('streakWidget').style.display='none';
+    return;
+  }
+  $('streakWidget').style.display='flex';
+  $('streakWidget').innerHTML=`
+    <div class="streak-fire">${cur>=7?'🔥':cur>=3?'⚡':'✨'}</div>
+    <div class="streak-info">
+      <div class="streak-num" style="color:${cur>=7?'var(--rose)':cur>=3?'var(--amber)':'var(--mint)'}">${cur}</div>
+      <div class="streak-label">day streak · best ${best}</div>
+    </div>
+    <div style="flex:1;min-width:100px">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Last 7 days</div>
+      <div class="streak-dots">
+        ${days.map(d=>`<div class="streak-dot ${d.had?'on':''} ${d.isToday&&d.had?'today':''}" title="${d.d}"></div>`).join('')}
+      </div>
+    </div>`;
+}
+
+/* ================= BILL HISTORY CHART ================= */
+function renderBillChart(){
+  const el=$('billChart');
+  if(!el)return;
+  // Build last 6 months of bill spend from payment history
+  const months=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date();
+    d.setDate(1);d.setMonth(d.getMonth()-i);
+    const label=d.toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+    const mStart=new Date(d.getFullYear(),d.getMonth(),1);
+    const mEnd=new Date(d.getFullYear(),d.getMonth()+1,0,23,59,59);
+    let total=0;
+    S.bills.forEach(b=>{
+      (b.history||[]).forEach(h=>{
+        const pd=new Date(h.paid);
+        if(pd>=mStart&&pd<=mEnd)total+=Number(h.amount||0);
+      });
+    });
+    months.push({label,total});
+  }
+  const max=Math.max(1,...months.map(m=>m.total));
+  if(max<=1){
+    el.innerHTML=`<div style="text-align:center;padding:30px 10px;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.06em">NO PAYMENT HISTORY YET — MARK BILLS AS PAID TO SEE CHART</div>`;
+    return;
+  }
+  const W=100,H=100,pad=8,barW=10,gap=4;
+  const totalW=months.length*(barW+gap)-gap;
+  const startX=(W-totalW)/2;
+  const bars=months.map((m,i)=>{
+    const x=startX+i*(barW+gap);
+    const barH=Math.max(2,Math.round((m.total/max)*(H-pad*2)));
+    const y=H-pad-barH;
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" rx="2" fill="var(--mint)" opacity="${m.total>0?0.85:0.2}"/>
+      <text x="${(x+barW/2).toFixed(1)}" y="${H.toFixed(1)}" text-anchor="middle" fill="#66727F" font-family="JetBrains Mono" font-size="5">${m.label}</text>
+      ${m.total>0?`<text x="${(x+barW/2).toFixed(1)}" y="${(y-2).toFixed(1)}" text-anchor="middle" fill="#4DD9B0" font-family="Space Grotesk" font-size="5" font-weight="600">$${Math.round(m.total)}</text>`:''}`;
+  }).join('');
+  el.innerHTML=`<svg class="bchart-svg" viewBox="0 0 ${W} ${H+8}" preserveAspectRatio="xMidYMid meet">${bars}</svg>
+    <div class="bchart-foot">
+      <span>Monthly bill payments — last 6 months</span>
+      <span style="color:var(--mint)">Total: ${money(months.reduce((a,b)=>a+b.total,0))}</span>
+    </div>`;
+}
+
+/* ================= PDF EXPORT ================= */
+$('bPdfExport').onclick=()=>$('pdfModal').classList.add('on');
+$('pdfClose').onclick=$('pdfCancel').onclick=()=>$('pdfModal').classList.remove('on');
+$('pdfModal').onclick=e=>{if(e.target===$('pdfModal'))$('pdfModal').classList.remove('on')};
+
+function buildPdfHtml(title,bodyHtml){
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>${title}</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1f24;margin:0;padding:32px;max-width:800px;margin:0 auto}
+h1{font-size:24px;font-weight:700;margin-bottom:4px;color:#0E1116}
+.subtitle{font-size:12px;color:#8A9099;margin-bottom:28px;font-family:monospace;letter-spacing:0.06em}
+h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#4A5568;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}
+.task{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0}
+.cb{width:14px;height:14px;border:2px solid #CBD5E0;border-radius:3px;flex-shrink:0;margin-top:2px}
+.cb.done{background:#4DD9B0;border-color:#4DD9B0}
+.t{flex:1}
+.t-title{font-size:13.5px;font-weight:450}
+.t-meta{font-size:11px;color:#8A9099;margin-top:3px;font-family:monospace}
+.sub{display:flex;gap:8px;padding:4px 0 4px 22px;font-size:12px;color:#4A5568}
+.sub .cb{width:11px;height:11px;margin-top:1px}
+.bill-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.bill-amt{font-weight:600}
+.tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-right:4px}
+.high{background:#fff5f5;color:#e53e3e}.med{background:#fffbeb;color:#d97706}.low{background:#f7f7f7;color:#718096}
+.od{color:#e53e3e;font-weight:500}
+footer{margin-top:40px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#8A9099;font-family:monospace}
+@media print{body{padding:20px}button{display:none}}
+</style>
+</head><body>${bodyHtml}
+<footer>Generated by Ledger · ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</footer>
+<script>window.onload=()=>window.print()<\/script>
+</body></html>`;
+}
+
+function openPdfWindow(title,html){
+  const w=window.open('','_blank');
+  if(!w){toast('Pop-up blocked — allow pop-ups and try again');return}
+  w.document.write(buildPdfHtml(title,html));
+  w.document.close();
+}
+
+$('pdfOptTasks').onclick=()=>{
+  $('pdfModal').classList.remove('on');
+  const open=S.tasks.filter(t=>!t.done);
+  const byCat=S.cats.map(c=>({c,tasks:open.filter(t=>t.cat===c.id)})).filter(x=>x.tasks.length);
+  let html=`<h1>Open Tasks</h1><div class="subtitle">${open.length} tasks · ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}).toUpperCase()}</div>`;
+  byCat.forEach(({c,tasks})=>{
+    html+=`<h2>${c.name}</h2>`;
+    tasks.forEach(t=>{
+      const dl=dueLabel(t);
+      html+=`<div class="task"><div class="cb"></div><div class="t"><div class="t-title">${t.title}</div><div class="t-meta"><span class="tag ${t.pri}">${t.pri}</span>${dl?`<span class="${bucketOf(t)==='overdue'?'od':''}">${dl}</span>`:''}</div></div></div>`;
+      (t.subtasks||[]).forEach(s=>html+=`<div class="sub"><div class="cb ${s.done?'done':''}"></div>${s.title}</div>`);
+    });
+  });
+  openPdfWindow('Open Tasks — Ledger',html);
+};
+
+$('pdfOptAll').onclick=()=>{
+  $('pdfModal').classList.remove('on');
+  const byCat=S.cats.map(c=>({c,tasks:S.tasks.filter(t=>t.cat===c.id)})).filter(x=>x.tasks.length);
+  let html=`<h1>Full Board</h1><div class="subtitle">${S.tasks.length} tasks · ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}).toUpperCase()}</div>`;
+  byCat.forEach(({c,tasks})=>{
+    html+=`<h2>${c.name}</h2>`;
+    tasks.forEach(t=>{
+      html+=`<div class="task"><div class="cb ${t.done?'done':''}"></div><div class="t"><div class="t-title" style="${t.done?'text-decoration:line-through;color:#8A9099':''}">${t.title}</div></div></div>`;
+    });
+  });
+  openPdfWindow('Full Board — Ledger',html);
+};
+
+$('pdfOptBills').onclick=()=>{
+  $('pdfModal').classList.remove('on');
+  const active=S.bills.filter(b=>!b.paused);
+  let html=`<h1>Bills Summary</h1><div class="subtitle">${active.length} active bills · ${money(active.reduce((a,b)=>a+monthlyEquiv(b),0))}/month</div>`;
+  html+=`<h2>All Bills</h2>`;
+  const sorted=active.slice().sort((a,b)=>(parseDue(a.due)||0)-(parseDue(b.due)||0));
+  sorted.forEach(b=>{
+    const st=billStatus(b),dl=billLabel(b);
+    html+=`<div class="bill-row"><div><div>${b.name}${b.autopay?' <span class="tag" style="background:#f0fff4;color:#276749">AUTO</span>':''}</div><div style="font-size:11px;color:#8A9099;font-family:monospace">${CAD[b.cadence].label}${dl?' · '+dl:''}</div></div><div class="bill-amt ${st==='overdue'?'od':''}">${money(b.amount)}</div></div>`;
+  });
+  openPdfWindow('Bills Summary — Ledger',html);
+};
+
+$('pdfOptWeek').onclick=()=>{
+  $('pdfModal').classList.remove('on');
+  const w=weekData(wkOffset);
+  const {start,end}=weekBounds(wkOffset);
+  const f=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  let html=`<h1>Weekly Review</h1><div class="subtitle">${f(start).toUpperCase()} — ${f(new Date(end.getTime()-DAY)).toUpperCase()}</div>`;
+  html+=`<h2>Completed (${w.done.length})</h2>`;
+  w.done.forEach(t=>html+=`<div class="task"><div class="cb done"></div><div class="t"><div class="t-title">${t.title}</div><div class="t-meta">${catOf(t.cat).name}</div></div></div>`);
+  if(!w.done.length)html+=`<p style="color:#8A9099;font-size:13px">Nothing completed this week.</p>`;
+  html+=`<h2>Slipped (${w.slipped.length})</h2>`;
+  w.slipped.forEach(t=>html+=`<div class="task"><div class="cb"></div><div class="t"><div class="t-title">${t.title}</div><div class="t-meta od">${Math.abs(dayDiff(parseDue(t.due)))}d overdue</div></div></div>`);
+  if(!w.slipped.length)html+=`<p style="color:#38a169;font-size:13px">Nothing slipped this week.</p>`;
+  html+=`<h2>Up next (${w.ahead.length})</h2>`;
+  w.ahead.forEach(t=>html+=`<div class="task"><div class="cb"></div><div class="t"><div class="t-title">${t.title}</div><div class="t-meta"><span class="tag ${t.pri}">${t.pri}</span>${t.due?' due '+t.due:''}</div></div></div>`);
+  openPdfWindow('Weekly Review — Ledger',html);
+};
+
+/* ================= SMART DUE DATE IN ASSISTANT ================= */
+// Patch sendToAsst system prompt to include due date suggestion logic
+// (handled via updated system prompt in buildBoardSnapshot)
+function buildBoardSnapshot(){
+ const open=S.tasks.filter(t=>!t.done);
+ const od=open.filter(t=>bucketOf(t)==='overdue');
+ const today=open.filter(t=>bucketOf(t)==='today');
+ const stalled=open.filter(isStalled);
+ const bills=S.bills.filter(b=>!b.paused&&['overdue','soon'].includes(billStatus(b)));
+ const weekTasks=open.filter(t=>['today','tomorrow','week'].includes(bucketOf(t)));
+ return `Open tasks: ${open.length} (${od.length} overdue, ${today.length} due today, ${stalled.length} stalled)
+Week pressure: ${weekTasks.length} tasks due in next 7 days
+Bills needing attention: ${bills.length}${bills.length?'\n'+bills.map(b=>`  - ${b.name} ${money(b.amount)} ${billStatus(b)==='overdue'?'OVERDUE':'due soon'}`).join('\n'):''}
+Top overdue tasks:${od.slice(0,5).map(t=>`\n  - ${t.title} (${Math.abs(dayDiff(parseDue(t.due)))}d late, ${catOf(t.cat).name}, ${t.pri})`).join('')}
+Due today:${today.map(t=>`\n  - ${t.title} (${catOf(t.cat).name}, ${t.pri})`).join('')}
+Stalled:${stalled.slice(0,4).map(t=>`\n  - ${t.title} (pushed ${t.pushes||0}x, ${idleDays(t)}d untouched)`).join('')}
+All open tasks:${open.map(t=>`\n  - [${catOf(t.cat).name}/${t.pri}] ${t.title}${t.due?' due '+t.due:''}`).join('')}
+Today is ${iso(today0())}. When suggesting due dates, consider that ${weekTasks.length} tasks are already due this week. If that number is high (4+), suggest dates in the following week instead.`;
+}
+
+/* ================= UPDATE renderDash TO INCLUDE NEW FEATURES ================= */
 cacheShell();
 if(!navigator.onLine)updateConnStatus();
 loadStaples();
 renderStaples();
 initDraggableTabs();
 initTabs();
+// Update streak whenever a task is completed
+const _origCompleteTask=completeTask;
+function completeTask(t){
+ _origCompleteTask(t);
+ setTimeout(updateStreak,100);
+}
 </script>
 </body>
 </html>
