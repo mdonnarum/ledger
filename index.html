@@ -141,6 +141,7 @@ input,select,textarea{font-family:inherit;color:inherit}
 .tick:hover .bx{stroke:var(--mint)}
 .t-body{flex:1;min-width:0}
 .t-title{font-size:14.5px;font-weight:450;line-height:1.4;word-break:break-word}
+.t-title:hover{color:var(--mint);transition:color .14s}
 .task.done .t-title{text-decoration:line-through;text-decoration-color:var(--text-dim)}
 .t-meta{display:flex;align-items:center;gap:9px;margin-top:5px;flex-wrap:wrap}
 .chip-cat{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--text-mid)}
@@ -1959,7 +1960,7 @@ function taskHTML(t){
  <svg viewBox="0 0 24 24"><rect class="bx" x="2.5" y="2.5" width="19" height="19" rx="5"/><path class="ck" d="M6.5 12.5l3.6 3.6 7.4-8.2"/></svg>
  </div>
  <div class="t-body">
- <div class="t-title">${esc(t.title)}</div>
+ <div class="t-title" data-edit="${t.id}" style="cursor:pointer" title="Click to edit">${esc(t.title)}</div>
  <div class="t-meta">
  <span class="chip-cat"><span class="swatch" style="background:${c.color}"></span>${esc(c.name)}</span>
  ${dl2?`<span class="chip-due ${dcls}">${dl2}</span>`:''}
@@ -2015,6 +2016,7 @@ function taskHTML(t){
 }
 function completeTask(t){
  t.done=true;t.completed=Date.now();touch(t);
+ setTimeout(updateStreak,200);
  if(t.repeat&&t.repeat!=='none'&&REPEAT[t.repeat].next){
  const base=t.due?parseDue(t.due):today0();
  let nd=REPEAT[t.repeat].next(base);
@@ -3902,12 +3904,6 @@ loadStaples();
 renderStaples();
 initDraggableTabs();
 initTabs();
-// Update streak whenever a task is completed
-const _origCompleteTask=completeTask;
-function completeTask(t){
- _origCompleteTask(t);
- setTimeout(updateStreak,100);
-}
 </script>
 </body>
 </html>
