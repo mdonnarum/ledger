@@ -4146,45 +4146,91 @@ h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
 /* ================= INSIGHTS: GENERATE ALL ================= */
 $('bGenAll').onclick=async()=>{
   const key=getAKey();
-  if(!key){$('planDayOut').innerHTML=`<div class="ins-err">No API key configured. Open ⚙ Settings.</div>`;return;}
   const btn=$('bGenAll');
+  if(!key){$('planDayOut').innerHTML=`<div class="ins-err">No API key configured. Open ⚙ Settings.</div>`;return;}
   btn.textContent='Generating…';btn.disabled=true;
-  // Switch to today tab to show progress
+  // Switch to today tab while loading
   document.querySelectorAll('.ins-tab').forEach(t=>t.classList.remove('on'));
   document.querySelectorAll('.ins-panel').forEach(p=>p.classList.remove('on'));
   document.querySelector('[data-it="today"]').classList.add('on');
   $('it-today').classList.add('on');
-  $('planDayOut').innerHTML=`<div style="text-align:center;padding:30px;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.06em">GENERATING TODAY'S PLAN…</div>`;
-  $('planWeekOut').innerHTML=`<div style="text-align:center;padding:30px;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.06em">QUEUED…</div>`;
-  $('insOut').innerHTML=`<div style="text-align:center;padding:30px;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.06em">QUEUED…</div>`;
+  const loading=s=>`<div style="text-align:center;padding:30px;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.06em">${s}</div>`;
+  $('planDayOut').innerHTML=loading('GENERATING TODAY\'S PLAN…');
+  $('planWeekOut').innerHTML=loading('GENERATING WEEK PLAN…');
+  $('insOut').innerHTML=loading('GENERATING BOARD REVIEW…');
+
+  // Board review helper
+  async function genBoardReview(){
+    const out=$('insOut');
+    const open=S.tasks.filter(t=>!t.done);
+    if(!open.length&&!S.bills.length){out.innerHTML=`<div class="ins-err">Nothing to analyze — add some tasks or bills first.</div>`;return;}
+    const tasks=open.map(t=>({
+      title:t.title,category:catOf(t.cat).name,priority:t.pri,due:t.due||'unscheduled',
+      status:bucketOf(t),age_days:ageDays(t),days_untouched:idleDays(t),times_pushed:t.pushes||0,
+      checklist:(t.subtasks||[]).map(s=>({item:s.title,done:s.done,progress_note:s.notes||''})),
+      notes:t.notes||''
+    }));
+    const bills=S.bills.filter(x=>!x.paused).map(x=>({
+      name:x.name,amount:x.amount,recurs:CAD[x.cadence]?.label||x.cadence,
+      due:x.due,days_until:dayDiff(parseDue(x.due)),autopay:x.autopay,status:billStatus(x)
+    }));
+    const recent=S.tasks.filter(t=>t.done&&t.completed&&t.completed>Date.now()-14*DAY).length;
+    const prompt=`You are a blunt, perceptive planning coach. Below is a person's open task board and recurring bills. They completed ${recent} tasks in the last 14 days.
+TASKS:\n${JSON.stringify(tasks,null,1)}\nBILLS:\n${JSON.stringify(bills,null,1)}\nToday is ${new Date().toDateString()}.
+Respond with ONLY a JSON object, no fences, no preamble:
+{"headline":"one blunt sentence naming the real problem","stalled":[{"task":"exact title","diagnosis":"TOO BIG|TOO VAGUE|NO FIRST STEP|BEING AVOIDED|BLOCKED ON SOMEONE|OVERLOOKED","why":"1-2 sentences","breakdown":["concrete item"]}],"plan":[{"task":"exact title or bill name","why":"why first","first_step":"concrete action under 15 min"}],"quick_wins":[{"task":"exact title","why":"why fast"}],"blind_spots":[{"title":"short name","detail":"1-2 sentences"}]}
+Rules: stalled=2-3 stuck tasks; plan=exactly 3 items; quick_wins=1-3; blind_spots=2-3. Titles must match exactly.`;
+    try{
+      const r=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2200,messages:[{role:'user',content:prompt}]})
+      });
+      const data=await r.json();
+      const txt=data.content.filter(x=>x.type==='text').map(x=>x.text).join('\n').replace(/```json|```/g,'').trim();
+      const j=JSON.parse(txt);
+      const stalledHTML=(j.stalled||[]).map((s,i)=>`
+        <div class="ins-card ins-stall"><div class="ins-idx">⚑</div>
+        <div style="flex:1;min-width:0">
+          <div class="ins-t">${esc(s.task)}</div>
+          <span class="ins-diag">${esc(s.diagnosis)}</span>
+          <div class="ins-w">${esc(s.why)}</div>
+          ${(s.breakdown&&s.breakdown.length)?`<div class="brk"><div class="brk-h">Suggested breakdown</div>
+          ${s.breakdown.map(x=>`<div class="brk-s"><span class="d">└</span><span>${esc(x)}</span></div>`).join('')}
+          <button class="brk-btn" data-brk="${i}">＋ Add ${s.breakdown.length} checklist items</button></div>`:''}
+        </div></div>`).join('');
+      out.innerHTML=`
+        <div class="ins-head">${esc(j.headline)}</div>
+        ${stalledHTML?`<div class="ins-sec"><div class="p-title">Stuck — and why</div>${stalledHTML}</div>`:''}
+        <div class="ins-sec"><div class="p-title">Attack plan — in this order</div>
+        ${(j.plan||[]).map((p,i)=>`<div class="ins-card"><div class="ins-idx">0${i+1}</div>
+          <div style="flex:1;min-width:0"><div class="ins-t">${esc(p.task)}</div>
+          <div class="ins-w">${esc(p.why)}</div>
+          <div class="ins-first"><b>Start here: </b>${esc(p.first_step)}</div>
+        </div></div>`).join('')}</div>
+        ${(j.quick_wins||[]).length?`<div class="ins-sec"><div class="p-title">Quick wins</div>
+        ${j.quick_wins.map(w=>`<div class="ins-card ins-win"><div class="ins-idx">⚡</div>
+          <div><div class="ins-t">${esc(w.task)}</div><div class="ins-w">${esc(w.why)}</div></div></div>`).join('')}</div>`:''}
+        ${(j.blind_spots||[]).length?`<div class="ins-sec"><div class="p-title">Blind spots</div>
+        ${j.blind_spots.map(x=>`<div class="ins-card ins-blind"><div class="ins-idx">◆</div>
+          <div><div class="ins-t">${esc(x.title)}</div><div class="ins-w">${esc(x.detail)}</div></div></div>`).join('')}</div>`:''}
+        <div class="ins-note">Generated from your board just now.</div>`;
+      out.querySelectorAll('[data-brk]').forEach(b=>b.onclick=()=>{
+        const s=j.stalled[+b.dataset.brk];applyBreakdown(s.task,s.breakdown,b);
+      });
+    }catch(e){
+      out.innerHTML=`<div class="ins-err">Board review failed. Check your connection and try again.</div>`;
+    }
+  }
+
   // Run all three in parallel
   await Promise.all([
     runPlanner('day',$('planDayOut'),{textContent:'',disabled:false}),
     runPlanner('week',$('planWeekOut'),{textContent:'',disabled:false}),
-    (async()=>{
-      try{
-        const b=$('bGen'),out=$('insOut');
-        b.textContent='Generating…';b.disabled=true;
-        b.click();
-        await new Promise(r=>setTimeout(r,100));
-      }catch(e){}
-      // Trigger board review
-      const open=S.tasks.filter(t=>!t.done);
-      const out=$('insOut');
-      if(!open.length&&!S.bills.length){out.innerHTML=`<div class="ins-err">Nothing to analyze.</div>`;return;}
-      const snapshot=buildBoardSnapshot();
-      try{
-        const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-          headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2200,messages:[{role:'user',content:snapshot}]})});
-        const data=await resp.json();
-        const raw=data.content?.filter(x=>x.type==='text').map(x=>x.text).join('')||'';
-        applyBreakdown(JSON.parse(raw.replace(/```json|```/g,'').trim()),out);
-      }catch(e){out.innerHTML=`<div class="ins-err">Board review failed. Try again.</div>`;}
-    })()
+    genBoardReview()
   ]);
   btn.textContent='✦ Generate everything';btn.disabled=false;
-  toast('All three plans generated — switch tabs to view each');
+  toast('All three generated — switch tabs to view each');
 };
 
 /* ================= DASHBOARD TILE DETAIL ================= */
