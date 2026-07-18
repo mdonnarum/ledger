@@ -73,9 +73,9 @@ input,select,textarea{font-family:inherit;color:inherit}
 .field input[type=number]{width:70px;font-family:var(--mono)}
 .field select{cursor:pointer}
 .field select option{background:var(--panel-hi)}
-.comp-notes{width:100%;background:var(--panel-hi);border:1px solid var(--line);border-radius:7px;padding:9px 10px;margin-top:10px;font-size:13px;resize:vertical;min-height:120px;outline:none;display:block}
-.comp-notes:focus{border-color:var(--mint)}
+.comp-notes{width:100%;background:var(--panel-hi);border:1px solid var(--line);border-radius:7px;padding:9px 10px;margin-top:10px;font-size:13px;outline:none;display:block;min-height:40px;resize:none;overflow:hidden;transition:min-height .2s ease}
 .comp-notes.on{display:block}
+.comp-notes.expanded{min-height:160px;resize:vertical;overflow:auto}
 .btn{background:var(--panel-hi);border:1px solid var(--line);border-radius:7px;height:34px;padding:0 13px;font-size:12.5px;font-weight:500;color:var(--text-mid);transition:.15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .btn:hover{background:var(--panel-hover);color:var(--text);border-color:var(--text-dim)}
 .btn-go{background:var(--mint);color:#08120F;border-color:var(--mint);font-weight:600;margin-left:auto}
@@ -207,7 +207,7 @@ input,select,textarea{font-family:inherit;color:inherit}
 .te-title{width:100%;background:var(--panel-hi);border:1px solid var(--line);border-radius:7px;height:34px;padding:0 10px;font-size:14px;outline:none;margin-bottom:9px}
 .te-title:focus{border-color:var(--mint)}
 .te-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.te-notes{width:100%;background:var(--panel-hi);border:1px solid var(--line);border-radius:7px;padding:9px 10px;margin-top:9px;font-size:13px;resize:vertical;min-height:36px;outline:none}
+.te-notes{width:100%;background:var(--panel-hi);border:1px solid var(--line);border-radius:7px;padding:9px 10px;margin-top:9px;font-size:13px;resize:vertical;min-height:120px;outline:none;-webkit-overflow-scrolling:touch}
 .te-notes:focus{border-color:var(--mint)}
 .empty{text-align:center;padding:56px 20px;color:var(--text-dim)}
 .empty .big{font-family:var(--display);font-size:16px;color:var(--text-mid);margin-bottom:6px}
@@ -829,7 +829,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v25</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v26</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -2039,7 +2039,9 @@ function renderStage(){
  `<div class="stage-item"><span class="dash">└</span>${esc(s.title)}<button data-i="${i}">×</button></div>`).join('');
  $('stageList').querySelectorAll('button').forEach(b=>b.onclick=()=>{staged.splice(+b.dataset.i,1);renderStage()});
 }
-$('bNotes').onclick=()=>{const n=$('cNotes');n.classList.toggle('on');if(n.classList.contains('on'))n.focus()};
+$('bNotes').onclick=()=>{const n=$('cNotes');n.classList.toggle('on');if(n.classList.contains('on'))n.focus();};
+$('cNotes').addEventListener('focus',function(){this.classList.add('expanded');this.style.overflow='auto';});
+$('cNotes').addEventListener('blur',function(){if(!this.value.trim()){this.classList.remove('expanded');this.style.overflow='hidden';}});
 $('bSubs').onclick=()=>{const s=$('cStage');s.classList.toggle('on');if(s.classList.contains('on'))$('sInput').focus()};
 $('sInput').onkeydown=e=>{
  if(e.key!=='Enter')return;
@@ -2184,7 +2186,19 @@ function taskHTML(t){
  <button class="btn btn-go" data-esave="${t.id}">Save</button>
  <button class="btn" data-ecancel="${t.id}">Cancel</button>
  </div>
- <textarea class="te-notes" data-enotes="${t.id}" placeholder="Notes…">${esc(t.notes||'')}</textarea>
+ <textarea class="te-notes" data-enotes="${t.id}" placeholder="Notes, context, links…" style="min-height:120px;resize:vertical">${esc(t.notes||'')}</textarea>
+ <div style="margin-top:10px">
+ <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">Checklist</div>
+ ${(t.subtasks||[]).map(s=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-soft)">
+ <div class="tick ${s.done?'on':''}" data-sub="${s.id}" data-stask="${t.id}" style="flex-shrink:0"><svg viewBox="0 0 24 24"><rect class="bx" x="2.5" y="2.5" width="19" height="19" rx="5"/><path class="ck" d="M6.5 12.5l3.6 3.6 7.4-8.2"/></svg></div>
+ <span style="flex:1;font-size:13px;${s.done?'text-decoration:line-through;color:var(--text-dim)':''}">${esc(s.title)}</span>
+ <button data-subdel="${s.id}" data-stask="${t.id}" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;line-height:1">×</button>
+ </div>`).join('')}
+ <div class="sub-new" style="margin-top:8px">
+ <input placeholder="Add checklist item…" data-subin="${t.id}" maxlength="140">
+ <button data-subadd="${t.id}">Add</button>
+ </div>
+ </div>
  </div>
  </div>`;
 }
@@ -3889,7 +3903,7 @@ Bills needing attention: ${bills.length}${bills.length?'\n'+bills.map(b=>`  - ${
 Top overdue tasks:${od.slice(0,5).map(t=>`\n  - ${t.title} (${Math.abs(dayDiff(parseDue(t.due)))}d late, ${catOf(t.cat).name}, ${t.pri})`).join('')}
 Due today:${today.map(t=>`\n  - ${t.title} (${catOf(t.cat).name}, ${t.pri})`).join('')}
 Stalled:${stalled.slice(0,4).map(t=>`\n  - ${t.title} (pushed ${t.pushes||0}x, ${idleDays(t)}d untouched)`).join('')}
-All open tasks:${open.map(t=>`\n  - [${catOf(t.cat).name}/${t.pri}] ${t.title}${t.due?' due '+t.due:''}`).join('')}
+All open tasks:${open.map(t=>`\n  - [${catOf(t.cat).name}/${t.pri}] ${t.title}${t.due?' due '+t.due:''}${t.notes?' | '+t.notes.slice(0,80)+(t.notes.length>80?'…':''):''}${(t.subtasks||[]).filter(s=>!s.done).length?' [todo: '+(t.subtasks.filter(s=>!s.done).map(s=>s.title).join(', '))+']':''}`).join('')}
 Today is ${iso(today0())}. When suggesting due dates, consider that ${weekTasks.length} tasks are already due this week. If that number is high (4+), suggest dates in the following week instead.`;
 }
 
