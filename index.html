@@ -831,7 +831,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v28</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v29</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -3523,6 +3523,12 @@ YOU CAN:
   {"op":"operation_name", ...params}
 ]>>>
 
+CRITICAL JSON RULES — the OPS block MUST be valid JSON:
+- ALL property names must use double quotes: {"op":"add_task"} NOT {op:"add_task"}
+- ALL string values must use double quotes: "title":"My task" NOT 'title':'My task'
+- NO trailing commas
+- NO comments inside JSON
+
 AVAILABLE OPERATIONS:
 - add_task: {op:"add_task",title,cat,pri:"low|med|high",due:"YYYY-MM-DD",notes,subtasks:["item1"]}
 - update: {op:"update",task:"match title",title,cat,pri,due,status:"todo|inprogress|blocked",notes,done:true/false}
@@ -3565,12 +3571,33 @@ RULES:
 
  if(opsMatch){
    try{
-     const ops=extractJSON('['+opsMatch[1].trim().replace(/^\[/,'').replace(/\]$/,'')+']');
-     const opsArr=Array.isArray(ops)?ops:[ops];
-     opsResults=applyOps(opsArr);
+     let opsRaw=opsMatch[1].trim();
+     // Ensure it's wrapped in an array
+     if(!opsRaw.startsWith('['))opsRaw='['+opsRaw;
+     if(!opsRaw.endsWith(']'))opsRaw=opsRaw+']';
+     // Repair common Claude JSON mistakes:
+     // 1. Single-quoted strings → double-quoted
+     opsRaw=opsRaw.replace(/'/g,'"');
+     // 2. Unquoted property names → double-quoted (e.g. {op:"add_task"} → {"op":"add_task"})
+     opsRaw=opsRaw.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g,'$1"$2":');
+     // 3. Trailing commas before ] or }
+     opsRaw=opsRaw.replace(/,(\s*[}\]])/g,'$1');
+     // 4. Fix unescaped newlines in strings
+     opsRaw=opsRaw.replace(/("(?:[^"\\]|\\.)*")/g,m=>m.replace(/\n/g,'\\n').replace(/\r/g,'\\r'));
+     const opsArr=JSON.parse(opsRaw);
+     const result=Array.isArray(opsArr)?opsArr:[opsArr];
+     opsResults=applyOps(result);
      save();renderAll();
    }catch(e){
-     opsResults=[`✗ Could not parse operations: ${e.message}`];
+     // Last resort: try extractJSON
+     try{
+       const opsArr2=extractJSON(opsMatch[1]);
+       const result2=Array.isArray(opsArr2)?opsArr2:[opsArr2];
+       opsResults=applyOps(result2);
+       save();renderAll();
+     }catch(e2){
+       opsResults=[`✗ Could not parse operations: ${e2.message.slice(0,60)}`];
+     }
    }
  }
 
