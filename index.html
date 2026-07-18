@@ -49,7 +49,7 @@ input,select,textarea{font-family:inherit;color:inherit}
 .bell.cold .bell-dot{display:none}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(242,88,106,.4)}50%{box-shadow:0 0 0 5px rgba(242,88,106,0)}}
 .bell.hot{animation:pulse 2.4s ease-in-out infinite}
-.tabs{display:flex;gap:2px;margin:18px 0 24px;background:var(--panel);padding:3px;border-radius:9px;border:1px solid var(--line-soft);width:fit-content}
+.tabs{display:flex;gap:2px;margin:18px 0 24px;background:var(--panel);padding:3px;border-radius:9px;border:1px solid var(--line-soft);width:fit-content;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .tab{padding:8px 16px;border-radius:6px;font-size:13px;font-weight:500;color:var(--text-dim);transition:.16s;white-space:nowrap}
 .tab:hover{color:var(--text-mid)}
 .tab.on{background:var(--panel-hi);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
@@ -413,7 +413,7 @@ input,select,textarea{font-family:inherit;color:inherit}
  .hz-lab{font-size:7.5px;letter-spacing:.04em}
  .app{padding:0 14px 90px}
  .donut-wrap{justify-content:center}
- .tabs{width:100%;overflow-x:auto}
+ .tabs{width:100%;max-width:100%}
  .tab{flex:1;text-align:center;padding:9px 4px;font-size:11.5px}
  .pmx{grid-template-columns:1fr}
  .clock{display:none}
@@ -605,10 +605,11 @@ body.light .asst-panel{background:var(--panel)}
 body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(--line)}
 .theme-btn{width:36px;height:36px;border-radius:9px;border:1px solid var(--line-soft);background:var(--panel);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;transition:.15s;flex-shrink:0}
 .theme-btn:hover{background:var(--panel-hi)}
-.tabs{touch-action:none}
+.tabs{touch-action:pan-x pan-y}
 .tab.dragging{opacity:.4;cursor:grabbing}
 .tab.drag-over{background:rgba(77,217,176,.12);border-radius:6px}
-.tab{cursor:grab;user-select:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0}
 .tab.on{cursor:default}
 .focus-overlay{position:fixed;inset:0;background:var(--void);z-index:200;display:none;flex-direction:column;overflow:hidden}
 .focus-overlay.on{display:flex}
@@ -757,29 +758,37 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 .plan-remove{background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:0 2px;flex-shrink:0;line-height:1}
 .plan-remove:hover{color:var(--rose)}
 /* ---- SHOPPING ---- */
-.shop-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-@media(max-width:600px){.shop-layout{grid-template-columns:1fr}}
+.shop-header{margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line-soft)}
+.shop-layout{display:block}
 .shop-section{background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:16px}
 .shop-sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .shop-sec-title{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:-0.01em}
-.shop-add-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.shop-add-row{display:flex;gap:8px;flex-wrap:wrap}
 .shop-add-row input{flex:1;min-width:120px;background:var(--panel-hi);border:1px solid var(--line-soft);border-radius:7px;height:34px;padding:0 10px;font-size:13.5px;outline:none;color:var(--text)}
 .shop-add-row input:focus{border-color:var(--mint)}
 .shop-add-row select{height:34px;background:var(--panel-hi);border:1px solid var(--line-soft);border-radius:7px;padding:0 8px;font-size:12px;color:var(--text);outline:none}
-.shop-aisle{margin-bottom:12px}
-.shop-aisle-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:600}
-.shop-item{display:flex;align-items:center;gap:10px;padding:8px 4px;border-radius:6px;cursor:pointer;transition:.12s}
+.shop-aisle{margin-bottom:14px}
+.shop-aisle-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:600;display:flex;align-items:center;gap:8px}
+.shop-aisle-label::after{content:'';flex:1;height:1px;background:var(--line-soft)}
+.shop-item{display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:7px;transition:.12s}
 .shop-item:hover{background:var(--panel-hi)}
-.shop-item.done{opacity:.4}
-.shop-item.done .shop-name{text-decoration:line-through}
-.shop-cb{width:20px;height:20px;border-radius:5px;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.13s}
-.shop-cb.on{background:var(--mint);border-color:var(--mint)}
-.shop-cb svg{width:11px;height:11px;stroke:#08120F;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;display:none}
-.shop-cb.on svg{display:block}
-.shop-name{flex:1;font-size:13.5px}
-.shop-del{background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;opacity:0;transition:opacity .12s}
+.shop-item.done .shop-name{text-decoration:line-through;color:var(--text-dim)}
+.shop-item.done .shop-cb{background:var(--mint);border-color:var(--mint)}
+.shop-item.done .shop-cb svg{display:block}
+.shop-cb{width:22px;height:22px;border-radius:6px;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.13s;cursor:pointer}
+.shop-cb svg{width:12px;height:12px;stroke:#08120F;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;display:none}
+.shop-name{flex:1;font-size:14px;cursor:pointer}
+.shop-name:hover{color:var(--mint)}
+.shop-edit-btn{opacity:0;transition:opacity .12s;background:none;border:none;color:var(--text-dim);font-size:14px;cursor:pointer;padding:0 4px}
+.shop-item:hover .shop-edit-btn{opacity:1}
+.shop-del{opacity:0;transition:opacity .12s;background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px}
 .shop-item:hover .shop-del{opacity:1}
-.shop-empty{text-align:center;padding:20px 10px;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.06em}
+.shop-empty{text-align:center;padding:40px 10px;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.06em}
+.shop-done-count{text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--text-dim);padding:10px 0 4px;letter-spacing:.04em}
+/* ---- SHOP EDIT MODAL ---- */
+.shop-edit-modal{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(6,8,11,.8);backdrop-filter:blur(4px)}
+.shop-edit-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;width:min(400px,100%)}
+.shop-edit-head{padding:16px 18px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center}
 /* ---- ACTIVE KPI TILE ---- */
 .kpi{cursor:pointer;transition:border-color .14s,transform .14s}
 .kpi:hover{border-color:var(--line)!important;transform:translateY(-1px)}
@@ -820,7 +829,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v22</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v25</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -1040,48 +1049,63 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 
   <!-- ===== SHOPPING ===== -->
   <div class="view" id="v-shop">
-    <div class="shop-layout">
-      <!-- ONE-TIME ITEMS -->
-      <div class="shop-section">
-        <div class="shop-sec-head">
-          <div class="shop-sec-title">Shopping list</div>
-          <div class="hint">Checked items disappear</div>
+    <div class="shop-header">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="flex:1">
+          <div class="shop-add-row">
+            <input id="stapleInput" placeholder="Add item (e.g. milk)…" maxlength="80">
+            <select id="stapleAisle">
+              <option value="produce">🥦 Produce</option>
+              <option value="dairy" selected>🥛 Dairy</option>
+              <option value="proteins">🥩 Proteins</option>
+              <option value="pantry">🥫 Pantry</option>
+              <option value="frozen">🧊 Frozen</option>
+              <option value="household">🧹 Household</option>
+              <option value="other">📦 Other</option>
+            </select>
+            <button class="btn btn-go btn-sm" id="bStapleAdd">Add</button>
+          </div>
         </div>
-        <div class="shop-add-row">
-          <input id="shopInput" placeholder="Add item…" maxlength="80">
-          <select id="shopAisle">
-            <option value="produce">🥦 Produce</option>
-            <option value="dairy" selected>🥛 Dairy</option>
-            <option value="proteins">🥩 Proteins</option>
-            <option value="pantry">🥫 Pantry</option>
-            <option value="frozen">🧊 Frozen</option>
-            <option value="household">🧹 Household</option>
-            <option value="other">📦 Other</option>
-          </select>
-          <button class="btn btn-go btn-sm" id="bShopAdd">Add</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+          <div class="seg" id="shopFilter">
+            <button class="on" data-sf="active">Active</button>
+            <button data-sf="done">Checked off</button>
+            <button data-sf="all">All</button>
+          </div>
+          <button class="btn btn-sm" id="bStaplesReset" style="white-space:nowrap">Uncheck all</button>
         </div>
-        <div id="shopList"></div>
       </div>
-      <!-- STAPLES -->
-      <div class="shop-section">
-        <div class="shop-sec-head">
-          <div class="shop-sec-title">Staples</div>
-          <button class="btn btn-sm" id="bStaplesReset">Uncheck all</button>
+    </div>
+    <div id="stapleList"></div>
+    <!-- EDIT MODAL -->
+    <div class="shop-edit-modal" id="shopEditModal" style="display:none">
+      <div class="shop-edit-box">
+        <div class="shop-edit-head">
+          <div style="font-family:var(--display);font-size:16px;font-weight:600">Edit item</div>
+          <button class="dw-close" id="shopEditClose">✕</button>
         </div>
-        <div class="shop-add-row">
-          <input id="stapleInput" placeholder="Add staple (e.g. milk)…" maxlength="80">
-          <select id="stapleAisle">
-            <option value="produce">🥦 Produce</option>
-            <option value="dairy" selected>🥛 Dairy</option>
-            <option value="proteins">🥩 Proteins</option>
-            <option value="pantry">🥫 Pantry</option>
-            <option value="frozen">🧊 Frozen</option>
-            <option value="household">🧹 Household</option>
-            <option value="other">📦 Other</option>
-          </select>
-          <button class="btn btn-go btn-sm" id="bStapleAdd">Add</button>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+          <div class="field" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <label style="font-size:12px;color:var(--text-dim)">Item name</label>
+            <input id="shopEditName" maxlength="80" style="width:100%;background:var(--panel-hi);border:1px solid var(--line-soft);border-radius:7px;height:36px;padding:0 10px;font-size:14px;outline:none;color:var(--text)">
+          </div>
+          <div class="field" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <label style="font-size:12px;color:var(--text-dim)">Aisle / Category</label>
+            <select id="shopEditAisle" style="width:100%;height:36px;background:var(--panel-hi);border:1px solid var(--line-soft);border-radius:7px;padding:0 10px;font-size:14px;color:var(--text);outline:none">
+              <option value="produce">🥦 Produce</option>
+              <option value="dairy">🥛 Dairy</option>
+              <option value="proteins">🥩 Proteins</option>
+              <option value="pantry">🥫 Pantry</option>
+              <option value="frozen">🧊 Frozen</option>
+              <option value="household">🧹 Household</option>
+              <option value="other">📦 Other</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+            <button class="btn" id="shopEditCancel">Cancel</button>
+            <button class="btn btn-go" id="shopEditSave">Save</button>
+          </div>
         </div>
-        <div id="stapleList"></div>
       </div>
     </div>
   </div>
@@ -1493,7 +1517,7 @@ const DEFCATS=[
  {id:'home',name:'Home',color:'#9B8CFF'},{id:'finance',name:'Finance',color:'#F0A23C'},
  {id:'health',name:'Health',color:'#F2586A'}
 ];
-let S={tasks:[],bills:[],cats:DEFCATS.slice(),notes:[]};
+let S={tasks:[],bills:[],cats:DEFCATS.slice(),notes:[],staples:[]};
 let staged=[], uiStatus='open', uiSort='due', uiQuery='', uiCat='';
 let hzFilter=null, openTasks=new Set(), openBills=new Set(), openSubs=new Set(), editing=null;
 let wkOffset=0;
@@ -1619,6 +1643,8 @@ async function load(){
  S.tasks=(data.tasks||[]).map(normalize);
  S.bills=data.bills||[];
  S.notes=data.notes||[];
+ S.staples=data.staples||[];
+ staples=S.staples; // keep local ref in sync
  if(data.cats&&data.cats.length)S.cats=data.cats;
  }else{
  S.tasks=seedTasks().map(normalize);S.bills=seedBills();S.notes=seedNotes();
@@ -1634,6 +1660,8 @@ async function load(){
  S.tasks=(fbData.tasks||[]).map(normalize);
  S.bills=fbData.bills||[];
  S.notes=fbData.notes||[];
+ S.staples=fbData.staples||[];
+ staples=S.staples; // keep local ref in sync
  if(fbData.cats&&fbData.cats.length)S.cats=fbData.cats;
  try{localStorage.setItem('ledger:local-snapshot',JSON.stringify({savedAt:Date.now(),...fbData}));}catch(e){}
  renderAll();
@@ -1645,7 +1673,7 @@ let saveT;
 async function save(){
  clearTimeout(saveT);
  saveT=setTimeout(async()=>{
- const payload={tasks:S.tasks,bills:S.bills,cats:S.cats,notes:S.notes,savedAt:Date.now()};
+ const payload={tasks:S.tasks,bills:S.bills,cats:S.cats,notes:S.notes,staples:S.staples,savedAt:Date.now()};
  await sharedStorage.set(payload);
  // Also keep local copy for offline
  try{localStorage.setItem('ledger:local-snapshot',JSON.stringify(payload))}catch(e){}
@@ -3539,14 +3567,6 @@ function initSwipe(el,taskId){
 }
 
 const STAPLE_SECTIONS=['produce','dairy','proteins','pantry','frozen','other'];
-function addStaple(){
- const inp=$('stapleInput'),v=inp.value.trim();
- if(!v)return;
- staples.push({id:uid(),name:v,aisle:$('stapleAisle').value,done:false});
- inp.value='';saveShopData();renderShop();inp.focus();
-}
-$('bStapleAdd').onclick=addStaple;
-$('stapleInput').onkeydown=e=>{if(e.key==='Enter')addStaple();};
 $('bStaplesReset').onclick=()=>{staples.forEach(s=>s.done=false);saveShopData();renderShop();toast('All unchecked — ready for next trip');};
 
 function linkify(text){
@@ -3876,11 +3896,40 @@ Today is ${iso(today0())}. When suggesting due dates, consider that ${weekTasks.
 /* ================= UPDATE renderDash TO INCLUDE NEW FEATURES ================= */
 
 function extractJSON(raw){
-  // Find outermost JSON object
+  // Step 1: find outermost JSON object
   const first=raw.indexOf('{');
   const last=raw.lastIndexOf('}');
-  if(first===-1||last===-1)throw new Error('No JSON object found in response');
-  return JSON.parse(raw.slice(first,last+1));
+  if(first===-1||last===-1)throw new Error('No JSON found in response');
+  let s=raw.slice(first,last+1);
+  // Step 2: fix unescaped newlines/tabs inside string values (common Claude output issue)
+  s=s.replace(/("(?:[^"\\]|\\.)*")/g,match=>
+    match.replace(/\n/g,'\\n').replace(/\r/g,'\\r').replace(/\t/g,'\\t')
+  );
+  // Step 3: remove trailing commas before ] or }
+  s=s.replace(/,(\s*[}\]])/g,'$1');
+  // Step 4: try parse
+  try{return JSON.parse(s);}catch(e){
+    // Step 5: truncated JSON recovery - extract complete day/block objects
+    const dayPat=/\{"day":"[^"]+","date":"[^"]+","theme":"[^"]*","tasks":\[[^\]]*\](?:,"note":"[^"]*")?\}/g;
+    const blockPat=/\{"time":"[^"]+","tasks":\[[^\]]*\]\}/g;
+    const days=s.match(dayPat)||[];
+    const blocks=s.match(blockPat)||[];
+    const overview=(s.match(/"overview"\s*:\s*"([^"\\]*)"/)||[])[1]||'';
+    const weeklyTip=(s.match(/"weekly_tip"\s*:\s*"([^"\\]*)"/)||[])[1]||'';
+    const greeting=(s.match(/"greeting"\s*:\s*"([^"\\]*)"/)||[])[1]||'';
+    const timeEst=(s.match(/"time_estimate"\s*:\s*"([^"\\]*)"/)||[])[1]||'';
+    const headline=(s.match(/"headline"\s*:\s*"([^"\\]*)"/)||[])[1]||'';
+    if(days.length>0){
+      try{return JSON.parse(`{"overview":${JSON.stringify(overview)},"days":[${days.join(',')}],"weekly_tip":${JSON.stringify(weeklyTip)}}`);}catch(e2){}
+    }
+    if(blocks.length>0){
+      try{return JSON.parse(`{"greeting":${JSON.stringify(greeting)},"time_estimate":${JSON.stringify(timeEst)},"blocks":[${blocks.join(',')}],"skip_today":[],"skip_reason":""}`);}catch(e2){}
+    }
+    if(headline){
+      try{return JSON.parse(`{"headline":${JSON.stringify(headline)},"stalled":[],"plan":[],"quick_wins":[],"blind_spots":[]}`);}catch(e2){}
+    }
+    throw new Error('JSON parse failed: '+e.message.slice(0,80));
+  }
 }
 /* ================= KANBAN ================= */
 let kbFilters={pri:'all',due:'all',cat:'all',q:''};
@@ -4059,75 +4108,144 @@ function initPlanDrag(container){
 
 
 /* ================= SHOPPING LIST ================= */
-const SHOP_KEY='ledger:shop-items';
 const STAPLES_KEY='ledger:staples-v2';
 const SHOP_AISLES=['produce','dairy','proteins','pantry','frozen','household','other'];
 const SHOP_LABELS={produce:'🥦 Produce',dairy:'🥛 Dairy',proteins:'🥩 Proteins',pantry:'🥫 Pantry',frozen:'🧊 Frozen',household:'🧹 Household',other:'📦 Other'};
-let shopItems=[], staples=[];
+let staples=[];
+let shopFilter='active'; // 'active' | 'done' | 'all'
+let shopEditId=null;
 
 function loadShopData(){
-  try{shopItems=JSON.parse(localStorage.getItem(SHOP_KEY)||'[]');}catch(e){shopItems=[];}
-  try{staples=JSON.parse(localStorage.getItem(STAPLES_KEY)||'[]');}catch(e){staples=[];}
+  // Staples now sync via Firebase (S.staples)
+  // Load from S if available, otherwise localStorage fallback
+  if(S.staples&&S.staples.length){staples=S.staples;return;}
+  try{
+    const raw=localStorage.getItem(STAPLES_KEY);
+    if(raw){staples=JSON.parse(raw);S.staples=staples;}
+  }catch(e){staples=[];}
 }
 function saveShopData(){
-  try{localStorage.setItem(SHOP_KEY,JSON.stringify(shopItems));}catch(e){}
+  // Save to S.staples so Firebase picks it up on next save()
+  S.staples=staples;
+  save(); // triggers Firebase sync
+  // Also keep localStorage as offline fallback
   try{localStorage.setItem(STAPLES_KEY,JSON.stringify(staples));}catch(e){}
 }
-function renderShopSection(items, el, isStaple){
-  if(!el)return;
+
+function renderShop(){
+  const listEl=$('stapleList');
+  if(!listEl)return;
+
+  // Apply filter
+  let items=staples;
+  if(shopFilter==='active')items=staples.filter(s=>!s.done);
+  else if(shopFilter==='done')items=staples.filter(s=>s.done);
+
+  if(!items.length){
+    const msg=shopFilter==='done'
+      ?'No checked-off items — check off items while shopping to see them here'
+      :shopFilter==='active'&&staples.length>0
+      ?'All items checked off — switch to "Checked off" to see them or hit "Uncheck all"'
+      :'Add your regular grocery items above — milk, bread, eggs…';
+    listEl.innerHTML=`<div class="shop-empty">${msg}</div>`;
+    return;
+  }
+
+  // Group by aisle
   const grouped={};
   SHOP_AISLES.forEach(a=>grouped[a]=[]);
-  items.forEach(i=>{(grouped[i.aisle]||(grouped['other']=[],grouped['other'])).push(i);});
-  const sections=SHOP_AISLES.filter(a=>grouped[a]&&grouped[a].length);
-  if(!sections.length){el.innerHTML=`<div class="shop-empty">Nothing here yet — add items above</div>`;return;}
-  el.innerHTML=sections.map(sec=>`
+  items.forEach(s=>{
+    const a=s.aisle&&grouped[s.aisle]!==undefined?s.aisle:'other';
+    grouped[a].push(s);
+  });
+  const sections=SHOP_AISLES.filter(a=>grouped[a].length);
+
+  listEl.innerHTML=sections.map(sec=>`
     <div class="shop-aisle">
-      <div class="shop-aisle-label">${SHOP_LABELS[sec]||sec}</div>
+      <div class="shop-aisle-label">${SHOP_LABELS[sec]}</div>
       ${grouped[sec].map(item=>`
         <div class="shop-item ${item.done?'done':''}" data-sid="${item.id}">
-          <div class="shop-cb ${item.done?'on':''}"><svg viewBox="0 0 12 12"><polyline points="1.5,6 4.5,9 10.5,3"/></svg></div>
-          <span class="shop-name">${esc(item.name)}</span>
-          <button class="shop-del" data-sdel="${item.id}">×</button>
+          <div class="shop-cb" data-stog="${item.id}">
+            <svg viewBox="0 0 12 12"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>
+          </div>
+          <span class="shop-name" data-sedit="${item.id}">${esc(item.name)}</span>
+          <button class="shop-edit-btn" data-sedit="${item.id}" title="Edit">✎</button>
+          <button class="shop-del" data-sdel="${item.id}" title="Delete">×</button>
         </div>`).join('')}
     </div>`).join('');
-  el.querySelectorAll('[data-sid]').forEach(el2=>el2.onclick=e=>{
-    if(e.target.closest('[data-sdel]'))return;
-    const id=el2.dataset.sid;
-    if(isStaple){
-      const s=staples.find(x=>x.id===id);if(s){s.done=!s.done;saveShopData();renderShop();}
-    }else{
-      const s=shopItems.find(x=>x.id===id);
-      if(s){
-        if(!s.done){s.done=true;saveShopData();renderShop();
-          // Remove after brief delay
-          setTimeout(()=>{shopItems=shopItems.filter(x=>x.id!==id);saveShopData();renderShop();},800);
-        }
-      }
-    }
-  });
-  el.querySelectorAll('[data-sdel]').forEach(btn=>btn.onclick=e=>{
+
+  // Wire checkboxes
+  listEl.querySelectorAll('[data-stog]').forEach(el=>el.onclick=e=>{
     e.stopPropagation();
-    const id=btn.dataset.sdel;
-    if(isStaple)staples=staples.filter(x=>x.id!==id);
-    else shopItems=shopItems.filter(x=>x.id!==id);
+    const s=staples.find(x=>x.id===el.dataset.stog);
+    if(s){s.done=!s.done;saveShopData();renderShop();}
+  });
+
+  // Wire name click / edit button → open edit modal
+  listEl.querySelectorAll('[data-sedit]').forEach(el=>el.onclick=e=>{
+    e.stopPropagation();
+    const s=staples.find(x=>x.id===el.dataset.sedit);
+    if(!s)return;
+    shopEditId=s.id;
+    $('shopEditName').value=s.name;
+    $('shopEditAisle').value=s.aisle||'other';
+    $('shopEditModal').style.display='flex';
+    setTimeout(()=>$('shopEditName').select(),50);
+  });
+
+  // Wire delete buttons
+  listEl.querySelectorAll('[data-sdel]').forEach(btn=>btn.onclick=e=>{
+    e.stopPropagation();
+    staples=staples.filter(x=>x.id!==btn.dataset.sdel);
     saveShopData();renderShop();
   });
+
+  // Show count if filtered
+  if(shopFilter==='active'&&staples.filter(s=>s.done).length>0){
+    listEl.insertAdjacentHTML('beforeend',
+      `<div class="shop-done-count">${staples.filter(s=>s.done).length} item${staples.filter(s=>s.done).length>1?'s':''} checked off — switch to "Checked off" to see them</div>`);
+  }
 }
-function renderShop(){
-  if(!$('shopList'))return;
-  renderShopSection(shopItems,$('shopList'),false);
-  renderShopSection(staples,$('stapleList'),true);
+
+function addStaple(){
+  const inp=$('stapleInput'),v=inp.value.trim();
+  if(!v)return;
+  staples.push({id:uid(),name:v,aisle:$('stapleAisle').value,done:false});
+  inp.value='';saveShopData();renderShop();inp.focus();
 }
-function addShopItem(){
-  const v=$('shopInput').value.trim();if(!v)return;
-  shopItems.push({id:uid(),name:v,aisle:$('shopAisle').value,done:false});
-  $('shopInput').value='';saveShopData();renderShop();$('shopInput').focus();
-}
-$('bShopAdd').onclick=addShopItem;
-$('shopInput').onkeydown=e=>{if(e.key==='Enter')addShopItem();};
+
+// Wire add
 $('bStapleAdd').onclick=addStaple;
 $('stapleInput').onkeydown=e=>{if(e.key==='Enter')addStaple();};
-$('bStaplesReset').onclick=()=>{staples.forEach(s=>s.done=false);saveShopData();renderShop();toast('All unchecked — ready for next trip');};
+
+// Wire uncheck all
+$('bStaplesReset').onclick=()=>{
+  staples.forEach(s=>s.done=false);
+  saveShopData();renderShop();
+  toast('All unchecked — ready for next trip');
+};
+
+// Wire filter
+$('shopFilter').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  $('shopFilter').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  shopFilter=b.dataset.sf;
+  renderShop();
+});
+
+// Wire edit modal
+$('shopEditSave').onclick=()=>{
+  const name=$('shopEditName').value.trim();
+  if(!name){toast('Name cannot be empty');return;}
+  const s=staples.find(x=>x.id===shopEditId);
+  if(s){s.name=name;s.aisle=$('shopEditAisle').value;saveShopData();renderShop();}
+  $('shopEditModal').style.display='none';shopEditId=null;
+};
+$('shopEditCancel').onclick=$('shopEditClose').onclick=()=>{
+  $('shopEditModal').style.display='none';shopEditId=null;
+};
+$('shopEditName').onkeydown=e=>{if(e.key==='Enter')$('shopEditSave').click();};
+$('shopEditModal').onclick=e=>{if(e.target===$('shopEditModal')){$('shopEditModal').style.display='none';shopEditId=null;}};
 
 /* ================= WORD EXPORT ================= */
 $('bWordExport').onclick=()=>{
