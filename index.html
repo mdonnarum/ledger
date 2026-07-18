@@ -711,10 +711,6 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 .pdf-opt .ot{font-size:13.5px;font-weight:500;margin-bottom:4px}
 .pdf-opt .od{font-size:12px;color:var(--text-dim);line-height:1.45}
 .pdf-foot{padding:14px 18px;border-top:1px solid var(--line-soft);display:flex;justify-content:flex-end}
-/* ---- STATUS FIELD ---- */
-.status-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
-.status-badge.inprogress{background:rgba(91,168,245,.12);color:var(--blue)}
-.status-badge.blocked{background:rgba(242,88,106,.12);color:var(--rose)}
 /* ---- KANBAN ---- */
 .kb-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0 14px;border-bottom:1px solid var(--line-soft);margin-bottom:16px}
 .kb-filter-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -723,14 +719,14 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 @media(max-width:700px){.kb-board{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:420px){.kb-board{grid-template-columns:1fr}}
 .kb-col{background:var(--panel-hi);border-radius:10px;padding:10px;min-height:200px;transition:background .14s}
-.kb-col.drop-target{background:rgba(77,217,176,.06);outline:1px dashed rgba(77,217,176,.4);border-radius:10px}
-.kb-col-head{border-top:2px solid var(--line);padding-bottom:10px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+.kb-col.drop-target{background:rgba(77,217,176,.06);outline:1px dashed rgba(77,217,176,.4)}
+.kb-col-head{border-top:2px solid var(--line);padding-bottom:10px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;padding-top:6px}
 .kb-col-title{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--text-mid)}
 .kb-col-count{font-family:var(--mono);font-size:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1px 7px;color:var(--text-dim)}
 .kb-cards{display:flex;flex-direction:column;gap:8px;min-height:80px}
-.kb-card{background:var(--panel);border:1px solid var(--line-soft);border-radius:8px;padding:10px 12px 10px 15px;cursor:grab;transition:border-color .14s,transform .14s;position:relative;user-select:none}
+.kb-card{background:var(--panel);border:1px solid var(--line-soft);border-radius:8px;padding:10px 12px 10px 15px;cursor:grab;position:relative;user-select:none;transition:border-color .14s,transform .14s}
 .kb-card:hover{border-color:var(--line);transform:translateY(-1px)}
-.kb-card.dragging{opacity:.35;cursor:grabbing;transform:rotate(1deg) scale(.98)}
+.kb-card.dragging{opacity:.35;cursor:grabbing}
 .kb-card.drag-over{border-color:var(--mint);box-shadow:0 0 0 2px rgba(77,217,176,.2)}
 .kb-card-title{font-size:13px;font-weight:450;line-height:1.4;margin-bottom:7px;cursor:pointer}
 .kb-card-title:hover{color:var(--mint)}
@@ -813,6 +809,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
       <button class="tab" data-v="kanban">Kanban</button>
       <button class="tab" data-v="bills">Bills</button>
       <button class="tab" data-v="notes">Notes</button>
+      <button class="tab" data-v="recipes">Recipes</button>
       <button class="tab" data-v="dash">Dashboard</button>
       <button class="tab" data-v="week">Weekly Review</button>
       <button class="tab" data-v="ins">Insights</button>
@@ -885,6 +882,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
     <div id="taskZone"></div>
   </div>
 
+
   <!-- ===== KANBAN ===== -->
   <div class="view" id="v-kanban">
     <div class="kb-filters">
@@ -935,7 +933,6 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
       </div>
     </div>
   </div>
-
   <!-- ===== BILLS ===== -->
   <div class="view" id="v-bills">
     <div class="bill-kpis" id="billKpis"></div>
@@ -1148,7 +1145,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
     <div class="ins-panel on" id="it-today">
       <div class="ins-hero">
         <h2>Plan my day</h2>
-        <p>Claude looks at everything due and your priorities, then gives you a ranked order of what to tackle today with time estimates and reasoning. Drag to reorder, × to remove.</p>
+        <p>Claude ranks what to tackle today with time estimates and reasoning. Drag to reorder, × to remove.</p>
         <button class="btn-ai" id="bPlanDay">Generate today's plan</button>
       </div>
       <div id="planDayOut"></div>
@@ -1156,7 +1153,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
     <div class="ins-panel" id="it-week">
       <div class="ins-hero">
         <h2>Plan this week</h2>
-        <p>Claude spreads your tasks across the days ahead with themes, coaching notes, and a weekly tip. Drag items to reorder, × to remove from plan.</p>
+        <p>Claude spreads tasks across the week with themes and coaching notes. Drag to reorder.</p>
         <button class="btn-ai" id="bPlanWeek" style="background:linear-gradient(135deg,var(--violet),var(--blue))">Generate week plan</button>
       </div>
       <div id="planWeekOut"></div>
@@ -1164,13 +1161,12 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
     <div class="ins-panel" id="it-board">
       <div class="ins-hero">
         <h2>Read the board for me</h2>
-        <p>Claude looks at what's aging, what you keep pushing, what's sitting untouched, and what bills are landing — then tells you what's actually stuck, why, and what to do first.</p>
+        <p>Claude looks at what's aging, what you keep pushing, what's sitting untouched, and what bills are landing — then tells you what's stuck and what to do first.</p>
         <button class="btn-ai" id="bGen">Generate board review</button>
       </div>
       <div id="insOut"></div>
     </div>
   </div>
-
 </div><!-- end .app -->
 
 <!-- FLOATING ASSISTANT -->
@@ -1586,6 +1582,7 @@ function normalize(t){
  t.subtasks=(t.subtasks||[]).map(s=>({id:s.id||uid(),title:s.title,done:!!s.done,notes:s.notes||''}));
  t.repeat=t.repeat||'none';
  t.pushes=t.pushes||0;
+ if(!t.status)t.status=t.done?'done':'todo';
  return t;
 }
 async function load(){
@@ -2011,9 +2008,9 @@ function addTask(){
  const title=$('cTitle').value.trim();
  if(!title){$('cTitle').focus();return}
  S.tasks.unshift({id:uid(),title,cat:$('cCat').value,pri:$('cPri').value,due:$('cDue').value,
- repeat:$('cRep').value,notes:$('cNotes').value.trim(),done:false,
+ repeat:$('cRep').value,notes:$('cNotes').value.trim(),done:false,status:$('cStatus').value||'todo',
  created:Date.now(),touched:Date.now(),pushes:0,subtasks:staged.slice()});
- $('cTitle').value='';$('cNotes').value='';$('cDue').value='';$('cRep').value='none';
+ $('cTitle').value='';$('cNotes').value='';$('cDue').value='';$('cRep').value='none';$('cStatus').value='todo';
  $('cStage').classList.remove('on');
  staged=[];renderStage();save();renderAll();toast('Task added');
 }
@@ -3146,7 +3143,7 @@ $('shopModal').onclick=e=>{if(e.target===$('shopModal'))$('shopModal').classList
 function renderAll(){
  fillCatSelect();fillNoteSelects();renderCatBar();renderCatMgr();renderStage();
  renderTasks();renderBillKPIs();renderBills();renderBillMonthly();renderDash();renderWeek();
- renderNotes();renderRecipes();renderStaples();
+ renderNotes();renderRecipes();renderStaples();renderKanban();
  renderClock();renderBell();updNotifBtn();
 }
 const PIN='2000';
@@ -3729,6 +3726,7 @@ function initTabs(){
  if(v)v.classList.add('on');
  if(b.dataset.v==='dash')renderDash();
  if(b.dataset.v==='week')renderWeek();
+ if(b.dataset.v==='kanban')renderKanban();
  if(b.dataset.v==='notes'){fillNoteSelects();renderNotes();}
  if(b.dataset.v==='recipes'){renderRecipes();renderStaples();}
  });
@@ -4031,37 +4029,10 @@ Today is ${iso(today0())}. When suggesting due dates, consider that ${weekTasks.
 }
 
 /* ================= UPDATE renderDash TO INCLUDE NEW FEATURES ================= */
-/* ================= NORMALIZE - add status field ================= */
-const _origNormalize=window._origNormalize||normalize;
-function normalize(t){
-  const r=_origNormalize(t);
-  if(!r.status)r.status=r.done?'done':'todo';
-  return r;
-}
-
-/* ================= TASK STATUS - addTask update ================= */
-const _origAddTask=addTask;
-function addTask(){
-  // patch to include status
-  const orig=_origAddTask;
-  const title=$('cTitle').value.trim();
-  if(!title){$('cTitle').focus();return;}
-  S.tasks.unshift({id:uid(),title,cat:$('cCat').value,pri:$('cPri').value,due:$('cDue').value,
-    repeat:$('cRep').value,notes:$('cNotes').value.trim(),done:false,
-    status:$('cStatus')&&$('cStatus').value||'todo',
-    created:Date.now(),touched:Date.now(),pushes:0,subtasks:staged.slice()});
-  $('cTitle').value='';$('cNotes').value='';$('cDue').value='';$('cRep').value='none';
-  if($('cStatus'))$('cStatus').value='todo';
-  $('cStage').classList.remove('on');
-  staged=[];renderStage();save();renderAll();toast('Task added');
-}
-
 /* ================= KANBAN ================= */
 let kbFilters={pri:'all',due:'all',cat:'all',q:''};
 let kbDragId=null,kbCatBuilt=false;
-
 function kbStatus(t){return t.done?'done':(t.status||'todo');}
-
 function kbDueBucket(t){
   if(!t.due)return'none';
   const b=bucketOf(t);
@@ -4073,7 +4044,6 @@ function kbDueBucket(t){
   if(diff>=7&&diff<14)return'next';
   return'none';
 }
-
 function kbMatches(t){
   if(kbFilters.pri!=='all'&&t.pri!==kbFilters.pri)return false;
   if(kbFilters.cat!=='all'&&t.cat!==kbFilters.cat)return false;
@@ -4081,37 +4051,26 @@ function kbMatches(t){
   if(kbFilters.q){const q=kbFilters.q.toLowerCase();if(!t.title.toLowerCase().includes(q))return false;}
   return true;
 }
-
 function renderKanban(){
   const kanbanView=$('v-kanban');
   if(!kanbanView||!kanbanView.classList.contains('on'))return;
-
-  // Build category filter once
   if(!kbCatBuilt){
     const seg=$('kbCat');
     S.cats.forEach(c=>{
       const b=document.createElement('button');
       b.dataset.kc=c.id;b.textContent=c.name;
-      b.onclick=()=>{
-        seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
-        b.classList.add('on');kbFilters.cat=c.id;renderKanban();
-      };
+      b.onclick=()=>{seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');kbFilters.cat=c.id;renderKanban();};
       seg.appendChild(b);
     });
     kbCatBuilt=true;
   }
-
-  const cols=['todo','inprogress','blocked','done'];
-  cols.forEach(col=>{
+  ['todo','inprogress','blocked','done'].forEach(col=>{
     const cards=$('kbCards-'+col);
     const cnt=$('kbCnt-'+col);
     if(!cards||!cnt)return;
     const tasks=S.tasks.filter(t=>kbStatus(t)===col&&kbMatches(t));
     cnt.textContent=tasks.length;
-    if(!tasks.length){
-      cards.innerHTML=`<div class="kb-empty">NO CARDS</div>`;
-      return;
-    }
+    if(!tasks.length){cards.innerHTML=`<div class="kb-empty">NO CARDS</div>`;return;}
     cards.innerHTML=tasks.map(t=>{
       const c=catOf(t.cat),dl=dueLabel(t),bkt=bucketOf(t),sp=subProg(t);
       return `<div class="kb-card" draggable="true" data-kbid="${t.id}">
@@ -4125,79 +4084,43 @@ function renderKanban(){
         </div>
       </div>`;
     }).join('');
-
-    // Wire card drag
     cards.querySelectorAll('.kb-card').forEach(card=>{
-      card.ondragstart=e=>{
-        kbDragId=card.dataset.kbid;
-        setTimeout(()=>card.classList.add('dragging'),0);
-        e.dataTransfer.effectAllowed='move';
-      };
-      card.ondragend=()=>{
-        card.classList.remove('dragging');
-        document.querySelectorAll('.kb-col').forEach(c=>c.classList.remove('drop-target'));
-        kbDragId=null;
-      };
+      card.ondragstart=e=>{kbDragId=card.dataset.kbid;setTimeout(()=>card.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';};
+      card.ondragend=()=>{card.classList.remove('dragging');document.querySelectorAll('.kb-col').forEach(c=>c.classList.remove('drop-target'));kbDragId=null;};
       card.ondragover=e=>{e.preventDefault();card.classList.add('drag-over');};
       card.ondragleave=()=>card.classList.remove('drag-over');
-      card.ondrop=e=>{e.preventDefault();card.classList.remove('drag-over');/* handled by col */};
-      // Click title to go to task in tasks tab
       const titleEl=card.querySelector('[data-kbedit]');
       if(titleEl)titleEl.onclick=()=>{
         const id=titleEl.dataset.kbedit;
-        editing=editing===id?null:id;
-        openTasks.delete(id);
-        // switch to tasks tab
+        editing=editing===id?null:id;openTasks.delete(id);
         document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
         document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
         document.querySelector('[data-v="tasks"]').classList.add('on');
         $('v-tasks').classList.add('on');
         renderTasks();
-        setTimeout(()=>{
-          const el=document.querySelector(`[data-id="${id}"]`)||document.querySelector(`.task`);
-          if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
-        },100);
       };
     });
   });
-
-  // Wire column drop zones
   document.querySelectorAll('.kb-col').forEach(col=>{
     col.ondragover=e=>{e.preventDefault();col.classList.add('drop-target');};
     col.ondragleave=e=>{if(!col.contains(e.relatedTarget))col.classList.remove('drop-target');};
     col.ondrop=e=>{
       e.preventDefault();col.classList.remove('drop-target');
       if(!kbDragId)return;
+      const t=S.tasks.find(x=>x.id===kbDragId);if(!t)return;
       const newStatus=col.dataset.col;
-      const t=S.tasks.find(x=>x.id===kbDragId);
-      if(!t)return;
-      if(newStatus==='done'){
-        if(!t.done){completeTask(t);touch(t);}
-      }else{
-        t.done=false;t.completed=null;t.status=newStatus;touch(t);
-      }
+      if(newStatus==='done'){if(!t.done){completeTask(t);touch(t);}}
+      else{t.done=false;t.completed=null;t.status=newStatus;touch(t);}
       save();renderAll();
     };
   });
 }
-
-// Wire Kanban filters
 $('kbQ').oninput=function(){kbFilters.q=this.value;renderKanban();};
-$('kbPri').querySelectorAll('button').forEach(b=>b.onclick=()=>{
-  $('kbPri').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
-  b.classList.add('on');kbFilters.pri=b.dataset.kp;renderKanban();
-});
-$('kbDue').querySelectorAll('button').forEach(b=>b.onclick=()=>{
-  $('kbDue').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
-  b.classList.add('on');kbFilters.due=b.dataset.kd;renderKanban();
-});
+$('kbPri').querySelectorAll('button').forEach(b=>b.onclick=()=>{$('kbPri').querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');kbFilters.pri=b.dataset.kp;renderKanban();});
+$('kbDue').querySelectorAll('button').forEach(b=>b.onclick=()=>{$('kbDue').querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');kbFilters.due=b.dataset.kd;renderKanban();});
 $('kbClear').onclick=()=>{
-  kbFilters={pri:'all',due:'all',cat:'all',q:''};
-  $('kbQ').value='';
-  ['kbPri','kbDue','kbCat'].forEach(id=>{
-    const el=$(id);
-    if(el){el.querySelectorAll('button').forEach(b=>b.classList.remove('on'));el.querySelector('button').classList.add('on');}
-  });
+  kbFilters={pri:'all',due:'all',cat:'all',q:''};$('kbQ').value='';
+  ['kbPri','kbDue','kbCat'].forEach(id=>{const el=$(id);if(el){el.querySelectorAll('button').forEach(b=>b.classList.remove('on'));el.querySelector('button').classList.add('on');}});
   renderKanban();
 };
 
@@ -4205,120 +4128,64 @@ $('kbClear').onclick=()=>{
 document.querySelectorAll('.ins-tab').forEach(tab=>tab.onclick=()=>{
   document.querySelectorAll('.ins-tab').forEach(t=>t.classList.remove('on'));
   document.querySelectorAll('.ins-panel').forEach(p=>p.classList.remove('on'));
-  tab.classList.add('on');
-  $('it-'+tab.dataset.it).classList.add('on');
+  tab.classList.add('on');$('it-'+tab.dataset.it).classList.add('on');
 });
 
-/* ================= DAILY / WEEKLY PLANNER ================= */
+/* ================= PLANNER ================= */
 async function runPlanner(mode,outEl,btn){
   const key=getAKey();
   if(!key){outEl.innerHTML=`<div class="ins-err">No API key configured. Open ⚙ Settings.</div>`;return;}
   const open=S.tasks.filter(t=>!t.done);
   if(!open.length){outEl.innerHTML=`<div class="ins-err">No open tasks to plan.</div>`;return;}
-  const origText=btn.textContent;
-  btn.textContent='Thinking…';btn.disabled=true;
+  const origText=btn.textContent;btn.textContent='Thinking…';btn.disabled=true;
   const bills=S.bills.filter(b=>!b.paused&&['overdue','soon','today'].includes(billStatus(b)));
   const snapshot=open.map(t=>`- [${catOf(t.cat).name}/${t.pri}] ${t.title}${t.due?' due '+t.due:''}${isStalled(t)?' STALLED':''}${bucketOf(t)==='overdue'?' OVERDUE':''}`).join('\n');
-  const billSnap=bills.map(b=>`- ${b.name} ${money(b.amount)} ${billStatus(b)}`).join('\n');
   const todayStr=iso(today0());
-  const weekTasks=open.filter(t=>['today','tomorrow','week'].includes(bucketOf(t)));
   const prompt=mode==='day'
-    ?`You are a personal productivity coach. Today is ${todayStr}. ${weekTasks.length} tasks due this week already.
-
-OPEN TASKS:\n${snapshot}\nBILLS NEEDING ATTENTION:\n${billSnap||'None'}
-
-Return ONLY valid JSON (no markdown):
-{"greeting":"one motivating sentence","time_estimate":"~X hours","blocks":[{"time":"Morning|After lunch|End of day","tasks":[{"title":"exact title","rank":1,"urgency":"urgent|high|med|low","why":"specific reason","est":"15 min"}]}],"skip_today":["title"],"skip_reason":"why"}`
-    :`You are a personal productivity coach. Today is ${todayStr}.
-
-OPEN TASKS:\n${snapshot}\nBILLS:\n${billSnap||'None'}
-
-Return ONLY valid JSON (no markdown):
-{"overview":"2 sentences about the week","days":[{"day":"Monday","date":"YYYY-MM-DD","theme":"short theme","tasks":[{"title":"exact title","urgency":"urgent|high|med|low","why":"brief reason"}],"note":"coaching tip"}],"weekly_tip":"one tip"}`;
-
+    ?`You are a productivity coach. Today is ${todayStr}.\nOPEN TASKS:\n${snapshot}\nBILLS:\n${bills.map(b=>`- ${b.name} ${money(b.amount)}`).join('\n')||'None'}\nReturn ONLY valid JSON:\n{"greeting":"motivating sentence","time_estimate":"~X hours","blocks":[{"time":"Morning|After lunch|End of day","tasks":[{"title":"exact title","rank":1,"urgency":"urgent|high|med|low","why":"reason","est":"15 min"}]}],"skip_today":["title"],"skip_reason":"why"}`
+    :`You are a productivity coach. Today is ${todayStr}.\nOPEN TASKS:\n${snapshot}\nReturn ONLY valid JSON:\n{"overview":"2 sentences","days":[{"day":"Monday","date":"YYYY-MM-DD","theme":"theme","tasks":[{"title":"exact title","urgency":"urgent|high|med|low","why":"reason"}],"note":"tip"}],"weekly_tip":"tip"}`;
   try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages:[{role:'user',content:prompt}]})
-    });
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
     const raw=data.content?.filter(x=>x.type==='text').map(x=>x.text).join('')||'';
     const j=JSON.parse(raw.replace(/```json|```/g,'').trim());
-    if(mode==='day')renderDayPlan(j,outEl);
-    else renderWeekPlan(j,outEl);
-  }catch(e){
-    outEl.innerHTML=`<div class="ins-err">Couldn't generate plan. Check your API key and connection.</div>`;
-    console.error('Planner error:',e);
-  }
+    if(mode==='day')renderDayPlan(j,outEl);else renderWeekPlan(j,outEl);
+  }catch(e){outEl.innerHTML=`<div class="ins-err">Couldn't generate plan. Check your API key and connection.</div>`;}
   btn.textContent=origText;btn.disabled=false;
 }
-
 function renderDayPlan(j,out){
-  let html=`<div class="panel" style="margin-bottom:20px">
-    <div class="p-head"><div class="p-title">Today's plan</div><div class="hint">${esc(j.time_estimate||'')}</div></div>
-    <div class="p-body">
-    <div style="font-size:13.5px;color:var(--text-mid);line-height:1.6;margin-bottom:16px;font-style:italic">${esc(j.greeting||'')}</div>
-    <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;font-family:var(--mono)">DRAG TO REORDER · × TO REMOVE FROM PLAN</div>
-    <div id="dayPlanList">`;
+  let html=`<div class="panel"><div class="p-head"><div class="p-title">Today's plan</div><div class="hint">${esc(j.time_estimate||'')}</div></div><div class="p-body">`;
+  html+=`<div style="font-size:13px;color:var(--text-mid);line-height:1.6;margin-bottom:14px;font-style:italic">${esc(j.greeting||'')}</div>`;
+  html+=`<div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;font-family:var(--mono)">DRAG TO REORDER · × TO REMOVE</div><div id="dayPlanList">`;
   (j.blocks||[]).forEach(block=>{
     html+=`<div class="plan-day-label">${esc(block.time)}</div>`;
     (block.tasks||[]).forEach((t,i)=>{
-      html+=`<div class="plan-item" draggable="true">
-        <div class="plan-num">${t.rank||i+1}</div>
-        <div class="plan-body">
-          <div class="plan-title">${esc(t.title)}</div>
-          <div class="plan-why">${esc(t.why||'')}</div>
-          <div class="plan-chips">
-            <span class="pri ${t.urgency||'med'}">${t.urgency||'med'}</span>
-            ${t.est?`<span class="badge auto" style="font-size:10px">${esc(t.est)}</span>`:''}
-          </div>
-        </div>
-        <button class="plan-remove" title="Remove from plan">×</button>
-      </div>`;
+      html+=`<div class="plan-item" draggable="true"><div class="plan-num">${t.rank||i+1}</div><div class="plan-body"><div class="plan-title">${esc(t.title)}</div><div class="plan-why">${esc(t.why||'')}</div><div class="plan-chips"><span class="pri ${t.urgency||'med'}">${t.urgency||'med'}</span>${t.est?`<span class="badge auto" style="font-size:10px">${esc(t.est)}</span>`:''}</div></div><button class="plan-remove">×</button></div>`;
     });
   });
   html+=`</div>`;
-  if(j.skip_today&&j.skip_today.length){
-    html+=`<div style="margin-top:14px;padding:10px 12px;background:var(--panel-hi);border-radius:8px;font-size:12.5px;color:var(--text-dim)">
-      <span style="font-weight:500;color:var(--text-mid)">Leave for later:</span> ${j.skip_today.map(t=>esc(t)).join(', ')}
-      ${j.skip_reason?`<div style="margin-top:4px;font-style:italic">${esc(j.skip_reason)}</div>`:''}
-    </div>`;
-  }
+  if(j.skip_today?.length)html+=`<div style="margin-top:12px;padding:10px 12px;background:var(--panel-hi);border-radius:8px;font-size:12.5px;color:var(--text-dim)"><span style="font-weight:500;color:var(--text-mid)">Leave for later:</span> ${j.skip_today.map(t=>esc(t)).join(', ')}${j.skip_reason?`<div style="margin-top:4px;font-style:italic">${esc(j.skip_reason)}</div>`:''}</div>`;
   html+=`</div></div>`;
   out.innerHTML=html;
-  // Wire remove buttons and drag
-  out.querySelectorAll('.plan-remove').forEach(btn=>btn.onclick=()=>btn.closest('.plan-item').remove());
+  out.querySelectorAll('.plan-remove').forEach(b=>b.onclick=()=>b.closest('.plan-item').remove());
   initPlanDrag(out.querySelector('#dayPlanList'));
 }
-
 function renderWeekPlan(j,out){
-  let html=`<div class="panel" style="margin-bottom:20px">
-    <div class="p-head"><div class="p-title">Week plan</div></div>
-    <div class="p-body">
-    <div style="font-size:13.5px;color:var(--text-mid);line-height:1.6;margin-bottom:18px;font-style:italic">${esc(j.overview||'')}</div>`;
+  let html=`<div class="panel"><div class="p-head"><div class="p-title">Week plan</div></div><div class="p-body">`;
+  html+=`<div style="font-size:13px;color:var(--text-mid);line-height:1.6;margin-bottom:16px;font-style:italic">${esc(j.overview||'')}</div>`;
   (j.days||[]).forEach(day=>{
-    if(!day.tasks||!day.tasks.length)return;
+    if(!day.tasks?.length)return;
     html+=`<div class="plan-day-label">${esc(day.day)}${day.date?` <span style="font-weight:400">${day.date}</span>`:''} ${day.theme?`<span style="color:var(--violet)">· ${esc(day.theme)}</span>`:''}</div>`;
-    day.tasks.forEach((t,i)=>{
-      html+=`<div class="plan-item" draggable="true">
-        <div class="plan-num">${i+1}</div>
-        <div class="plan-body">
-          <div class="plan-title">${esc(t.title)}</div>
-          ${t.why?`<div class="plan-why">${esc(t.why)}</div>`:''}
-          <div class="plan-chips"><span class="pri ${t.urgency||'med'}">${t.urgency||'med'}</span></div>
-        </div>
-        <button class="plan-remove" title="Remove">×</button>
-      </div>`;
-    });
+    day.tasks.forEach((t,i)=>{html+=`<div class="plan-item" draggable="true"><div class="plan-num">${i+1}</div><div class="plan-body"><div class="plan-title">${esc(t.title)}</div>${t.why?`<div class="plan-why">${esc(t.why)}</div>`:''}<div class="plan-chips"><span class="pri ${t.urgency||'med'}">${t.urgency||'med'}</span></div></div><button class="plan-remove">×</button></div>`;});
     if(day.note)html+=`<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:4px 6px 10px">${esc(day.note)}</div>`;
   });
-  if(j.weekly_tip)html+=`<div style="margin-top:8px;padding:12px 14px;background:rgba(91,168,245,.07);border:1px solid rgba(91,168,245,.2);border-radius:8px;font-size:13px;color:var(--blue)">💡 ${esc(j.weekly_tip)}</div>`;
+  if(j.weekly_tip)html+=`<div style="margin-top:8px;padding:12px;background:rgba(91,168,245,.07);border:1px solid rgba(91,168,245,.2);border-radius:8px;font-size:13px;color:var(--blue)">💡 ${esc(j.weekly_tip)}</div>`;
   html+=`</div></div>`;
   out.innerHTML=html;
-  out.querySelectorAll('.plan-remove').forEach(btn=>btn.onclick=()=>btn.closest('.plan-item').remove());
+  out.querySelectorAll('.plan-remove').forEach(b=>b.onclick=()=>b.closest('.plan-item').remove());
 }
-
 function initPlanDrag(container){
   if(!container)return;
   let dragEl=null;
@@ -4326,43 +4193,11 @@ function initPlanDrag(container){
     item.ondragstart=()=>{dragEl=item;setTimeout(()=>item.style.opacity='.35',0);};
     item.ondragend=()=>{item.style.opacity='';dragEl=null;container.querySelectorAll('.plan-item').forEach(i=>i.classList.remove('drag-over'));};
     item.ondragover=e=>{e.preventDefault();if(dragEl&&dragEl!==item){container.querySelectorAll('.plan-item').forEach(i=>i.classList.remove('drag-over'));item.classList.add('drag-over');}};
-    item.ondrop=e=>{
-      e.preventDefault();
-      if(dragEl&&dragEl!==item){
-        const items=[...container.querySelectorAll('.plan-item')];
-        if(items.indexOf(dragEl)<items.indexOf(item))item.after(dragEl);else item.before(dragEl);
-        container.querySelectorAll('.plan-item').forEach(i=>i.classList.remove('drag-over'));
-      }
-    };
+    item.ondrop=e=>{e.preventDefault();if(dragEl&&dragEl!==item){const items=[...container.querySelectorAll('.plan-item')];if(items.indexOf(dragEl)<items.indexOf(item))item.after(dragEl);else item.before(dragEl);container.querySelectorAll('.plan-item').forEach(i=>i.classList.remove('drag-over'));}};
   });
 }
-
 $('bPlanDay').onclick=()=>runPlanner('day',$('planDayOut'),$('bPlanDay'));
 $('bPlanWeek').onclick=()=>runPlanner('week',$('planWeekOut'),$('bPlanWeek'));
-
-/* ================= UPDATE renderAll to include Kanban ================= */
-const _baseRenderAll=renderAll;
-function renderAll(){
-  _baseRenderAll();
-  renderKanban();
-}
-
-/* ================= UPDATE TAB HANDLER to include Kanban ================= */
-// Override initTabs to add kanban support
-function initTabs(){
-  $('tabBar').querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
-    $('tabBar').querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
-    document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on');
-    const v=$('v-'+b.dataset.v);
-    if(v)v.classList.add('on');
-    if(b.dataset.v==='dash')renderDash();
-    if(b.dataset.v==='week')renderWeek();
-    if(b.dataset.v==='kanban')renderKanban();
-    if(b.dataset.v==='notes'){fillNoteSelects();renderNotes();}
-    if(b.dataset.v==='recipes'){renderRecipes();renderStaples();}
-  });
-}
 
 cacheShell();
 if(!navigator.onLine)updateConnStatus();
