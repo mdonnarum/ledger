@@ -73,7 +73,7 @@ input,select,textarea{font-family:inherit;color:inherit}
 .field input[type=number]{width:70px;font-family:var(--mono)}
 .field select{cursor:pointer}
 .field select option{background:var(--panel-hi)}
-.comp-notes{width:100%;background:var(--panel-hi);border:1px solid var(--line);border-radius:7px;padding:9px 10px;margin-top:10px;font-size:13px;resize:vertical;min-height:120px;outline:none;display:none}
+.comp-notes{width:100%;background:var(--panel-hi);border:1px solid var(--line);border-radius:7px;padding:9px 10px;margin-top:10px;font-size:13px;resize:vertical;min-height:120px;outline:none;display:block}
 .comp-notes:focus{border-color:var(--mint)}
 .comp-notes.on{display:block}
 .btn{background:var(--panel-hi);border:1px solid var(--line);border-radius:7px;height:34px;padding:0 13px;font-size:12.5px;font-weight:500;color:var(--text-mid);transition:.15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
@@ -756,7 +756,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v14</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v15</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -818,7 +818,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
           <option value="biweekly">Every 2 weeks</option><option value="monthly">Monthly</option>
           <option value="quarterly">Quarterly</option><option value="annual">Annually</option>
         </select></div>
-        <button class="btn" id="bNotes">＋ Notes</button>
+        <button class="btn" id="bNotes" style="display:none">＋ Notes</button>
         <button class="btn" id="bSubs">＋ Checklist</button>
         <button class="btn btn-go" id="bAdd">Add task</button>
       </div>
@@ -1908,7 +1908,7 @@ function addTask(){
  repeat:$('cRep').value,notes:$('cNotes').value.trim(),done:false,
  created:Date.now(),touched:Date.now(),pushes:0,subtasks:staged.slice()});
  $('cTitle').value='';$('cNotes').value='';$('cDue').value='';$('cRep').value='none';
- $('cNotes').classList.remove('on');$('cStage').classList.remove('on');
+ $('cStage').classList.remove('on');
  staged=[];renderStage();save();renderAll();toast('Task added');
 }
 $('bAdd').onclick=addTask;
