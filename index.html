@@ -829,7 +829,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v26</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v27</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -3315,6 +3315,157 @@ function addTaskFromAsst(t){
  repeat:'none',notes:t.notes||'',done:false,created:Date.now(),touched:Date.now(),pushes:0,subtasks:[]});
  save();renderAll();toast(`"${t.title}" added to your list`);
 }
+/* ================= BOARD INTELLIGENCE OPS ENGINE ================= */
+
+function findTask(match){
+  if(!match)return null;
+  const q=match.toLowerCase().trim();
+  // Exact match first, then partial
+  return S.tasks.find(t=>t.title.toLowerCase()===q)
+      || S.tasks.find(t=>t.title.toLowerCase().includes(q));
+}
+
+function findCat(name){
+  if(!name)return S.cats[0]?.id||'personal';
+  const q=name.toLowerCase();
+  return (S.cats.find(c=>c.name.toLowerCase()===q)||S.cats.find(c=>c.name.toLowerCase().includes(q)))?.id||'personal';
+}
+
+function applyOps(ops){
+  const results=[];
+  for(const op of ops){
+    try{
+      switch(op.op){
+
+        case 'add_task':{
+          const task={id:uid(),title:op.title||'New task',
+            cat:findCat(op.cat),pri:op.pri||'med',due:op.due||'',
+            repeat:op.repeat||'none',notes:op.notes||'',
+            done:false,status:op.status||'todo',
+            created:Date.now(),touched:Date.now(),pushes:0,
+            subtasks:(op.subtasks||[]).map(s=>({id:uid(),title:s,done:false,notes:''}))};
+          S.tasks.unshift(task);
+          results.push(`✓ Added task: "${task.title}"`);
+          break;
+        }
+
+        case 'update':{
+          const t=findTask(op.task);
+          if(!t){results.push(`✗ Task not found: "${op.task}"`);break;}
+          if(op.title!==undefined)t.title=op.title;
+          if(op.cat!==undefined)t.cat=findCat(op.cat);
+          if(op.pri!==undefined)t.pri=op.pri;
+          if(op.due!==undefined)t.due=op.due;
+          if(op.status!==undefined)t.status=op.status;
+          if(op.notes!==undefined)t.notes=op.notes;
+          if(op.done===true){t.done=true;t.completed=Date.now();}
+          if(op.done===false){t.done=false;t.completed=null;}
+          touch(t);
+          results.push(`✓ Updated: "${t.title}"`);
+          break;
+        }
+
+        case 'complete':{
+          const t=findTask(op.task);
+          if(!t){results.push(`✗ Not found: "${op.task}"`);break;}
+          completeTask(t);touch(t);
+          results.push(`✓ Completed: "${t.title}"`);
+          break;
+        }
+
+        case 'delete':{
+          const t=findTask(op.task);
+          if(!t){results.push(`✗ Not found: "${op.task}"`);break;}
+          const title=t.title;
+          S.tasks=S.tasks.filter(x=>x.id!==t.id);
+          results.push(`✓ Deleted: "${title}"`);
+          break;
+        }
+
+        case 'add_subtask':{
+          const t=findTask(op.task);
+          if(!t){results.push(`✗ Not found: "${op.task}"`);break;}
+          if(!t.subtasks)t.subtasks=[];
+          const items=(Array.isArray(op.items)?op.items:[op.item||op.title]).filter(Boolean);
+          items.forEach(txt=>t.subtasks.push({id:uid(),title:txt,done:false,notes:''}));
+          touch(t);
+          results.push(`✓ Added ${items.length} checklist item${items.length>1?'s':''} to "${t.title}"`);
+          break;
+        }
+
+        case 'set_subtasks':{
+          const t=findTask(op.task);
+          if(!t){results.push(`✗ Not found: "${op.task}"`);break;}
+          const items=(op.items||[]).filter(Boolean);
+          t.subtasks=items.map(txt=>({id:uid(),title:txt,done:false,notes:''}));
+          touch(t);
+          results.push(`✓ Set ${items.length} checklist items on "${t.title}"`);
+          break;
+        }
+
+        case 'check_subtask':{
+          const t=findTask(op.task);
+          if(!t){results.push(`✗ Not found: "${op.task}"`);break;}
+          const q=(op.item||'').toLowerCase();
+          const s=(t.subtasks||[]).find(x=>x.title.toLowerCase().includes(q));
+          if(!s){results.push(`✗ Checklist item not found: "${op.item}"`);break;}
+          s.done=op.done!==false;touch(t);
+          results.push(`✓ ${s.done?'Checked':'Unchecked'}: "${s.title}"`);
+          break;
+        }
+
+        case 'delete_subtask':{
+          const t=findTask(op.task);
+          if(!t){results.push(`✗ Not found: "${op.task}"`);break;}
+          const q=(op.item||'').toLowerCase();
+          const before=(t.subtasks||[]).length;
+          t.subtasks=(t.subtasks||[]).filter(s=>!s.title.toLowerCase().includes(q));
+          touch(t);
+          results.push(`✓ Removed ${before-t.subtasks.length} item(s) from "${t.title}"`);
+          break;
+        }
+
+        case 'notes_to_subtasks':{
+          const t=findTask(op.task);
+          if(!t){results.push(`✗ Not found: "${op.task}"`);break;}
+          if(!t.notes){results.push(`✗ No notes on "${t.title}"`);break;}
+          // Split notes into lines, filter blanks
+          const lines=t.notes.split(/[\n;,]/).map(l=>l.trim()).filter(l=>l.length>2);
+          if(!t.subtasks)t.subtasks=[];
+          lines.forEach(txt=>t.subtasks.push({id:uid(),title:txt,done:false,notes:''}));
+          if(op.clear_notes!==false)t.notes=''; // clear notes by default
+          touch(t);
+          results.push(`✓ Created ${lines.length} checklist items from notes on "${t.title}"`);
+          break;
+        }
+
+        case 'split':{
+          const t=findTask(op.task);
+          if(!t){results.push(`✗ Not found: "${op.task}"`);break;}
+          const newTasks=(op.into||[]);
+          if(!newTasks.length){results.push(`✗ No tasks to split into`);break;}
+          const idx=S.tasks.indexOf(t);
+          const created=newTasks.map(nt=>({
+            id:uid(),title:nt.title||nt,cat:findCat(nt.cat)||t.cat,
+            pri:nt.pri||t.pri,due:nt.due||t.due,repeat:'none',
+            notes:nt.notes||'',done:false,status:'todo',
+            created:Date.now(),touched:Date.now(),pushes:0,subtasks:[]}));
+          S.tasks.splice(idx,0,...created);
+          if(op.delete_original!==false)S.tasks=S.tasks.filter(x=>x.id!==t.id);
+          results.push(`✓ Split "${t.title}" into ${created.length} tasks`);
+          break;
+        }
+
+        default:
+          results.push(`✗ Unknown op: ${op.op}`);
+      }
+    }catch(err){
+      results.push(`✗ Error on op "${op.op}": ${err.message}`);
+    }
+  }
+  return results;
+}
+
 async function sendToAsst(msg){
  if(!msg||asstBusy)return;
  const key=getAKey();
@@ -3329,63 +3480,125 @@ async function sendToAsst(msg){
  asstBusy=true;
  $('asstTyping').classList.add('on');
  $('asstMsgs').scrollTop=$('asstMsgs').scrollHeight;
- const boardSnapshot=buildBoardSnapshot();
- const system=`You are a sharp, practical personal assistant embedded in a task management app called Ledger. You have full visibility of the user's current board.
-CURRENT BOARD SNAPSHOT:
-${boardSnapshot}
-Today is ${new Date().toDateString()}.
-You can do three things:
-1. ANSWER questions about the board, give advice, help prioritize, explain what's urgent.
-2. ADD tasks: if the user says something that sounds like a new task ("I need to...", "remind me to...", "add...", "don't let me forget..."), extract it and respond with JSON embedded in your message using this exact format:
- <<<TASK:{"title":"...","cat":"work|personal|home|finance|health","pri":"low|med|high","due":"YYYY-MM-DD or empty","notes":"..."}>>>
-3. UPDATE tasks: if the user wants to change an existing task ("mark X as done", "change X priority to high", "push X to Friday", "move X to home category", "rename X to Y"), identify the task by matching its title and respond with JSON using this exact format:
- <<<UPDATE:{"match":"exact or partial task title to find","changes":{"title":"new title or omit","cat":"new cat or omit","pri":"new pri or omit","due":"YYYY-MM-DD or omit","done":true/false or omit,"notes":"new notes or omit"}}>>>
-Rules:
-- Be concise and direct — this is a chat panel, not an essay
-- If adding or updating a task, still give a brief natural response AND include the JSON
-- Match category to the closest available: work, personal, home, finance, health
-- For UPDATE: "match" should be enough of the title to uniquely identify the task
-- For due dates, interpret relative dates like "next Friday" or "next week" based on today's date
-- Only capture/update a task if the user clearly intends to do so
-- Never make up tasks that weren't mentioned`;
+
+ // Build a rich board snapshot including notes and subtasks
+ const open=S.tasks.filter(t=>!t.done);
+ const taskList=open.map(t=>{
+   const sub=(t.subtasks||[]);
+   const done=sub.filter(s=>s.done).length;
+   return `- [${t.id.slice(-6)}] "${t.title}" cat=${catOf(t.cat).name} pri=${t.pri} status=${t.status||'todo'}${t.due?' due='+t.due:''}${isStalled(t)?' STALLED':''}${bucketOf(t)==='overdue'?' OVERDUE':''}${t.notes?' notes="'+t.notes.slice(0,100)+'"':''}${sub.length?' checklist=('+done+'/'+sub.length+' done: '+sub.map(s=>(s.done?'✓':'○')+s.title).join(' | ')+')':''}`;
+ }).join('\n');
+
+ const cats=S.cats.map(c=>c.name.toLowerCase()).join('|');
+ const system=`You are the board intelligence for a task manager called Ledger. You have full read/write access to the user's board.
+
+TODAY: ${new Date().toDateString()}
+CATEGORIES AVAILABLE: ${cats}
+
+OPEN TASKS (${open.length} total):
+${taskList||'(no open tasks)'}
+
+BILLS NEEDING ATTENTION:
+${S.bills.filter(b=>!b.paused&&['overdue','soon','today'].includes(billStatus(b))).map(b=>`- ${b.name} ${money(b.amount)} ${billStatus(b)}`).join('\n')||'none'}
+
+YOU CAN:
+1. ANSWER any question about the board
+2. EXECUTE board operations using this exact format at the end of your response:
+<<<OPS:[
+  {"op":"operation_name", ...params}
+]>>>
+
+AVAILABLE OPERATIONS:
+- add_task: {op:"add_task",title,cat,pri:"low|med|high",due:"YYYY-MM-DD",notes,subtasks:["item1"]}
+- update: {op:"update",task:"match title",title,cat,pri,due,status:"todo|inprogress|blocked",notes,done:true/false}
+- complete: {op:"complete",task:"match title"}
+- delete: {op:"delete",task:"match title"}
+- add_subtask: {op:"add_subtask",task:"match title",items:["item1","item2"]}
+- set_subtasks: {op:"set_subtasks",task:"match title",items:["item1","item2"]} ← REPLACES all subtasks
+- check_subtask: {op:"check_subtask",task:"match title",item:"item text",done:true/false}
+- delete_subtask: {op:"delete_subtask",task:"match title",item:"item text"}
+- notes_to_subtasks: {op:"notes_to_subtasks",task:"match title",clear_notes:true} ← converts notes into checklist items
+- split: {op:"split",task:"match title",into:[{title,cat,pri,due}],delete_original:true}
+
+RULES:
+- Match tasks by partial title — be fuzzy, pick the closest match
+- You can chain multiple ops in one OPS block
+- Always give a brief natural response THEN the OPS block
+- For notes_to_subtasks: read the task's notes field and convert each line/item into a checklist item
+- For due dates: interpret "next Friday", "next week", "tomorrow" relative to today
+- Never invent tasks that weren't mentioned
+- If unclear which task, ask for clarification before executing`;
+
  try{
  const resp=await fetch('https://api.anthropic.com/v1/messages',{
  method:'POST',
  headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
- body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:800,system,messages:asstHistory})
+ body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1200,system,messages:asstHistory})
  });
  const data=await resp.json();
- const raw=data.content?.filter(x=>x.type==='text').map(x=>x.text).join('')||'Sorry, something went wrong.';
- // Extract new task JSON
+ if(data.error){
+   $('asstTyping').classList.remove('on');
+   addAsstMsg('system',`API error: ${data.error.message}`);
+   asstHistory.pop();asstBusy=false;$('asstSend').disabled=false;return;
+ }
+ const raw=data.content?.filter(x=>x.type==='text').map(x=>x.text).join('')||'Something went wrong.';
+
+ // Extract and execute OPS
+ const opsMatch=raw.match(/<<<OPS:([\s\S]*?)>>>/);
+ let opsResults=[];
+ let displayText=raw.replace(/<<<OPS:[\s\S]*?>>>/g,'').trim();
+
+ if(opsMatch){
+   try{
+     const ops=extractJSON('['+opsMatch[1].trim().replace(/^\[/,'').replace(/\]$/,'')+']');
+     const opsArr=Array.isArray(ops)?ops:[ops];
+     opsResults=applyOps(opsArr);
+     save();renderAll();
+   }catch(e){
+     opsResults=[`✗ Could not parse operations: ${e.message}`];
+   }
+ }
+
+ // Also handle legacy TASK/UPDATE formats for backwards compat
  const taskMatch=raw.match(/<<<TASK:([\s\S]*?)>>>/);
- // Extract update JSON
  const updateMatch=raw.match(/<<<UPDATE:([\s\S]*?)>>>/);
- let taskData=null, updateData=null;
- let displayText=raw.replace(/<<<TASK:[\s\S]*?>>>/g,'').replace(/<<<UPDATE:[\s\S]*?>>>/g,'').trim();
- if(taskMatch){try{taskData=JSON.parse(taskMatch[1]);}catch(e){}}
- if(updateMatch){try{updateData=JSON.parse(updateMatch[1]);}catch(e){}}
- // Apply update immediately if found
- if(updateData&&updateData.match){
- const q=updateData.match.toLowerCase();
- const t=S.tasks.find(x=>x.title.toLowerCase().includes(q));
- if(t){
- const c=updateData.changes||{};
- if(c.title!==undefined)t.title=c.title;
- if(c.cat!==undefined)t.cat=c.cat;
- if(c.pri!==undefined)t.pri=c.pri;
- if(c.due!==undefined)t.due=c.due;
- if(c.done!==undefined){t.done=c.done;if(c.done)t.completed=Date.now();}
- if(c.notes!==undefined)t.notes=c.notes;
- touch(t);save();renderAll();
- // add confirmation card
- taskData={_isUpdate:true,title:t.title,cat:t.cat,pri:t.pri,due:t.due,_taskId:t.id};
- }else{
- displayText+=' (Note: I couldn\'t find that task on your board — check the name and try again.)';
+ let taskData=null;
+ if(taskMatch&&!opsMatch){
+   try{
+     const td=JSON.parse(taskMatch[1]);
+     displayText=displayText.replace(/<<<TASK:[\s\S]*?>>>/g,'');
+     taskData=td;
+   }catch(e){}
  }
+ if(updateMatch&&!opsMatch){
+   try{
+     const ud=JSON.parse(updateMatch[1]);
+     displayText=displayText.replace(/<<<UPDATE:[\s\S]*?>>>/g,'');
+     const t=findTask(ud.match);
+     if(t){
+       const c=ud.changes||{};
+       if(c.title!==undefined)t.title=c.title;
+       if(c.cat!==undefined)t.cat=c.cat;
+       if(c.pri!==undefined)t.pri=c.pri;
+       if(c.due!==undefined)t.due=c.due;
+       if(c.done!==undefined){t.done=c.done;if(c.done)t.completed=Date.now();}
+       if(c.notes!==undefined)t.notes=c.notes;
+       touch(t);save();renderAll();
+       taskData={_isUpdate:true,title:t.title,cat:t.cat,pri:t.pri,due:t.due};
+     }
+   }catch(e){}
  }
+
  asstHistory.push({role:'assistant',content:raw});
  $('asstTyping').classList.remove('on');
- addAsstMsg('claude',esc(displayText).replace(/\n/g,'<br>'),taskData);
+
+ // Build display — response + ops results
+ let fullDisplay=esc(displayText).replace(/\n/g,'<br>');
+ if(opsResults.length){
+   fullDisplay+=`<div style="margin-top:10px;padding:8px 10px;background:var(--panel-hi);border-radius:7px;font-family:var(--mono);font-size:11.5px;color:var(--text-dim);line-height:1.7">${opsResults.map(r=>esc(r)).join('<br>')}</div>`;
+ }
+ addAsstMsg('claude',fullDisplay,taskData);
+
  }catch(e){
  $('asstTyping').classList.remove('on');
  addAsstMsg('system','Connection error — check your API key in Settings.');
