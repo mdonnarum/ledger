@@ -166,6 +166,8 @@ input,select,textarea{font-family:inherit;color:inherit}
 .t-acts button:hover{background:var(--panel-hi);color:var(--text)}
 .t-acts button.del:hover{color:var(--rose)}
 .t-acts button.push:hover{color:var(--violet)}
+.t-acts [data-cal]:hover{background:rgba(91,168,245,.12)!important;color:var(--blue)!important}
+#calPopup button:hover{background:var(--panel-hi)}
 .caret{transition:transform .22s ease;display:block}
 .task.open .caret{transform:rotate(90deg)}
 .t-drawer{display:none;padding:11px 13px 13px 43px;border-top:1px solid var(--line-soft)}
@@ -829,7 +831,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v27</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v28</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -1206,7 +1208,18 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
   </div>
 </div><!-- end .app -->
 
-<!-- FLOATING ASSISTANT -->
+<!-- CALENDAR EXPORT POPUP -->
+<div id="calPopup" style="display:none;position:fixed;z-index:200;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px;box-shadow:0 8px 32px rgba(0,0,0,.5);min-width:200px">
+  <div id="calPopupTitle" style="font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);padding:6px 10px 8px">Add to calendar</div>
+  <button id="calIcs" style="display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border-radius:7px;border:none;background:none;color:var(--text);font-size:13.5px;cursor:pointer;text-align:left">
+    <span style="font-size:18px">🍎</span><span>Apple Calendar / iCal</span>
+  </button>
+  <button id="calGoogle" style="display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border-radius:7px;border:none;background:none;color:var(--text);font-size:13.5px;cursor:pointer;text-align:left">
+    <span style="font-size:18px">📆</span><span>Google Calendar</span>
+  </button>
+</div>
+
+
 <button class="fab" id="fabBtn" title="Ask your assistant">
   <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
   <span class="badge" id="fabBadge">!</span>
@@ -2095,8 +2108,9 @@ function renderTasks(){
  ${g.items.map(taskHTML).join('')}
  </div>`).join('');
  wireTasks();
- // Wire swipe on mobile
- document.querySelectorAll('[data-swipe]').forEach(el=>initSwipe(el,el.dataset.swipe));
+ // Wire drag and calendar buttons
+ document.querySelectorAll('#taskZone .task[data-swipe]').forEach(el=>initSwipe(el,el.dataset.swipe));
+ wireCalButtons();
 }
 function subHTML(t,s){
  const k=`${t.id}|${s.id}`, open=openSubs.has(k), has=!!(s.notes||'').trim();
@@ -2144,6 +2158,7 @@ function taskHTML(t){
  </div>
  <div class="t-acts">
  ${!t.done?`<button class="push" data-push="${t.id}" title="Push a week">↷</button>`:''}
+ ${t.due?`<button data-cal="${t.id}" title="Add to calendar" style="color:var(--blue)">📅</button>`:''}
  <button data-edit="${t.id}" title="Edit">✎</button>
  <button data-exp="${t.id}" title="Open"><span class="caret">›</span></button>
  <button class="del" data-del="${t.id}" title="Delete">×</button>
@@ -4751,6 +4766,131 @@ function wireTaskDrag(){
   });
 }
 loadShopData();
+/* ================= TASK CALENDAR EXPORT ================= */
+let calTaskId=null;
+const calPopup=$('calPopup');
+
+function formatICSDate(dateStr){
+  // dateStr is YYYY-MM-DD → YYYYMMDD
+  return dateStr.replace(/-/g,'');
+}
+
+function openCalPopup(taskId, btnEl){
+  calTaskId=taskId;
+  const t=S.tasks.find(x=>x.id===taskId);
+  if(!t)return;
+  // Position popup near the button
+  const rect=btnEl.getBoundingClientRect();
+  const popW=210;
+  let left=rect.left;
+  let top=rect.bottom+6;
+  // Keep within viewport
+  if(left+popW>window.innerWidth)left=window.innerWidth-popW-10;
+  if(top+120>window.innerHeight)top=rect.top-126;
+  calPopup.style.left=left+'px';
+  calPopup.style.top=top+'px';
+  $('calPopupTitle').textContent=t.title.length>28?t.title.slice(0,25)+'…':t.title;
+  calPopup.style.display='block';
+}
+
+function closeCalPopup(){
+  calPopup.style.display='none';
+  calTaskId=null;
+}
+
+$('calIcs').onclick=()=>{
+  const t=S.tasks.find(x=>x.id===calTaskId);
+  if(!t||!t.due){closeCalPopup();return;}
+  const d=formatICSDate(t.due);
+  // Next day for DTEND (all-day event)
+  const endDate=new Date(t.due+'T00:00:00');
+  endDate.setDate(endDate.getDate()+1);
+  const dEnd=formatICSDate(endDate.toISOString().slice(0,10));
+  // Lead time: alarm 1 day before at 9am
+  const alarmDate=new Date(t.due+'T09:00:00');
+  alarmDate.setDate(alarmDate.getDate()-1);
+  const notes=t.notes?`DESCRIPTION:${t.notes.replace(/\n/g,'\\n')}\n`:'';
+  const subCount=(t.subtasks||[]).filter(s=>!s.done).length;
+  const desc=(t.notes||'')+(subCount?`\n\nOpen checklist items (${subCount}):\n`+(t.subtasks||[]).filter(s=>!s.done).map(s=>'• '+s.title).join('\n'):'');
+  const uid=`ledger-${t.id}@mdonnarum.github.io`;
+  const ics=[
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Ledger Task Command//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTART;VALUE=DATE:${d}`,
+    `DTEND;VALUE=DATE:${dEnd}`,
+    `SUMMARY:${t.title}`,
+    desc?`DESCRIPTION:${desc.replace(/\n/g,'\\n').replace(/,/g,'\\,')}` :'',
+    `CATEGORIES:${catOf(t.cat).name.toUpperCase()}`,
+    `PRIORITY:${t.pri==='high'?1:t.pri==='med'?5:9}`,
+    'BEGIN:VALARM',
+    'TRIGGER:-P1DT15H', // 1 day before at 9am = -33h from midnight = -P1DT15H
+    'ACTION:DISPLAY',
+    `DESCRIPTION:Reminder: ${t.title}`,
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].filter(Boolean).join('\r\n');
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=t.title.replace(/[^a-z0-9]/gi,'-').toLowerCase()+'.ics';
+  a.click();
+  URL.revokeObjectURL(url);
+  closeCalPopup();
+  toast('Calendar file downloaded — open it to add to Apple Calendar');
+};
+
+$('calGoogle').onclick=()=>{
+  const t=S.tasks.find(x=>x.id===calTaskId);
+  if(!t||!t.due){closeCalPopup();return;}
+  const d=t.due.replace(/-/g,'');
+  // Google wants YYYYMMDD/YYYYMMDD for all-day
+  const endDate=new Date(t.due+'T00:00:00');
+  endDate.setDate(endDate.getDate()+1);
+  const dEnd=endDate.toISOString().slice(0,10).replace(/-/g,'');
+  const desc=[
+    t.notes||'',
+    (t.subtasks||[]).filter(s=>!s.done).length
+      ? 'Open items: '+(t.subtasks.filter(s=>!s.done).map(s=>s.title).join(', '))
+      : ''
+  ].filter(Boolean).join('\n');
+  const params=new URLSearchParams({
+    action:'TEMPLATE',
+    text:t.title,
+    dates:`${d}/${dEnd}`,
+    details:desc,
+    ctz:'America/Chicago', // Bentonville timezone
+  });
+  window.open('https://calendar.google.com/calendar/render?'+params.toString(),'_blank');
+  closeCalPopup();
+};
+
+// Close popup when clicking outside
+document.addEventListener('click',e=>{
+  if(calPopup.style.display!=='none'&&!calPopup.contains(e.target)&&!e.target.closest('[data-cal]')){
+    closeCalPopup();
+  }
+});
+
+// Wire cal buttons in task list — called from wireTasks
+function wireCalButtons(){
+  document.querySelectorAll('[data-cal]').forEach(btn=>{
+    btn.onclick=e=>{
+      e.stopPropagation();
+      if(calPopup.style.display!=='none'&&calTaskId===btn.dataset.cal){
+        closeCalPopup();return;
+      }
+      openCalPopup(btn.dataset.cal,btn);
+    };
+  });
+}
+
 cacheShell();
 if(!navigator.onLine)updateConnStatus();
 
