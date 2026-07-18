@@ -73,7 +73,7 @@ input,select,textarea{font-family:inherit;color:inherit}
 .field input[type=number]{width:70px;font-family:var(--mono)}
 .field select{cursor:pointer}
 .field select option{background:var(--panel-hi)}
-.comp-notes{width:100%;background:var(--panel-hi);border:1px solid var(--line);border-radius:7px;padding:9px 10px;margin-top:10px;font-size:13px;resize:vertical;min-height:38px;outline:none;display:none}
+.comp-notes{width:100%;background:var(--panel-hi);border:1px solid var(--line);border-radius:7px;padding:9px 10px;margin-top:10px;font-size:13px;resize:vertical;min-height:120px;outline:none;display:none}
 .comp-notes:focus{border-color:var(--mint)}
 .comp-notes.on{display:block}
 .btn{background:var(--panel-hi);border:1px solid var(--line);border-radius:7px;height:34px;padding:0 13px;font-size:12.5px;font-weight:500;color:var(--text-mid);transition:.15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
@@ -401,6 +401,18 @@ input,select,textarea{font-family:inherit;color:inherit}
 .ins-blind{border-left:2px solid var(--violet)}
 .ins-blind .ins-idx{color:var(--violet)}
 .ins-err{background:rgba(242,88,106,.09);border:1px solid rgba(242,88,106,.28);border-radius:8px;padding:13px;font-size:13px;color:var(--rose)}
+.plan-section{margin-bottom:20px}
+.plan-day-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--text-dim);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.plan-day-label::after{content:'';flex:1;height:1px;background:var(--line-soft)}
+.plan-item{display:flex;gap:12px;align-items:flex-start;padding:11px 13px;background:var(--panel);border:1px solid var(--line-soft);border-radius:9px;margin-bottom:7px}
+.plan-num{font-family:var(--display);font-size:18px;font-weight:600;color:var(--text-dim);min-width:24px;line-height:1.3}
+.plan-item.urgent .plan-num{color:var(--rose)}
+.plan-item.high .plan-num{color:var(--amber)}
+.plan-item.med .plan-num{color:var(--mint)}
+.plan-body{flex:1;min-width:0}
+.plan-title{font-size:14px;font-weight:450;margin-bottom:4px}
+.plan-why{font-size:12px;color:var(--text-dim);line-height:1.5}
+.plan-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .ins-note{font-family:var(--mono);font-size:10px;color:var(--text-dim);text-align:center;margin-top:22px;line-height:1.6}
 .toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,90px);background:var(--panel-hi);border:1px solid var(--line);border-radius:8px;padding:10px 16px;font-size:12.5px;z-index:90;transition:transform .28s cubic-bezier(.3,0,.2,1);box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:calc(100% - 30px);text-align:center}
 .toast.on{transform:translate(-50%,0)}
@@ -744,7 +756,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v13</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v14</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -1041,6 +1053,16 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
       <button class="btn-ai" id="bGen">Generate plan</button>
     </div>
     <div id="insOut"></div>
+
+    <div class="ins-hero" style="margin-top:24px;border-top:1px solid var(--line-soft);padding-top:24px">
+      <h2>Plan my day / week</h2>
+      <p>Claude looks at everything due, your priorities, and how much is on your plate — then gives you a ranked order of what to tackle today and a game plan for the rest of the week.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:4px">
+        <button class="btn-ai" id="bPlanDay" style="background:linear-gradient(135deg,var(--blue),var(--violet))">Plan today</button>
+        <button class="btn-ai" id="bPlanWeek" style="background:linear-gradient(135deg,var(--violet),var(--rose))">Plan this week</button>
+      </div>
+    </div>
+    <div id="planOut"></div>
   </div>
 
 </div><!-- end .app -->
@@ -2010,7 +2032,7 @@ function taskHTML(t){
  <button class="btn btn-go" data-esave="${t.id}">Save</button>
  <button class="btn" data-ecancel="${t.id}">Cancel</button>
  </div>
- <textarea class="te-notes" data-enotes="${t.id}" placeholder="Notes…">${esc(t.notes||'')}</textarea>
+ <textarea class="te-notes" data-enotes="${t.id}" placeholder="Notes…" style="min-height:160px;resize:vertical">${esc(t.notes||'')}</textarea>
  </div>
  </div>`;
 }
@@ -3903,6 +3925,163 @@ Today is ${iso(today0())}. When suggesting due dates, consider that ${weekTasks.
 }
 
 /* ================= UPDATE renderDash TO INCLUDE NEW FEATURES ================= */
+/* ================= DAILY / WEEKLY PLANNER ================= */
+async function runPlanner(mode){
+  const key=getAKey();
+  const out=$('planOut');
+  const btn=mode==='day'?$('bPlanDay'):$('bPlanWeek');
+  if(!key){out.innerHTML=`<div class="ins-err">No API key configured. Open ⚙ Settings and paste your Anthropic API key.</div>`;return;}
+  const open=S.tasks.filter(t=>!t.done);
+  if(!open.length){out.innerHTML=`<div class="ins-err">No open tasks — add some tasks first.</div>`;return;}
+  btn.textContent='Thinking…';btn.disabled=true;
+  const bills=S.bills.filter(b=>!b.paused&&['overdue','soon','today'].includes(billStatus(b)));
+  const snapshot=open.map(t=>`- [${catOf(t.cat).name}/${t.pri}] ${t.title}${t.due?' due '+t.due:''}${isStalled(t)?' STALLED':''}${bucketOf(t)==='overdue'?' OVERDUE':''}`).join('\n');
+  const billSnap=bills.map(b=>`- ${b.name} ${money(b.amount)} ${billStatus(b)}`).join('\n');
+  const today=iso(today0());
+  const prompt=mode==='day'
+    ?`You are a personal productivity coach. Today is ${today}. The user wants to know exactly what to work on TODAY in priority order.
+
+OPEN TASKS:
+${snapshot}
+
+BILLS NEEDING ATTENTION:
+${billSnap||'None'}
+
+Create a focused daily plan. Return ONLY valid JSON, no markdown:
+{
+  "greeting": "one motivating sentence about today (be specific, reference real tasks)",
+  "time_estimate": "estimated total hours if they do everything",
+  "blocks": [
+    {
+      "time": "suggested time block e.g. Morning, After lunch, End of day",
+      "tasks": [
+        {
+          "title": "exact task title from the list",
+          "rank": 1,
+          "urgency": "urgent|high|med|low",
+          "why": "one specific reason why this is the right priority RIGHT NOW",
+          "est": "15 min"
+        }
+      ]
+    }
+  ],
+  "skip_today": ["task title", "task title"],
+  "skip_reason": "why these can wait"
+}`
+    :`You are a personal productivity coach. Today is ${today}. The user wants a game plan for the entire week ahead.
+
+OPEN TASKS:
+${snapshot}
+
+BILLS NEEDING ATTENTION:
+${billSnap||'None'}
+
+Create a weekly plan spreading tasks across Mon–Sun. Return ONLY valid JSON, no markdown:
+{
+  "overview": "two sentences summarizing the week ahead — be honest about the load",
+  "days": [
+    {
+      "day": "Monday",
+      "date": "YYYY-MM-DD",
+      "theme": "short focus theme e.g. Finance & admin",
+      "tasks": [
+        {
+          "title": "exact task title",
+          "urgency": "urgent|high|med|low",
+          "why": "brief reason for this day"
+        }
+      ],
+      "note": "optional coaching note for this day"
+    }
+  ],
+  "weekly_tip": "one actionable tip for the week based on what you see"
+}`;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages:[{role:'user',content:prompt}]})
+    });
+    const data=await resp.json();
+    const raw=data.content?.filter(x=>x.type==='text').map(x=>x.text).join('')||'';
+    const clean=raw.replace(/```json|```/g,'').trim();
+    const j=JSON.parse(clean);
+    if(mode==='day')renderDayPlan(j);
+    else renderWeekPlan(j);
+  }catch(e){
+    out.innerHTML=`<div class="ins-err">Couldn't generate a plan just now. Check your connection and try again.</div>`;
+  }
+  btn.textContent=mode==='day'?'Plan today':'Plan this week';
+  btn.disabled=false;
+}
+
+function renderDayPlan(j){
+  const out=$('planOut');
+  const urgColors={urgent:'var(--rose)',high:'var(--amber)',med:'var(--mint)',low:'var(--text-dim)'};
+  let html=`<div class="panel" style="margin-bottom:20px">
+    <div class="p-head"><div class="p-title">Today's plan</div><div class="hint">${esc(j.time_estimate||'')}</div></div>
+    <div class="p-body">
+      <div style="font-size:13.5px;color:var(--text-mid);line-height:1.6;margin-bottom:16px;font-style:italic">${esc(j.greeting||'')}</div>`;
+  (j.blocks||[]).forEach(block=>{
+    html+=`<div class="plan-day-label">${esc(block.time)}</div>`;
+    (block.tasks||[]).forEach((t,i)=>{
+      html+=`<div class="plan-item ${t.urgency||'med'}">
+        <div class="plan-num">${t.rank||i+1}</div>
+        <div class="plan-body">
+          <div class="plan-title">${esc(t.title)}</div>
+          <div class="plan-why">${esc(t.why||'')}</div>
+          <div class="plan-chips">
+            <span class="pri ${t.urgency||'med'}">${t.urgency||'med'}</span>
+            ${t.est?`<span class="badge auto" style="font-size:10px">${esc(t.est)}</span>`:''}
+          </div>
+        </div>
+      </div>`;
+    });
+  });
+  if(j.skip_today&&j.skip_today.length){
+    html+=`<div style="margin-top:14px;padding:10px 12px;background:var(--panel-hi);border-radius:8px;font-size:12.5px;color:var(--text-dim)">
+      <span style="font-weight:500;color:var(--text-mid)">Leave for later:</span> ${j.skip_today.map(t=>esc(t)).join(', ')}
+      ${j.skip_reason?`<div style="margin-top:4px;font-style:italic">${esc(j.skip_reason)}</div>`:''}
+    </div>`;
+  }
+  html+=`</div></div>`;
+  out.innerHTML=html;
+}
+
+function renderWeekPlan(j){
+  const out=$('planOut');
+  let html=`<div class="panel" style="margin-bottom:20px">
+    <div class="p-head"><div class="p-title">Week plan</div></div>
+    <div class="p-body">
+      <div style="font-size:13.5px;color:var(--text-mid);line-height:1.6;margin-bottom:18px;font-style:italic">${esc(j.overview||'')}</div>`;
+  (j.days||[]).forEach(day=>{
+    if(!day.tasks||!day.tasks.length)return;
+    html+=`<div class="plan-day-label">${esc(day.day)}${day.date?` <span style="font-weight:400;color:var(--text-dim)">${day.date}</span>`:''} ${day.theme?`<span style="font-weight:400;color:var(--violet);margin-left:4px">· ${esc(day.theme)}</span>`:''}`;
+    html+=`</div>`;
+    day.tasks.forEach((t,i)=>{
+      html+=`<div class="plan-item ${t.urgency||'med'}">
+        <div class="plan-num">${i+1}</div>
+        <div class="plan-body">
+          <div class="plan-title">${esc(t.title)}</div>
+          ${t.why?`<div class="plan-why">${esc(t.why)}</div>`:''}
+          <div class="plan-chips"><span class="pri ${t.urgency||'med'}">${t.urgency||'med'}</span></div>
+        </div>
+      </div>`;
+    });
+    if(day.note)html+=`<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:4px 6px 10px">${esc(day.note)}</div>`;
+  });
+  if(j.weekly_tip){
+    html+=`<div style="margin-top:8px;padding:12px 14px;background:rgba(91,168,245,.07);border:1px solid rgba(91,168,245,.2);border-radius:8px;font-size:13px;color:var(--blue)">
+      💡 ${esc(j.weekly_tip)}</div>`;
+  }
+  html+=`</div></div>`;
+  out.innerHTML=html;
+}
+
+$('bPlanDay').onclick=()=>runPlanner('day');
+$('bPlanWeek').onclick=()=>runPlanner('week');
+
 cacheShell();
 if(!navigator.onLine)updateConnStatus();
 loadStaples();
