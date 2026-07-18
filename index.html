@@ -326,29 +326,29 @@ input,select,textarea{font-family:inherit;color:inherit}
 .mom-foot{display:flex;justify-content:space-between;margin-top:8px;gap:8px;flex-wrap:wrap}
 .mom-stat{font-family:var(--mono);font-size:10px;color:var(--text-dim)}
 .mom-stat b{color:var(--text);font-weight:600;font-size:12px}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+.wk-nav{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.wk-nav button{width:32px;height:32px;border-radius:8px;border:1px solid var(--line-soft);background:var(--panel);color:var(--text-mid);display:flex;align-items:center;justify-content:center;transition:.15s}
+.wk-nav button:hover:not(:disabled){background:var(--panel-hi);color:var(--text)}
+.wk-nav button:disabled{opacity:.3;cursor:default}
+.wk-range{flex:1}
+.wk-range .r1{font-family:var(--display);font-size:19px;font-weight:600;letter-spacing:-0.01em}
+.wk-range .r2{font-family:var(--mono);font-size:10.5px;color:var(--text-dim);letter-spacing:.06em;margin-top:3px}
+.wk-scorecard{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.wk-net{background:var(--panel);border:1px solid var(--line-soft);border-radius:var(--radius);padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.wk-net-num{font-family:var(--display);font-size:34px;font-weight:600;letter-spacing:-0.02em;line-height:1}
+.wk-net-txt{flex:1;min-width:180px}
+.wk-net-txt .h{font-size:14px;font-weight:500;margin-bottom:4px}
+.wk-net-txt .s{font-size:12.5px;color:var(--text-mid);line-height:1.55}
+.wk-scale{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--panel-hi);min-width:150px;flex:1}
+.wk-scale i{display:block;height:100%}
+.wk-item{display:flex;align-items:flex-start;gap:10px;padding:9px 8px;border-radius:7px;transition:.14s}
+.wk-item:hover{background:var(--panel-hi)}
+.wk-ico{font-family:var(--mono);font-size:11px;flex-shrink:0;padding-top:2px}
+.wk-t{font-size:13px;line-height:1.4;flex:1;min-width:0}
+.wk-d{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:3px;letter-spacing:.04em}
+.wk-done .wk-ico{color:var(--mint)}
+.wk-slip .wk-ico{color:var(--rose)}
+.wk-ahead .wk-ico{color:var(--sky)}
 .rev-out{margin-top:16px}
 .scrim{position:fixed;inset:0;background:rgba(6,8,11,.72);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .24s;z-index:40}
 .scrim.on{opacity:1;pointer-events:auto}
@@ -401,23 +401,11 @@ input,select,textarea{font-family:inherit;color:inherit}
 .ins-blind{border-left:2px solid var(--violet)}
 .ins-blind .ins-idx{color:var(--violet)}
 .ins-err{background:rgba(242,88,106,.09);border:1px solid rgba(242,88,106,.28);border-radius:8px;padding:13px;font-size:13px;color:var(--rose)}
-.plan-section{margin-bottom:20px}
-.plan-day-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--text-dim);margin-bottom:10px;display:flex;align-items:center;gap:8px}
-.plan-day-label::after{content:'';flex:1;height:1px;background:var(--line-soft)}
-.plan-item{display:flex;gap:12px;align-items:flex-start;padding:11px 13px;background:var(--panel);border:1px solid var(--line-soft);border-radius:9px;margin-bottom:7px}
-.plan-num{font-family:var(--display);font-size:18px;font-weight:600;color:var(--text-dim);min-width:24px;line-height:1.3}
-.plan-item.urgent .plan-num{color:var(--rose)}
-.plan-item.high .plan-num{color:var(--amber)}
-.plan-item.med .plan-num{color:var(--mint)}
-.plan-body{flex:1;min-width:0}
-.plan-title{font-size:14px;font-weight:450;margin-bottom:4px}
-.plan-why{font-size:12px;color:var(--text-dim);line-height:1.5}
-.plan-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .ins-note{font-family:var(--mono);font-size:10px;color:var(--text-dim);text-align:center;margin-top:22px;line-height:1.6}
 .toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,90px);background:var(--panel-hi);border:1px solid var(--line);border-radius:8px;padding:10px 16px;font-size:12.5px;z-index:90;transition:transform .28s cubic-bezier(.3,0,.2,1);box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:calc(100% - 30px);text-align:center}
 .toast.on{transform:translate(-50%,0)}
 @media(max-width:900px){
- .kpis,
+ .kpis,.wk-scorecard{grid-template-columns:repeat(2,1fr)}
  .bill-kpis{grid-template-columns:repeat(2,1fr)}
  .grid2,.grid2b{grid-template-columns:1fr}
  .hz-grid{gap:5px;height:96px}
@@ -465,65 +453,65 @@ input,select,textarea{font-family:inherit;color:inherit}
 .note-edit-area:focus{border-color:var(--mint)}
 .recipe-layout{display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start}
 @media(max-width:960px){.recipe-layout{grid-template-columns:1fr}}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+.rx-filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px;align-items:center}
+.rx-chip{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:5px 12px;border-radius:20px;border:1px solid var(--line-soft);background:var(--panel);color:var(--text-dim);cursor:pointer;transition:.14s}
+.rx-chip:hover{border-color:var(--line);color:var(--text-mid)}
+.rx-chip.on{background:var(--panel-hi);border-color:var(--line);color:var(--text)}
+.rx-search{flex:1;min-width:150px;background:var(--panel);border:1px solid var(--line-soft);border-radius:7px;height:34px;padding:0 11px;font-size:13px;outline:none}
+.rx-search:focus{border-color:var(--line)}
+.rx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px;margin-bottom:24px}
+.rx-card{background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;overflow:hidden;cursor:pointer;transition:.15s;position:relative}
+.rx-card:hover{border-color:var(--line);transform:translateY(-1px)}
+.rx-card.planned{border-color:var(--mint);box-shadow:0 0 0 1px var(--mint)}
+.rx-band{height:5px}
+.rx-body{padding:13px}
+.rx-name{font-size:14.5px;font-weight:500;line-height:1.35;margin-bottom:6px}
+.rx-desc{font-size:12px;color:var(--text-mid);line-height:1.5;margin-bottom:9px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.rx-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rx-time{font-family:var(--mono);font-size:10px;color:var(--text-dim)}
+.rx-tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:var(--panel-hi);color:var(--text-dim);border:1px solid var(--line-soft)}
+.rx-add-btn{position:absolute;top:11px;right:11px;width:26px;height:26px;border-radius:6px;background:var(--panel-hi);border:1px solid var(--line-soft);color:var(--text-dim);display:flex;align-items:center;justify-content:center;font-size:14px;transition:.14s}
+.rx-card:hover .rx-add-btn{border-color:var(--mint);color:var(--mint)}
+.rx-card.planned .rx-add-btn{background:var(--mint);border-color:var(--mint);color:#08120F}
 /* recipe detail modal */
-
-
-
-
-
-
-
-@media(max-width:600px){}
-
-
-
-
-
-
-
-
+.rx-modal{position:fixed;inset:0;z-index:80;display:none;align-items:flex-start;justify-content:center;padding:24px 16px;background:rgba(6,8,11,.8);backdrop-filter:blur(4px);overflow-y:auto}
+.rx-modal.on{display:flex}
+.rx-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;width:min(680px,100%);margin:auto;display:flex;flex-direction:column}
+.rx-box-head{padding:20px;border-bottom:1px solid var(--line-soft);display:flex;gap:14px;align-items:flex-start}
+.rx-box-title{font-family:var(--display);font-size:22px;font-weight:600;letter-spacing:-0.01em;flex:1;min-width:0}
+.rx-box-meta{display:flex;gap:9px;flex-wrap:wrap;margin-top:7px}
+.rx-box-body{padding:20px;display:grid;grid-template-columns:1fr 1.2fr;gap:24px}
+@media(max-width:600px){.rx-box-body{grid-template-columns:1fr}}
+.rx-section-h{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;font-weight:600}
+.rx-ing{display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--line-soft);font-size:13px}
+.rx-ing:last-child{border-bottom:none}
+.rx-amt{font-family:var(--mono);font-size:11.5px;color:var(--mint);min-width:42px;flex-shrink:0}
+.rx-step{display:flex;gap:10px;padding:8px 0;font-size:13px;color:var(--text-mid);line-height:1.6;border-bottom:1px solid var(--line-soft)}
+.rx-step:last-child{border-bottom:none}
+.rx-step-n{font-family:var(--mono);font-size:10px;color:var(--text-dim);min-width:18px;padding-top:3px;font-weight:600}
+.rx-box-foot{padding:14px 20px;border-top:1px solid var(--line-soft);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 /* meal plan sidebar */
-
+.rx-sidebar{position:sticky;top:24px}
 .plan-empty{text-align:center;padding:36px 10px;color:var(--text-dim)}
-
-
+.plan-empty .big{font-family:var(--display);font-size:14px;color:var(--text-mid);margin-bottom:5px}
+.plan-empty .small{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em}
 .plan-item{display:flex;align-items:center;gap:10px;padding:9px;border-radius:7px;background:var(--panel-hi);border:1px solid var(--line-soft);margin-bottom:6px;font-size:13px}
 .plan-item .pi-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .plan-item .pi-cat{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim)}
 .plan-item button{color:var(--text-dim);font-size:14px;flex-shrink:0;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center}
 .plan-item button:hover{background:var(--panel-hover);color:var(--rose)}
 /* shopping list */
-
-
-
-
-
-
-
-
-
-
-
+.shop-section{margin-bottom:16px}
+.shop-sec-h{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:7px;font-weight:600;display:flex;align-items:center;gap:8px}
+.shop-sec-h::after{content:'';flex:1;height:1px;background:var(--line-soft)}
+.shop-item{display:flex;align-items:center;gap:10px;padding:8px 4px;border-radius:6px;transition:.14s;cursor:pointer}
+.shop-item:hover{background:var(--panel-hi)}
+.shop-item.got{opacity:.4}
+.shop-item.got .si-name{text-decoration:line-through}
+.shop-cb{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--text-dim);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.14s}
+.shop-item.got .shop-cb{background:var(--mint);border-color:var(--mint)}
+.shop-cb svg{width:11px;height:11px;stroke:#08120F;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;display:none}
+.shop-item.got .shop-cb svg{display:block}
 .si-name{flex:1;font-size:13px;min-width:0}
 .si-amt{font-family:var(--mono);font-size:11px;color:var(--text-dim);text-align:right;flex-shrink:0}
 .pin-screen{position:fixed;inset:0;background:var(--void);z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0}
@@ -723,38 +711,55 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 .pdf-opt .ot{font-size:13.5px;font-weight:500;margin-bottom:4px}
 .pdf-opt .od{font-size:12px;color:var(--text-dim);line-height:1.45}
 .pdf-foot{padding:14px 18px;border-top:1px solid var(--line-soft);display:flex;justify-content:flex-end}
+/* ---- STATUS FIELD ---- */
+.status-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.status-badge.inprogress{background:rgba(91,168,245,.12);color:var(--blue)}
+.status-badge.blocked{background:rgba(242,88,106,.12);color:var(--rose)}
 /* ---- KANBAN ---- */
-.kb-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0 14px;border-bottom:1px solid var(--line-soft);margin-bottom:16px}
+.kb-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0 14px;border-bottom:1px solid var(--line-soft);margin-bottom:16px}
 .kb-filter-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .kb-filter-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);white-space:nowrap}
 .kb-board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start}
 @media(max-width:700px){.kb-board{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:420px){.kb-board{grid-template-columns:1fr}}
-.kb-col{background:var(--panel-hi);border-radius:10px;padding:10px;min-height:200px;transition:.14s}
-.kb-col-head{border-top:2px solid var(--line);padding-bottom:10px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.kb-col{background:var(--panel-hi);border-radius:10px;padding:10px;min-height:200px;transition:background .14s}
+.kb-col.drop-target{background:rgba(77,217,176,.06);outline:1px dashed rgba(77,217,176,.4);border-radius:10px}
+.kb-col-head{border-top:2px solid var(--line);padding-bottom:10px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;margin-top:4px}
 .kb-col-title{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--text-mid)}
 .kb-col-count{font-family:var(--mono);font-size:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1px 7px;color:var(--text-dim)}
 .kb-cards{display:flex;flex-direction:column;gap:8px;min-height:80px}
 .kb-card{background:var(--panel);border:1px solid var(--line-soft);border-radius:8px;padding:10px 12px 10px 15px;cursor:grab;transition:border-color .14s,transform .14s;position:relative;user-select:none}
 .kb-card:hover{border-color:var(--line);transform:translateY(-1px)}
-.kb-card.dragging{opacity:.35;cursor:grabbing;transform:rotate(1deg)}
+.kb-card.dragging{opacity:.35;cursor:grabbing;transform:rotate(1deg) scale(.98)}
 .kb-card.drag-over{border-color:var(--mint);box-shadow:0 0 0 2px rgba(77,217,176,.2)}
-.kb-col.drop-target{background:rgba(77,217,176,.06);border:1px dashed rgba(77,217,176,.4);border-radius:10px}
-.kb-card-title{font-size:13px;font-weight:450;line-height:1.4;margin-bottom:7px}
+.kb-card-title{font-size:13px;font-weight:450;line-height:1.4;margin-bottom:7px;cursor:pointer}
+.kb-card-title:hover{color:var(--mint)}
 .kb-card-meta{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
 .kb-pri-bar{position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:3px}
 .kb-pri-bar.high{background:var(--rose)}
 .kb-pri-bar.med{background:var(--amber)}
 .kb-pri-bar.low{background:var(--line)}
 .kb-empty{text-align:center;padding:24px 10px;color:var(--text-dim);font-family:var(--mono);font-size:10px;letter-spacing:.06em}
-.kb-filter-active{color:var(--mint)!important;border-color:rgba(77,217,176,.4)!important}
 /* ---- INSIGHTS TABS ---- */
-.ins-tabs{display:flex;gap:0;margin-bottom:0;border-bottom:1px solid var(--line-soft)}
+.ins-tabs{display:flex;gap:0;border-bottom:1px solid var(--line-soft);margin-bottom:0}
 .ins-tab{padding:9px 18px;border:none;border-bottom:2px solid transparent;font-size:13px;font-weight:450;color:var(--text-dim);cursor:pointer;background:transparent;transition:.14s}
 .ins-tab:hover{color:var(--text)}
-.ins-tab.on{color:var(--mint);border-bottom-color:var(--mint)}
+.ins-tab.on{color:var(--mint);border-bottom-color:var(--mint);font-weight:500}
 .ins-panel{display:none;padding-top:20px}
 .ins-panel.on{display:block}
+/* ---- PLANNER ---- */
+.plan-day-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--text-dim);margin:14px 0 8px;display:flex;align-items:center;gap:8px}
+.plan-day-label::after{content:'';flex:1;height:1px;background:var(--line-soft)}
+.plan-item{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;background:var(--panel);border:1px solid var(--line-soft);border-radius:9px;margin-bottom:7px;cursor:grab;transition:border-color .14s}
+.plan-item:hover{border-color:var(--line)}
+.plan-item.drag-over{border-color:var(--mint);background:rgba(77,217,176,.04)}
+.plan-num{font-family:var(--display);font-size:18px;font-weight:600;color:var(--text-dim);min-width:24px;line-height:1.3;flex-shrink:0}
+.plan-body{flex:1;min-width:0}
+.plan-title{font-size:14px;font-weight:450;margin-bottom:4px}
+.plan-why{font-size:12px;color:var(--text-dim);line-height:1.5}
+.plan-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+.plan-remove{background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:0 2px;flex-shrink:0;line-height:1}
+.plan-remove:hover{color:var(--rose)}
 </style>
 </head>
 <body>
@@ -788,7 +793,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v17</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v18</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -807,12 +812,15 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
       <button class="tab on" data-v="tasks">Tasks</button>
       <button class="tab" data-v="kanban">Kanban</button>
       <button class="tab" data-v="bills">Bills</button>
+      <button class="tab" data-v="notes">Notes</button>
       <button class="tab" data-v="dash">Dashboard</button>
+      <button class="tab" data-v="week">Weekly Review</button>
       <button class="tab" data-v="ins">Insights</button>
     </div>
     <button class="btn btn-sm" id="bFocus" style="white-space:nowrap">🎯 Focus mode</button>
     <button class="btn btn-sm" id="bTemplates" style="white-space:nowrap">📋 Templates</button>
-    </div>
+    <button class="btn btn-sm" id="bPdfExport" style="white-space:nowrap">📄 Export PDF</button>
+  </div>
 
   <!-- FOCUS MODE OVERLAY -->
   <div class="focus-overlay" id="focusOverlay">
@@ -880,7 +888,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
   <!-- ===== KANBAN ===== -->
   <div class="view" id="v-kanban">
     <div class="kb-filters">
-      <input class="search" id="kbQ" placeholder="Search cards…" style="max-width:200px">
+      <input class="search" id="kbQ" placeholder="Search cards…" style="max-width:180px;flex-shrink:0">
       <div class="kb-filter-group">
         <span class="kb-filter-label">Priority</span>
         <div class="seg" id="kbPri">
@@ -904,27 +912,25 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
       </div>
       <div class="kb-filter-group">
         <span class="kb-filter-label">Category</span>
-        <div class="seg" id="kbCat">
-          <button class="on" data-kc="all">All</button>
-        </div>
+        <div class="seg" id="kbCat"><button class="on" data-kc="all">All</button></div>
       </div>
-      <button class="btn btn-sm" id="kbClearFilters" style="color:var(--text-dim)">Clear filters</button>
+      <button class="btn btn-sm" id="kbClear" style="color:var(--text-dim);margin-left:auto">Clear filters</button>
     </div>
-    <div class="kb-board" id="kbBoard">
+    <div class="kb-board">
       <div class="kb-col" data-col="todo">
-        <div class="kb-col-head"><span class="kb-col-title">To Do</span><span class="kb-col-count" id="kbCount-todo">0</span></div>
+        <div class="kb-col-head"><span class="kb-col-title">To Do</span><span class="kb-col-count" id="kbCnt-todo">0</span></div>
         <div class="kb-cards" id="kbCards-todo"></div>
       </div>
       <div class="kb-col" data-col="inprogress">
-        <div class="kb-col-head" style="border-top-color:var(--blue)"><span class="kb-col-title" style="color:var(--blue)">In Progress</span><span class="kb-col-count" id="kbCount-inprogress">0</span></div>
+        <div class="kb-col-head" style="border-top-color:var(--blue)"><span class="kb-col-title" style="color:var(--blue)">In Progress</span><span class="kb-col-count" id="kbCnt-inprogress">0</span></div>
         <div class="kb-cards" id="kbCards-inprogress"></div>
       </div>
       <div class="kb-col" data-col="blocked">
-        <div class="kb-col-head" style="border-top-color:var(--rose)"><span class="kb-col-title" style="color:var(--rose)">Blocked</span><span class="kb-col-count" id="kbCount-blocked">0</span></div>
+        <div class="kb-col-head" style="border-top-color:var(--rose)"><span class="kb-col-title" style="color:var(--rose)">Blocked</span><span class="kb-col-count" id="kbCnt-blocked">0</span></div>
         <div class="kb-cards" id="kbCards-blocked"></div>
       </div>
       <div class="kb-col" data-col="done">
-        <div class="kb-col-head" style="border-top-color:var(--mint)"><span class="kb-col-title" style="color:var(--mint)">Done</span><span class="kb-col-count" id="kbCount-done">0</span></div>
+        <div class="kb-col-head" style="border-top-color:var(--mint)"><span class="kb-col-title" style="color:var(--mint)">Done</span><span class="kb-col-count" id="kbCnt-done">0</span></div>
         <div class="kb-cards" id="kbCards-done"></div>
       </div>
     </div>
@@ -979,6 +985,83 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
       <button class="btn" id="bIcs">📅 Export to calendar</button>
     </div>
     <div id="billZone"></div>
+  </div>
+
+  <!-- ===== NOTES ===== -->
+  <div class="view" id="v-notes">
+    <div class="note-composer">
+      <input class="note-title-in" id="nTitle" placeholder="Note title…" maxlength="120">
+      <div class="comp-row" style="margin-top:10px">
+        <div class="field"><label>Cat</label><select id="nCat"></select></div>
+        <div class="field"><label>Task link</label><select id="nTask"><option value="">None</option></select></div>
+        <button class="btn" id="nPin" title="Pin note">📌 Pin</button>
+        <button class="btn btn-go" id="nAdd">Add note</button>
+      </div>
+      <textarea class="note-body-in" id="nBody" placeholder="Write anything — context, research, running thoughts, links…"></textarea>
+    </div>
+    <div class="toolbar">
+      <input class="search" id="nq" placeholder="Search notes…">
+      <div class="seg" id="segNotes">
+        <button class="on" data-ns="all">All</button>
+        <button data-ns="pinned">Pinned</button>
+        <button data-ns="linked">Linked</button>
+      </div>
+    </div>
+    <div id="noteZone"></div>
+  </div>
+
+  <!-- ===== RECIPES ===== -->
+  <div class="view" id="v-recipes">
+    <div class="recipe-layout">
+      <div>
+        <div class="rx-filters">
+          <input class="rx-search" id="rxq" placeholder="Search recipes…">
+          <span class="rx-chip on" data-rx="all">All</span>
+          <span class="rx-chip" data-rx="breakfast">Breakfast</span>
+          <span class="rx-chip" data-rx="lunch">Lunch</span>
+          <span class="rx-chip" data-rx="dinner">Dinner</span>
+          <span class="rx-chip" data-rx="snack">Snack</span>
+          <span class="rx-chip" data-rx="soup">Soup</span>
+        </div>
+        <div class="rx-grid" id="rxGrid"></div>
+      </div>
+      <div class="rx-sidebar">
+        <div class="panel" style="margin-bottom:14px">
+          <div class="p-head">
+            <div class="p-title">Meal plan</div>
+            <div class="hint" id="planCount">0 recipes</div>
+          </div>
+          <div class="p-body" style="padding:10px">
+            <div id="planList"></div>
+            <button class="btn btn-go" id="bShop" style="width:100%;justify-content:center;margin-top:10px" disabled>🛒 Generate shopping list</button>
+          </div>
+        </div>
+        <!-- STAPLES LIST -->
+        <div class="panel staples-panel">
+          <div class="p-head">
+            <div class="p-title">Grocery staples</div>
+            <button class="btn btn-sm" id="bStaplesReset" style="font-size:11px">Uncheck all</button>
+          </div>
+          <div class="p-body" style="padding:10px">
+            <div class="staple-add-row">
+              <input id="stapleInput" placeholder="Add item (e.g. milk)…" maxlength="60">
+              <div class="field" style="height:34px"><label>Aisle</label>
+                <select id="stapleSection" style="font-size:12px">
+                  <option value="produce">Produce</option>
+                  <option value="dairy" selected>Dairy</option>
+                  <option value="proteins">Proteins</option>
+                  <option value="pantry">Pantry</option>
+                  <option value="frozen">Frozen</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <button class="btn btn-go btn-sm" id="bStapleAdd" style="margin-left:0">Add</button>
+            </div>
+            <div id="stapleList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ===== DASHBOARD ===== -->
@@ -1055,7 +1138,6 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
     <div class="rev-out" id="revOut"></div>
   </div>
 
-
   <!-- ===== INSIGHTS ===== -->
   <div class="view" id="v-ins">
     <div class="ins-tabs">
@@ -1063,33 +1145,27 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
       <button class="ins-tab" data-it="week">📆 This Week</button>
       <button class="ins-tab" data-it="board">🔍 Board Review</button>
     </div>
-
-    <!-- TODAY PLAN -->
     <div class="ins-panel on" id="it-today">
       <div class="ins-hero">
         <h2>Plan my day</h2>
-        <p>Claude looks at everything due and your priorities, then gives you a ranked order of what to tackle today — with time estimates and reasoning.</p>
+        <p>Claude looks at everything due and your priorities, then gives you a ranked order of what to tackle today with time estimates and reasoning. Drag to reorder, × to remove.</p>
         <button class="btn-ai" id="bPlanDay">Generate today's plan</button>
       </div>
       <div id="planDayOut"></div>
     </div>
-
-    <!-- WEEK PLAN -->
     <div class="ins-panel" id="it-week">
       <div class="ins-hero">
         <h2>Plan this week</h2>
-        <p>Claude spreads your tasks across the days ahead with a daily theme, coaching notes, and a tip for the week based on your actual load.</p>
+        <p>Claude spreads your tasks across the days ahead with themes, coaching notes, and a weekly tip. Drag items to reorder, × to remove from plan.</p>
         <button class="btn-ai" id="bPlanWeek" style="background:linear-gradient(135deg,var(--violet),var(--blue))">Generate week plan</button>
       </div>
       <div id="planWeekOut"></div>
     </div>
-
-    <!-- BOARD REVIEW -->
     <div class="ins-panel" id="it-board">
       <div class="ins-hero">
         <h2>Read the board for me</h2>
         <p>Claude looks at what's aging, what you keep pushing, what's sitting untouched, and what bills are landing — then tells you what's actually stuck, why, and what to do first.</p>
-        <button class="btn-ai" id="bGen" style="background:linear-gradient(135deg,var(--rose),var(--amber))">Generate board review</button>
+        <button class="btn-ai" id="bGen">Generate board review</button>
       </div>
       <div id="insOut"></div>
     </div>
@@ -1510,7 +1586,6 @@ function normalize(t){
  t.subtasks=(t.subtasks||[]).map(s=>({id:s.id||uid(),title:s.title,done:!!s.done,notes:s.notes||''}));
  t.repeat=t.repeat||'none';
  t.pushes=t.pushes||0;
- t.status=t.done?'done':(t.status||'todo');
  return t;
 }
 async function load(){
@@ -1937,9 +2012,8 @@ function addTask(){
  if(!title){$('cTitle').focus();return}
  S.tasks.unshift({id:uid(),title,cat:$('cCat').value,pri:$('cPri').value,due:$('cDue').value,
  repeat:$('cRep').value,notes:$('cNotes').value.trim(),done:false,
- status:$('cStatus').value||'todo',
  created:Date.now(),touched:Date.now(),pushes:0,subtasks:staged.slice()});
- $('cTitle').value='';$('cNotes').value='';$('cDue').value='';$('cRep').value='none';$('cStatus').value='todo';
+ $('cTitle').value='';$('cNotes').value='';$('cDue').value='';$('cRep').value='none';
  $('cStage').classList.remove('on');
  staged=[];renderStage();save();renderAll();toast('Task added');
 }
@@ -2061,15 +2135,10 @@ function taskHTML(t){
  </select></div>
  <div class="field"><label>Due</label><input type="date" data-edue="${t.id}" value="${t.due||''}"></div>
  <div class="field"><label>Repeat</label><select data-erep="${t.id}">${repOpts}</select></div>
- <div class="field"><label>Status</label><select data-estatus="${t.id}">
- <option value="todo" ${(t.status||'todo')==='todo'?'selected':''}>To Do</option>
- <option value="inprogress" ${t.status==='inprogress'?'selected':''}>In Progress</option>
- <option value="blocked" ${t.status==='blocked'?'selected':''}>Blocked</option>
- </select></div>
  <button class="btn btn-go" data-esave="${t.id}">Save</button>
  <button class="btn" data-ecancel="${t.id}">Cancel</button>
  </div>
- <textarea class="te-notes" data-enotes="${t.id}" placeholder="Notes…" style="min-height:160px;resize:vertical">${esc(t.notes||'')}</textarea>
+ <textarea class="te-notes" data-enotes="${t.id}" placeholder="Notes…">${esc(t.notes||'')}</textarea>
  </div>
  </div>`;
 }
@@ -2131,8 +2200,6 @@ function wireTasks(){
  t.pri=document.querySelector(`[data-epri="${id}"]`).value;
  t.due=nd;
  t.repeat=document.querySelector(`[data-erep="${id}"]`).value;
- const statusEl=document.querySelector(`[data-estatus="${id}"]`);
- if(statusEl)t.status=statusEl.value;
  t.notes=document.querySelector(`[data-enotes="${id}"]`).value.trim();
  touch(t);editing=null;save();renderAll();toast('Saved');
  });
@@ -2423,11 +2490,135 @@ function renderPmx(){
  }).join('');
  document.querySelectorAll('[data-pri]').forEach(el=>el.onclick=()=>drillPri(el.dataset.pri));
 }
-function renderDash(){renderKPIs();renderHorizon();renderDonut();renderPbars();renderAging();renderMomentum();renderPmx();}
+function renderDash(){renderStreak();renderKPIs();renderHorizon();renderDonut();renderPbars();renderAging();renderMomentum();renderPmx();renderBillChart();}
 
-;
-;
-;
+function weekBounds(offset){
+ const d=today0();
+ const dow=(d.getDay()+6)%7;                 /* Monday = 0 */
+ const start=new Date(d.getTime()-dow*DAY+offset*7*DAY);
+ const end=new Date(start.getTime()+7*DAY);
+ return {start,end};
+}
+function weekData(offset){
+ const {start,end}=weekBounds(offset);
+ const s=start.getTime(),e=end.getTime();
+ const done=S.tasks.filter(t=>t.done&&t.completed&&t.completed>=s&&t.completed<e);
+ const created=S.tasks.filter(t=>t.created&&t.created>=s&&t.created<e);
+ const slipped=S.tasks.filter(t=>!t.done&&t.due&&parseDue(t.due)>=start&&parseDue(t.due)<end&&dayDiff(parseDue(t.due))<0);
+ const paid=[];
+ S.bills.forEach(b=>(b.history||[]).forEach(h=>{
+ if(h.paid>=s&&h.paid<e)paid.push({name:b.name,amount:h.amount,paid:h.paid});
+ }));
+ const {start:ns}=weekBounds(offset+1);
+ const ne=new Date(ns.getTime()+7*DAY);
+ const ahead=S.tasks.filter(t=>!t.done&&t.due&&parseDue(t.due)>=ns&&parseDue(t.due)<ne);
+ const billsAhead=S.bills.filter(b=>!b.paused&&b.due&&parseDue(b.due)>=ns&&parseDue(b.due)<ne);
+ return {start,end,done,created,slipped,paid,ahead,billsAhead};
+}
+function renderWeek(){
+ const w=weekData(wkOffset);
+ const f=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+ const endShow=new Date(w.end.getTime()-DAY);
+ $('wkR1').textContent=wkOffset===0?'This week':(wkOffset===-1?'Last week':`${Math.abs(wkOffset)} weeks ago`);
+ $('wkR2').textContent=`${f(w.start).toUpperCase()} — ${f(endShow).toUpperCase()}`;
+ $('wkNext').disabled=wkOffset>=0;
+ const net=w.created.length-w.done.length;
+ const paidTotal=w.paid.reduce((a,b)=>a+Number(b.amount||0),0);
+ const k=(cls,lab,num,sub)=>`<div class="kpi ${cls}"><div class="k-lab">${lab}</div><div class="k-num">${num}</div><div class="k-sub">${sub}</div></div>`;
+ $('wkScore').innerHTML=
+ k('good','Shipped',w.done.length,'tasks completed')+
+ k('','Added',w.created.length,'new tasks in')+
+ k(w.slipped.length?'alert':'','Slipped',w.slipped.length,w.slipped.length?'due this week, still open':'nothing dropped')+
+ k('','Bills paid',w.paid.length,w.paid.length?money(paidTotal):'none logged');
+ const good=net<=0;
+ const totalMove=Math.max(1,w.done.length+w.created.length);
+ $('wkNet').innerHTML=`
+ <div class="wk-net-num" style="color:${good?'var(--mint)':'var(--amber)'}">${net>0?'+':''}${net}</div>
+ <div class="wk-net-txt">
+ <div class="h">${good?(net===0?'You held the line.':'Your backlog shrank.'):'Your backlog grew.'}</div>
+ <div class="s">${w.done.length} finished, ${w.created.length} added.
+ ${good?(net===0?'In equals out — steady state.':`Net ${Math.abs(net)} fewer open than when the week started.`):`${Math.abs(net)} more open than when the week started. Worth asking whether you're taking on faster than you can clear.`}</div>
+ </div>
+ <div class="wk-scale">
+ <i style="width:${w.done.length/totalMove*100}%;background:var(--mint)"></i>
+ <i style="width:${w.created.length/totalMove*100}%;background:var(--violet)"></i>
+ </div>`;
+ $('wkDoneN').textContent=w.done.length;
+ $('wkDone').innerHTML=w.done.length?w.done.sort((a,b)=>b.completed-a.completed).map(t=>`
+ <div class="wk-item wk-done"><div class="wk-ico">✓</div>
+ <div style="flex:1;min-width:0"><div class="wk-t">${esc(t.title)}</div>
+ <div class="wk-d">${esc(catOf(t.cat).name).toUpperCase()} · ${new Date(t.completed).toLocaleDateString('en-US',{weekday:'short'}).toUpperCase()}</div>
+ </div></div>`).join('')
+ :`<div class="empty" style="padding:34px 10px"><div class="small">NOTHING COMPLETED THIS WEEK</div></div>`;
+ $('wkSlipN').textContent=w.slipped.length;
+ $('wkSlip').innerHTML=w.slipped.length?w.slipped.map(t=>`
+ <div class="wk-item wk-slip"><div class="wk-ico">✕</div>
+ <div style="flex:1;min-width:0"><div class="wk-t">${esc(t.title)}</div>
+ <div class="wk-d">${Math.abs(dayDiff(parseDue(t.due)))}D LATE · ${esc(catOf(t.cat).name).toUpperCase()}${(t.pushes||0)?` · PUSHED ${t.pushes}×`:''}</div>
+ </div></div>`).join('')
+ :`<div class="empty" style="padding:34px 10px"><div class="big" style="color:var(--mint);font-size:14px">Nothing slipped.</div><div class="small">EVERYTHING DUE GOT DONE</div></div>`;
+ const aheadAll=[
+ ...w.billsAhead.map(b=>({t:`${b.name} — ${money(b.amount)}`,d:`BILL · ${parseDue(b.due).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}).toUpperCase()}${b.autopay?' · AUTOPAY':''}`,sort:parseDue(b.due)})),
+ ...w.ahead.map(t=>({t:t.title,d:`${esc(catOf(t.cat).name).toUpperCase()} · ${t.pri.toUpperCase()} · ${parseDue(t.due).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}).toUpperCase()}`,sort:parseDue(t.due)}))
+ ].sort((a,b)=>a.sort-b.sort);
+ $('wkAheadN').textContent=aheadAll.length;
+ $('wkAhead').innerHTML=aheadAll.length?aheadAll.map(x=>`
+ <div class="wk-item wk-ahead"><div class="wk-ico">→</div>
+ <div style="flex:1;min-width:0"><div class="wk-t">${esc(x.t)}</div><div class="wk-d">${x.d}</div></div>
+ </div>`).join('')
+ :`<div class="empty" style="padding:34px 10px"><div class="small">NOTHING SCHEDULED FOR THAT WEEK</div></div>`;
+}
+$('wkPrev').onclick=()=>{wkOffset--;$('revOut').innerHTML='';renderWeek()};
+$('wkNext').onclick=()=>{if(wkOffset<0){wkOffset++;$('revOut').innerHTML='';renderWeek()}};
+$('bRev').onclick=async()=>{
+ const b=$('bRev'),out=$('revOut'),w=weekData(wkOffset);
+ if(!getAKey()){out.innerHTML=`<div class="ins-err">No API key configured. Open ⚙ Settings and paste your Anthropic API key to enable this feature.</div>`;return;}
+ b.disabled=true;b.innerHTML=`<span class="spin"></span> Looking back…`;out.innerHTML='';
+ const payload={
+ week:`${w.start.toDateString()} to ${new Date(w.end.getTime()-DAY).toDateString()}`,
+ completed:w.done.map(t=>({title:t.title,category:catOf(t.cat).name,priority:t.pri})),
+ added:w.created.map(t=>({title:t.title,category:catOf(t.cat).name})),
+ slipped:w.slipped.map(t=>({title:t.title,category:catOf(t.cat).name,days_late:Math.abs(dayDiff(parseDue(t.due))),times_pushed:t.pushes||0})),
+ bills_paid:w.paid.map(p=>({name:p.name,amount:p.amount})),
+ week_ahead_tasks:w.ahead.map(t=>({title:t.title,priority:t.pri,due:t.due})),
+ week_ahead_bills:w.billsAhead.map(x=>({name:x.name,amount:x.amount,due:x.due,autopay:x.autopay})),
+ still_stalled:S.tasks.filter(t=>!t.done&&isStalled(t)).map(t=>({title:t.title,age_days:ageDays(t),days_untouched:idleDays(t),times_pushed:t.pushes||0}))
+ };
+ const prompt=`You are an honest, warm but unsentimental coach writing a weekly retrospective. Here is the person's week:
+${JSON.stringify(payload,null,1)}
+Respond with ONLY JSON, no fences, no preamble:
+{
+ "verdict": "one honest sentence summarizing the week — earned praise if deserved, plain truth if not",
+ "wins": [{"title":"what they actually did","note":"why it mattered, one sentence"}],
+ "drags": [{"title":"what held them back","note":"one or two sentences, specific, citing the numbers"}],
+ "next_week": [{"title":"exact task or bill name","note":"why it belongs at the top of next week"}]
+}
+Rules: wins 1-3 (if the week was genuinely empty, say so honestly rather than inventing praise). drags 1-3. next_week exactly 3, drawn from week_ahead or still_stalled. Reference real titles. Be specific, not generic.`;
+ try{
+ const r=await fetch("https://api.anthropic.com/v1/messages",{
+ method:"POST",headers:{"Content-Type":"application/json","x-api-key":getAKey(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+ body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1400,messages:[{role:"user",content:prompt}]})
+ });
+ const d=await r.json();
+ const txt=d.content.filter(x=>x.type==='text').map(x=>x.text).join('\n').replace(/```json|```/g,'').trim();
+ const j=JSON.parse(txt);
+ out.innerHTML=`
+ <div class="ins-head">${esc(j.verdict)}</div>
+ ${(j.wins||[]).length?`<div class="ins-sec"><div class="p-title">Wins</div>
+ ${j.wins.map(x=>`<div class="ins-card"><div class="ins-idx">✓</div>
+ <div><div class="ins-t">${esc(x.title)}</div><div class="ins-w">${esc(x.note)}</div></div></div>`).join('')}</div>`:''}
+ ${(j.drags||[]).length?`<div class="ins-sec"><div class="p-title">What dragged</div>
+ ${j.drags.map(x=>`<div class="ins-card ins-stall"><div class="ins-idx">⚑</div>
+ <div><div class="ins-t">${esc(x.title)}</div><div class="ins-w">${esc(x.note)}</div></div></div>`).join('')}</div>`:''}
+ ${(j.next_week||[]).length?`<div class="ins-sec"><div class="p-title">Top of next week</div>
+ ${j.next_week.map((x,i)=>`<div class="ins-card ins-win"><div class="ins-idx">0${i+1}</div>
+ <div><div class="ins-t">${esc(x.title)}</div><div class="ins-w">${esc(x.note)}</div></div></div>`).join('')}</div>`:''}
+ <div class="ins-note">Written from this week's board — not stored, not remembered.</div>`;
+ }catch(e){
+ out.innerHTML=`<div class="ins-err">Couldn't write the review just now. Check your connection and try again.</div>`;
+ }
+ b.disabled=false;b.textContent='Rewrite my review';
+};
 
 function itemHTML(t){
  const c=catOf(t.cat),sp=subProg(t),dl2=dueLabel(t),b=bucketOf(t);
@@ -2617,19 +2808,256 @@ function toast(msg){
  clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),2600);
 }
 let noteFilter='all', noteQuery='', pinCompose=false;
+function fillNoteSelects(){
+ const nc=$('nCat'),nt=$('nTask');
+ const cc=nc.value, ct=nt.value;
+ nc.innerHTML=S.cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+ nt.innerHTML=`<option value="">None</option>`+S.tasks.filter(t=>!t.done).map(t=>`<option value="${t.id}">${esc(t.title.slice(0,52))}</option>`).join('');
+ if(cc&&S.cats.some(c=>c.id===cc))nc.value=cc;
+ if(ct)nt.value=ct;
+}
+$('nPin').onclick=()=>{pinCompose=!pinCompose;$('nPin').style.color=pinCompose?'var(--mint)':'';};
+function addNote(){
+ const title=$('nTitle').value.trim();
+ const body=$('nBody').value.trim();
+ if(!title&&!body){$('nTitle').focus();return}
+ S.notes=S.notes||[];
+ S.notes.unshift({id:uid(),title:title||'Untitled',body,cat:$('nCat').value,taskId:$('nTask').value||'',pinned:pinCompose,created:Date.now(),modified:Date.now()});
+ $('nTitle').value='';$('nBody').value='';$('nTask').value='';pinCompose=false;$('nPin').style.color='';
+ save();renderNotes();toast('Note saved');
+}
+$('nAdd').onclick=addNote;
+$('nTitle').onkeydown=e=>{if(e.key==='Enter'&&e.ctrlKey)addNote()};
+$('nq').oninput=e=>{noteQuery=e.target.value;renderNotes()};
+$('segNotes').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+ $('segNotes').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+ b.classList.add('on');noteFilter=b.dataset.ns;renderNotes();
+});
+let openNotes=new Set(), editingNote=null;
+function renderNotes(){
+ fillNoteSelects();
+ const zone=$('noteZone');
+ S.notes=S.notes||[];
+ let list=S.notes.slice();
+ if(noteFilter==='pinned')list=list.filter(n=>n.pinned);
+ if(noteFilter==='linked')list=list.filter(n=>!!n.taskId);
+ if(noteQuery){const q=noteQuery.toLowerCase();list=list.filter(n=>(n.title+' '+n.body).toLowerCase().includes(q))}
+ list.sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(b.modified-a.modified));
+ if(!list.length){
+ zone.innerHTML=`<div class="empty"><div class="big">${noteFilter==='pinned'?'No pinned notes.':'No notes yet.'}</div><div class="small">ADD ONE ABOVE</div></div>`;
+ return;
+ }
+ zone.innerHTML=list.map(n=>{
+ const c=catOf(n.cat), linkedTask=n.taskId?S.tasks.find(t=>t.id===n.taskId):null;
+ const isOpen=openNotes.has(n.id), isEdit=editingNote===n.id;
+ const ts=new Date(n.modified).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+ return `<div class="note-card ${n.pinned?'pinned':''} ${isOpen||isEdit?'open':''}">
+ <div class="note-top">
+ <div class="note-ico">${n.pinned?'📌':'📝'}</div>
+ <div class="note-body-wrap">
+ <div class="note-h">${esc(n.title)}</div>
+ ${!isOpen&&!isEdit?`<div class="note-preview">${esc(n.body)}</div>`:''}
+ <div class="note-meta">
+ <span class="note-tag" style="border-color:${c.color};color:${c.color}">${esc(c.name)}</span>
+ ${linkedTask?`<span class="note-task-link ${linkedTask.done?'done':''}">↗ ${esc(linkedTask.title.slice(0,40))}</span>`:''}
+ <span class="note-ts">${ts}</span>
+ </div>
+ </div>
+ <div class="note-acts">
+ <button class="pin ${n.pinned?'on':''}" data-npin="${n.id}" title="${n.pinned?'Unpin':'Pin'}">📌</button>
+ <button data-nedit="${n.id}" title="Edit">✎</button>
+ <button data-nexp="${n.id}" title="Expand">›</button>
+ <button class="del" data-ndel="${n.id}" title="Delete">×</button>
+ </div>
+ </div>
+ <div class="note-expand">
+ ${isEdit?`
+ <input class="note-title-in" data-entitle="${n.id}" value="${esc(n.title)}" style="font-size:15px;padding:6px 0 10px;margin-bottom:8px">
+ <textarea class="note-edit-area" data-enbody="${n.id}">${esc(n.body)}</textarea>
+ <div style="display:flex;gap:8px;margin-top:10px">
+ <button class="btn btn-go btn-sm" data-ensave="${n.id}">Save</button>
+ <button class="btn btn-sm" data-encancel="${n.id}">Cancel</button>
+ </div>`
+ :`<div class="note-full">${linkify(n.body)}</div>`}
+ </div>
+ </div>`;
+ }).join('');
+ zone.querySelectorAll('[data-npin]').forEach(el=>el.onclick=()=>{
+ const n=S.notes.find(x=>x.id===el.dataset.npin);n.pinned=!n.pinned;save();renderNotes();
+ });
+ zone.querySelectorAll('[data-nexp]').forEach(el=>el.onclick=()=>{
+ const id=el.dataset.nexp;editingNote=null;
+ openNotes.has(id)?openNotes.delete(id):openNotes.add(id);renderNotes();
+ });
+ zone.querySelectorAll('[data-nedit]').forEach(el=>el.onclick=()=>{
+ const id=el.dataset.nedit;openNotes.delete(id);
+ editingNote=editingNote===id?null:id;renderNotes();
+ setTimeout(()=>{const ta=document.querySelector(`[data-enbody="${id}"]`);if(ta)ta.focus()},50);
+ });
+ zone.querySelectorAll('[data-ensave]').forEach(el=>el.onclick=()=>{
+ const id=el.dataset.ensave, n=S.notes.find(x=>x.id===id);
+ const nt=document.querySelector(`[data-entitle="${id}"]`).value.trim();
+ n.title=nt||'Untitled';
+ n.body=document.querySelector(`[data-enbody="${id}"]`).value;
+ n.modified=Date.now();
+ editingNote=null;save();renderNotes();toast('Note updated');
+ });
+ zone.querySelectorAll('[data-encancel]').forEach(el=>el.onclick=()=>{editingNote=null;renderNotes()});
+ zone.querySelectorAll('[data-ndel]').forEach(el=>el.onclick=()=>{
+ if(!confirm('Delete this note?'))return;
+ S.notes=S.notes.filter(x=>x.id!==el.dataset.ndel);
+ openNotes.delete(el.dataset.ndel);save();renderNotes();toast('Note deleted');
+ });
+}
 
-
-
-
-
+const RECIPES=[
+ {id:'rx01',cat:'breakfast',name:'Banana Oat Pancakes',time:15,toddler:true,desc:'Naturally sweet, no syrup needed. Soft, small rounds perfect for little hands.',tags:['no sugar','gluten-free option'],
+ ingredients:[{a:'2',n:'ripe bananas',sec:'produce'},{a:'1 cup',n:'rolled oats',sec:'pantry'},{a:'2',n:'eggs',sec:'dairy'},{a:'½ tsp',n:'cinnamon',sec:'pantry'},{a:'1 tsp',n:'vanilla extract',sec:'pantry'},{a:'1 tsp',n:'coconut oil',sec:'pantry'}],
+ steps:['Blend oats into flour. Mash bananas well in a large bowl.','Mix mashed banana, oat flour, eggs, cinnamon, and vanilla until combined.','Heat coconut oil in a non-stick pan over medium-low heat.','Drop 2-tbsp rounds. Cook 2–3 min until bubbles form on top, flip, cook 1 min more.','Serve with sliced fruit. Makes about 12 small pancakes. Fridge 3 days.']},
+ {id:'rx02',cat:'breakfast',name:'Veggie Egg Muffins',time:25,toddler:true,desc:'Batch-cook Sunday, grab one each morning. Soft, no mess, great for toddlers.',tags:['meal prep','protein'],
+ ingredients:[{a:'6',n:'eggs',sec:'dairy'},{a:'½ cup',n:'diced bell pepper',sec:'produce'},{a:'½ cup',n:'baby spinach, chopped',sec:'produce'},{a:'¼ cup',n:'shredded cheddar',sec:'dairy'},{a:'¼ cup',n:'milk',sec:'dairy'},{a:'pinch',n:'salt',sec:'pantry'}],
+ steps:['Preheat oven to 350°F. Grease a 12-cup muffin tin well.','Whisk eggs with milk and salt.','Fold in diced vegetables and cheese.','Fill muffin cups ¾ full. Bake 18–20 min until set and lightly golden.','Cool 5 min before removing. Store in fridge up to 4 days.']},
+ {id:'rx03',cat:'breakfast',name:'Greek Yogurt Parfait',time:5,toddler:true,desc:'No cooking. Stack yogurt, berries, and oats. Packed with protein and probiotics.',tags:['no cook','quick'],
+ ingredients:[{a:'1 cup',n:'plain Greek yogurt',sec:'dairy'},{a:'½ cup',n:'mixed berries',sec:'produce'},{a:'2 tbsp',n:'granola or rolled oats',sec:'pantry'},{a:'1 tsp',n:'honey (over-2 only)',sec:'pantry'}],
+ steps:['Spoon half the yogurt into a bowl or jar.','Add a layer of berries.','Top with remaining yogurt, then berries again.','Sprinkle granola or oats on top. Drizzle honey if using.','Serve immediately or refrigerate up to 2 hours.']},
+ {id:'rx04',cat:'breakfast',name:'Avocado Toast with Egg',time:10,toddler:true,desc:'Healthy fats and protein. Cut into strips for toddlers — easy to hold.',tags:['protein','healthy fats'],
+ ingredients:[{a:'2 slices',n:'whole grain bread',sec:'pantry'},{a:'1',n:'ripe avocado',sec:'produce'},{a:'2',n:'eggs',sec:'dairy'},{a:'1 tsp',n:'lemon juice',sec:'produce'},{a:'pinch',n:'salt',sec:'pantry'}],
+ steps:['Toast the bread to desired doneness.','Mash avocado with lemon juice and a pinch of salt.','Scramble or fry eggs to preference — scrambled softest for toddlers.','Spread avocado on toast. Top with egg.','Cut into strips for the toddler. Serve immediately.']},
+ {id:'rx05',cat:'lunch',name:'Turkey & Cheese Quesadilla',time:12,toddler:true,desc:'Crispy outside, melty inside. Cut into triangles for little hands.',tags:['protein','kid favorite'],
+ ingredients:[{a:'2',n:'small flour tortillas',sec:'pantry'},{a:'2 oz',n:'sliced turkey breast',sec:'proteins'},{a:'¼ cup',n:'shredded mozzarella',sec:'dairy'},{a:'¼ cup',n:'baby spinach',sec:'produce'},{a:'1 tsp',n:'olive oil',sec:'pantry'}],
+ steps:['Heat olive oil in a pan over medium heat.','Lay one tortilla flat. Layer turkey, cheese, and spinach on half.','Fold tortilla in half over the filling.','Cook 2–3 min per side until golden and cheese is melted.','Cool slightly, then cut into small triangles. Serve with salsa or yogurt dip.']},
+ {id:'rx06',cat:'lunch',name:'Sweet Potato & Black Bean Bowl',time:20,toddler:true,desc:'Filling, colorful, and nutritious. Sweet potato is naturally soft for toddlers.',tags:['vegetarian','fiber'],
+ ingredients:[{a:'1 large',n:'sweet potato, diced',sec:'produce'},{a:'1 can',n:'black beans, rinsed',sec:'pantry'},{a:'½ cup',n:'frozen corn',sec:'pantry'},{a:'1 tsp',n:'cumin',sec:'pantry'},{a:'1 tbsp',n:'olive oil',sec:'pantry'},{a:'¼ cup',n:'shredded cheddar',sec:'dairy'}],
+ steps:['Toss sweet potato with olive oil and cumin. Roast at 400°F for 18 min until soft.','Warm black beans and corn in a pan or microwave.','Assemble bowls: sweet potato, beans, corn.','Top with cheese. Mash sweet potato pieces slightly for toddler.','Optional: add plain yogurt or salsa. Serve warm.']},
+ {id:'rx07',cat:'lunch',name:'Simple Chicken Salad',time:10,toddler:true,desc:'Light and creamy. Serve on bread, crackers, or lettuce cups.',tags:['protein','no cook if using rotisserie'],
+ ingredients:[{a:'2 cups',n:'cooked chicken, shredded',sec:'proteins'},{a:'3 tbsp',n:'plain Greek yogurt',sec:'dairy'},{a:'1 tbsp',n:'mayo',sec:'pantry'},{a:'1 stalk',n:'celery, finely diced',sec:'produce'},{a:'½ tsp',n:'lemon juice',sec:'produce'},{a:'pinch',n:'salt & pepper',sec:'pantry'}],
+ steps:['Shred cooked or rotisserie chicken with two forks.','Mix Greek yogurt, mayo, lemon juice, salt and pepper in a bowl.','Fold in chicken and celery until evenly coated.','Taste and adjust seasoning.','Serve on toast, crackers, or in a wrap. Fridge 3 days.']},
+ {id:'rx08',cat:'lunch',name:'Grilled Cheese & Tomato Soup',time:15,toddler:true,desc:'Classic comfort combo. Use a good quality canned soup for a weeknight shortcut.',tags:['kid favorite','quick'],
+ ingredients:[{a:'2 slices',n:'whole grain bread',sec:'pantry'},{a:'2 slices',n:'American or cheddar cheese',sec:'dairy'},{a:'1 tbsp',n:'butter',sec:'dairy'},{a:'1 can',n:'tomato soup (low sodium)',sec:'pantry'},{a:'½ cup',n:'milk (for soup)',sec:'dairy'}],
+ steps:['Make soup per can instructions, using milk for creamier texture.','Butter outside of both bread slices.','Place one slice butter-side down in pan over medium heat. Add cheese. Top with second slice butter-side up.','Cook 2–3 min per side until golden and cheese melts.','Cut sandwich into strips or triangles. Serve alongside soup in a small cup.']},
+ {id:'rx09',cat:'dinner',name:'Sheet Pan Chicken & Vegetables',time:40,toddler:true,desc:'One pan, minimal cleanup. Everything roasts together — tender chicken, soft veggies.',tags:['meal prep','family dinner'],
+ ingredients:[{a:'4',n:'chicken thighs, bone-in',sec:'proteins'},{a:'2',n:'carrots, sliced',sec:'produce'},{a:'1',n:'zucchini, sliced',sec:'produce'},{a:'1',n:'red bell pepper, diced',sec:'produce'},{a:'2 tbsp',n:'olive oil',sec:'pantry'},{a:'1 tsp',n:'garlic powder',sec:'pantry'},{a:'1 tsp',n:'paprika',sec:'pantry'}],
+ steps:['Preheat oven to 425°F. Line a large baking sheet with foil.','Toss vegetables with 1 tbsp olive oil and half the spices.','Rub chicken with remaining oil and spices.','Arrange chicken and vegetables on sheet in single layer.','Roast 35–40 min until chicken is 165°F and vegetables are tender.','For toddler: remove chicken from bone, cut small. Mash or chop vegetables.']},
+ {id:'rx10',cat:'dinner',name:'Salmon with Roasted Broccoli',time:25,toddler:true,desc:'Omega-3 rich, quick, and the kids will eat more salmon than you expect.',tags:['omega-3','healthy'],
+ ingredients:[{a:'2',n:'salmon fillets (6 oz each)',sec:'proteins'},{a:'2 cups',n:'broccoli florets',sec:'produce'},{a:'2 tbsp',n:'olive oil',sec:'pantry'},{a:'1 tbsp',n:'lemon juice',sec:'produce'},{a:'1 tsp',n:'garlic powder',sec:'pantry'},{a:'pinch',n:'salt',sec:'pantry'}],
+ steps:['Preheat oven to 400°F.','Toss broccoli with 1 tbsp olive oil and garlic powder. Spread on baking sheet.','Roast broccoli 10 min. Push to side.','Season salmon with salt, drizzle with remaining oil and lemon juice.','Add salmon to pan. Roast 12–14 min until fish flakes easily.','For toddler: flake salmon into small pieces, cut broccoli small. Serve with rice.']},
+ {id:'rx11',cat:'dinner',name:'Beef & Vegetable Stir Fry',time:20,toddler:true,desc:'Quick weeknight dinner. Serve over rice — the toddler can eat the rice and soft veggies.',tags:['protein','quick'],
+ ingredients:[{a:'1 lb',n:'ground beef (lean)',sec:'proteins'},{a:'1 cup',n:'snap peas',sec:'produce'},{a:'1',n:'carrot, thinly sliced',sec:'produce'},{a:'2 cloves',n:'garlic, minced',sec:'produce'},{a:'2 tbsp',n:'low-sodium soy sauce',sec:'pantry'},{a:'1 tsp',n:'sesame oil',sec:'pantry'},{a:'2 cups',n:'cooked rice',sec:'pantry'}],
+ steps:['Heat a wok or large pan over high heat. Brown ground beef, breaking it up. Drain fat.','Add garlic, cook 30 seconds.','Add carrots, cook 3 min. Add snap peas, cook 2 more min.','Stir in soy sauce and sesame oil. Toss everything together.','Serve over rice. For toddler: skip soy sauce on their portion, serve vegetables soft-cooked on the side.']},
+ {id:'rx12',cat:'dinner',name:'Lemon Herb Baked Chicken',time:35,toddler:true,desc:'Simple, moist, and versatile. Leftovers become lunch tomorrow.',tags:['family dinner','meal prep'],
+ ingredients:[{a:'4',n:'chicken breasts',sec:'proteins'},{a:'3 tbsp',n:'olive oil',sec:'pantry'},{a:'2',n:'lemons (juice + zest)',sec:'produce'},{a:'3 cloves',n:'garlic, minced',sec:'produce'},{a:'1 tsp',n:'dried thyme',sec:'pantry'},{a:'1 tsp',n:'dried rosemary',sec:'pantry'},{a:'pinch',n:'salt',sec:'pantry'}],
+ steps:['Mix olive oil, lemon juice, zest, garlic, and herbs in a bowl.','Pound chicken to even thickness. Marinate in herb mixture 15–30 min (or overnight).','Preheat oven to 400°F. Place chicken in baking dish.','Bake 25–28 min until internal temp reaches 165°F.','Rest 5 min before slicing. Slice thin for toddlers.']},
+ {id:'rx13',cat:'dinner',name:'Turkey Meatballs & Zucchini Pasta',time:30,toddler:true,desc:'Sneaky veggies in the meatballs. Toddlers love meatballs. Everyone wins.',tags:['hidden veggies','kid favorite'],
+ ingredients:[{a:'1 lb',n:'ground turkey',sec:'proteins'},{a:'1',n:'zucchini, grated',sec:'produce'},{a:'¼ cup',n:'breadcrumbs',sec:'pantry'},{a:'1',n:'egg',sec:'dairy'},{a:'1 clove',n:'garlic, minced',sec:'produce'},{a:'8 oz',n:'pasta of choice',sec:'pantry'},{a:'1 cup',n:'marinara sauce',sec:'pantry'}],
+ steps:['Grate zucchini, squeeze out excess moisture with a towel.','Mix turkey, zucchini, breadcrumbs, egg, and garlic. Form into 1-inch balls.','Bake at 400°F for 18–20 min, or cook in a skillet over medium heat 8–10 min.','Cook pasta per package directions.','Warm marinara. Toss with pasta and meatballs. Cut meatballs in half for toddler.']},
+ {id:'rx14',cat:'dinner',name:'Black Bean Tacos',time:15,toddler:true,desc:'Fast meatless dinner. Build your own — toddler gets a deconstructed version.',tags:['vegetarian','quick'],
+ ingredients:[{a:'2 cans',n:'black beans, rinsed',sec:'pantry'},{a:'1 tsp',n:'cumin',sec:'pantry'},{a:'½ tsp',n:'chili powder (mild)',sec:'pantry'},{a:'8',n:'small corn tortillas',sec:'pantry'},{a:'1',n:'avocado, sliced',sec:'produce'},{a:'½ cup',n:'shredded cheese',sec:'dairy'},{a:'½ cup',n:'plain yogurt (sour cream sub)',sec:'dairy'}],
+ steps:['Warm beans in a pan with cumin and chili powder, mashing slightly.','Warm tortillas in a dry pan 30 sec per side.','Set out toppings: avocado, cheese, yogurt.','Build tacos. For toddler: skip chili powder, serve beans and avocado in a bowl with cheese.','Good as-is or with a simple salad.']},
+ {id:'rx15',cat:'soup',name:'Chicken & Rice Soup',time:35,toddler:true,desc:'The ultimate comfort soup. Freezes well — make a big batch on Sunday.',tags:['meal prep','freezer-friendly'],
+ ingredients:[{a:'2',n:'chicken breasts',sec:'proteins'},{a:'½ cup',n:'white rice',sec:'pantry'},{a:'3',n:'carrots, diced',sec:'produce'},{a:'3 stalks',n:'celery, diced',sec:'produce'},{a:'1',n:'onion, diced',sec:'produce'},{a:'6 cups',n:'low-sodium chicken broth',sec:'pantry'},{a:'1 tsp',n:'dried thyme',sec:'pantry'}],
+ steps:['Sauté onion, carrots, celery in a large pot 5 min until softened.','Add broth, chicken breasts, and thyme. Bring to boil.','Reduce heat, simmer 20 min until chicken is cooked through.','Remove chicken, shred with forks, return to pot.','Add rice, simmer 15 more min until rice is tender. Season to taste.']},
+ {id:'rx16',cat:'soup',name:'Red Lentil Soup',time:30,toddler:true,desc:'Naturally thick, creamy without cream. Blends smooth for younger toddlers.',tags:['vegetarian','high protein','freezer-friendly'],
+ ingredients:[{a:'1 cup',n:'red lentils, rinsed',sec:'pantry'},{a:'1',n:'onion, diced',sec:'produce'},{a:'2',n:'carrots, diced',sec:'produce'},{a:'2 cloves',n:'garlic',sec:'produce'},{a:'1 can',n:'diced tomatoes',sec:'pantry'},{a:'4 cups',n:'vegetable broth',sec:'pantry'},{a:'1 tsp',n:'cumin',sec:'pantry'},{a:'1 tbsp',n:'olive oil',sec:'pantry'}],
+ steps:['Sauté onion and carrots in olive oil 5 min. Add garlic and cumin, cook 1 min.','Add lentils, tomatoes, and broth. Bring to boil.','Reduce heat, simmer 20–25 min until lentils are very soft.','Blend partially or fully for smoother texture.','Season to taste. For toddler: thin with extra broth if needed, serve lukewarm.']},
+ {id:'rx17',cat:'snack',name:'Apple Slices with Peanut Butter',time:5,toddler:true,desc:'Classic, nutritious, fast. Use sunflower butter if nut allergy is a concern.',tags:['no cook','quick','healthy fats'],
+ ingredients:[{a:'1',n:'apple, thinly sliced',sec:'produce'},{a:'2 tbsp',n:'peanut or sunflower butter',sec:'pantry'}],
+ steps:['Core and thinly slice the apple. For toddlers under 2, peel first.','Serve slices arranged with a small portion of nut butter for dipping.','Alternatively, spread nut butter on apple slices and serve flat.','Optional: sprinkle with cinnamon.','Serve immediately — apple browns quickly once cut.']},
+ {id:'rx18',cat:'snack',name:'Hummus & Veggie Sticks',time:8,toddler:true,desc:'Great afternoon snack. Steamed carrot sticks are softer and safer for toddlers.',tags:['no cook','fiber','protein'],
+ ingredients:[{a:'½ cup',n:'hummus',sec:'pantry'},{a:'2',n:'carrots, cut into sticks',sec:'produce'},{a:'1',n:'cucumber, sliced',sec:'produce'},{a:'½',n:'bell pepper, sliced',sec:'produce'}],
+ steps:['Wash and cut vegetables. For toddlers: steam carrot sticks 4–5 min until slightly softened.','Arrange vegetables around a small bowl of hummus.','For toddlers: dice or slice vegetables into thin, short pieces to avoid choking.','Serve immediately.']},
+ {id:'rx19',cat:'snack',name:'Banana Nice Cream',time:5,toddler:true,desc:'Frozen banana blended = ice cream. One ingredient, zero guilt, toddler-approved.',tags:['no sugar','dessert','1 ingredient'],
+ ingredients:[{a:'3',n:'ripe bananas, frozen',sec:'produce'},{a:'optional:',n:'1 tbsp peanut butter or cocoa powder',sec:'pantry'}],
+ steps:['Freeze ripe bananas in chunks overnight (peel before freezing).','Blend frozen banana chunks in a food processor until smooth and creamy, scraping down sides.','Add peanut butter or cocoa powder if desired.','Serve immediately for soft-serve texture.','Refreeze 1 hour for firmer scoopable ice cream.']},
+ {id:'rx20',cat:'snack',name:'Oatmeal Energy Balls',time:15,toddler:true,desc:'No bake. Make a batch, keep in the fridge all week. Great on-the-go snack.',tags:['meal prep','no bake','energy'],
+ ingredients:[{a:'1 cup',n:'rolled oats',sec:'pantry'},{a:'⅓ cup',n:'peanut butter',sec:'pantry'},{a:'¼ cup',n:'honey',sec:'pantry'},{a:'¼ cup',n:'mini chocolate chips',sec:'pantry'},{a:'1 tsp',n:'vanilla extract',sec:'pantry'}],
+ steps:['Mix all ingredients in a bowl until well combined.','Refrigerate mixture 30 min to firm up — makes rolling easier.','Roll into 1-inch balls with your hands.','Store in fridge in an airtight container up to 1 week.','For toddlers under 2: omit honey — substitute extra peanut butter.']},
+ {id:'rx21',cat:'breakfast',name:'Blueberry Chia Pudding',time:5,toddler:true,desc:'Make the night before — breakfast is done. Creamy, fruity, omega-3 rich.',tags:['overnight','no cook','omega-3'],
+ ingredients:[{a:'1½ cups',n:'milk (any kind)',sec:'dairy'},{a:'¼ cup',n:'chia seeds',sec:'pantry'},{a:'1 tbsp',n:'maple syrup',sec:'pantry'},{a:'½ tsp',n:'vanilla extract',sec:'pantry'},{a:'½ cup',n:'fresh or frozen blueberries',sec:'produce'}],
+ steps:['Whisk milk, chia seeds, maple syrup, and vanilla in a jar or bowl.','Stir again after 5 minutes to prevent clumping.','Cover and refrigerate overnight (or at least 4 hours).','Top with blueberries before serving. Stir pudding if needed.','For toddlers: mash berries slightly. Pudding is soft and spoonable.']},
+ {id:'rx22',cat:'dinner',name:'Pasta Primavera',time:20,toddler:true,desc:'Loaded with vegetables, tossed with olive oil and parmesan. Simple and satisfying.',tags:['vegetarian','quick','kid favorite'],
+ ingredients:[{a:'8 oz',n:'penne or fusilli pasta',sec:'pantry'},{a:'1 cup',n:'cherry tomatoes, halved',sec:'produce'},{a:'1',n:'zucchini, diced small',sec:'produce'},{a:'1 cup',n:'frozen peas',sec:'pantry'},{a:'3 tbsp',n:'olive oil',sec:'pantry'},{a:'2 cloves',n:'garlic, minced',sec:'produce'},{a:'¼ cup',n:'parmesan, grated',sec:'dairy'}],
+ steps:['Cook pasta per package directions. Reserve ½ cup pasta water before draining.','Sauté garlic in olive oil 1 min. Add zucchini, cook 3 min.','Add tomatoes and peas, cook 2 more min.','Toss with drained pasta. Add pasta water if too dry.','Top with parmesan. For toddler: cut pasta short and ensure veggies are soft.']},
+ {id:'rx23',cat:'lunch',name:'Egg Salad on Toast',time:10,toddler:true,desc:'Hard boiled eggs mashed creamy. High protein, easy to prepare ahead.',tags:['protein','meal prep'],
+ ingredients:[{a:'4',n:'eggs, hard boiled',sec:'dairy'},{a:'2 tbsp',n:'mayo',sec:'pantry'},{a:'1 tsp',n:'mustard',sec:'pantry'},{a:'1 tsp',n:'lemon juice',sec:'produce'},{a:'4 slices',n:'whole grain bread',sec:'pantry'},{a:'pinch',n:'salt & pepper',sec:'pantry'}],
+ steps:['Hard boil eggs: cover with cold water, bring to boil, boil 10 min, cool in ice water.','Peel and roughly chop or mash eggs.','Mix with mayo, mustard, lemon juice, salt and pepper.','Toast bread. Spoon egg salad generously on each slice.','For toddler: serve on soft bread, cut into small pieces or fingers.']},
+ {id:'rx24',cat:'soup',name:'Butternut Squash Soup',time:40,toddler:true,desc:'Silky smooth, naturally sweet. Blends completely — perfect for toddlers.',tags:['vegetarian','freezer-friendly','hidden veggies'],
+ ingredients:[{a:'1 large',n:'butternut squash, cubed',sec:'produce'},{a:'1',n:'onion, diced',sec:'produce'},{a:'2 cloves',n:'garlic',sec:'produce'},{a:'3 cups',n:'vegetable broth',sec:'pantry'},{a:'½ cup',n:'coconut milk',sec:'pantry'},{a:'1 tbsp',n:'olive oil',sec:'pantry'},{a:'½ tsp',n:'cinnamon',sec:'pantry'}],
+ steps:['Sauté onion in olive oil 5 min. Add garlic, cook 1 min.','Add squash, broth, and cinnamon. Bring to boil.','Reduce heat, simmer 20–25 min until squash is very tender.','Blend until silky smooth. Stir in coconut milk.','Season to taste. Serve warm with bread for dipping. Freezes beautifully.']},
+ {id:'rx25',cat:'dinner',name:'Teriyaki Chicken Rice Bowl',time:25,toddler:true,desc:'Sweet and savory. Use low-sodium soy sauce and serve toddler portion plain.',tags:['kid favorite','protein'],
+ ingredients:[{a:'1 lb',n:'chicken thighs, diced',sec:'proteins'},{a:'3 tbsp',n:'low-sodium soy sauce',sec:'pantry'},{a:'1 tbsp',n:'honey',sec:'pantry'},{a:'1 tsp',n:'sesame oil',sec:'pantry'},{a:'1 clove',n:'garlic, minced',sec:'produce'},{a:'2 cups',n:'cooked rice',sec:'pantry'},{a:'1 cup',n:'broccoli florets, steamed',sec:'produce'}],
+ steps:['Mix soy sauce, honey, sesame oil, and garlic for sauce.','Cook chicken in a pan over medium-high heat 6–8 min until cooked through.','Pour sauce over chicken, simmer 2 min until it thickens and coats.','Serve chicken and sauce over rice with steamed broccoli on the side.','For toddler under 2: skip honey and soy sauce — season plain chicken separately.']}
+];
+const STORE_SECTIONS=['produce','proteins','dairy','pantry'];
+const SECTION_LABELS={produce:'🥦 Produce',proteins:'🥩 Proteins & Meat',dairy:'🥛 Dairy & Eggs',pantry:'🥫 Pantry & Dry Goods'};
 let rxFilter='all', rxQuery='', mealPlan=[], rxDetail=null, shopChecked=new Set();
+function renderRecipes(){
+ // filter chips
+ document.querySelectorAll('[data-rx]').forEach(c=>{
+ c.classList.toggle('on', c.dataset.rx===rxFilter);
+ c.onclick=()=>{rxFilter=c.dataset.rx;renderRecipes()};
+ });
+ const q=rxQuery.toLowerCase();
+ const list=RECIPES.filter(r=>{
+ const catOk=rxFilter==='all'||r.cat===rxFilter;
+ const qOk=!q||r.name.toLowerCase().includes(q)||r.desc.toLowerCase().includes(q)||r.tags.some(t=>t.includes(q));
+ return catOk&&qOk;
+ });
+ const BAND={breakfast:'#F0A23C',lunch:'#4DD9B0',dinner:'#5BA8F5',soup:'#9B8CFF',snack:'#F2586A'};
+ $('rxGrid').innerHTML=list.map(r=>{
+ const planned=mealPlan.includes(r.id);
+ return `<div class="rx-card ${planned?'planned':''}" data-rxid="${r.id}">
+ <div class="rx-band" style="background:${BAND[r.cat]||'#5A6673'}"></div>
+ <div class="rx-body">
+ <div class="rx-name">${esc(r.name)}</div>
+ <div class="rx-desc">${esc(r.desc)}</div>
+ <div class="rx-meta">
+ <span class="rx-time">⏱ ${r.time} min</span>
+ <span class="rx-tag">${r.cat}</span>
+ ${r.toddler?`<span class="rx-tag" style="color:var(--mint);border-color:rgba(77,217,176,.3)">👶 toddler</span>`:''}
+ </div>
+ </div>
+ <button class="rx-add-btn" data-rxplan="${r.id}" title="${planned?'Remove from plan':'Add to plan'}">${planned?'✓':'+'}</button>
+ </div>`;
+ }).join('');
+ $('rxGrid').querySelectorAll('[data-rxid]').forEach(el=>el.onclick=e=>{
+ if(e.target.closest('[data-rxplan]'))return;
+ openRecipe(el.dataset.rxid);
+ });
+ $('rxGrid').querySelectorAll('[data-rxplan]').forEach(el=>el.onclick=e=>{
+ e.stopPropagation();togglePlan(el.dataset.rxplan);
+ });
+ renderPlan();
+}
 function togglePlan(id){
  if(mealPlan.includes(id))mealPlan=mealPlan.filter(x=>x!==id);
  else mealPlan.push(id);
- 
+ renderRecipes();
 }
-
-
+function renderPlan(){
+ const n=mealPlan.length;
+ $('planCount').textContent=`${n} recipe${n===1?'':'s'}`;
+ $('bShop').disabled=n===0;
+ const list=$('planList');
+ if(!n){
+ list.innerHTML=`<div class="plan-empty"><div class="big">No meals planned.</div><div class="small">CLICK + ON ANY RECIPE</div></div>`;
+ return;
+ }
+ const BAND={breakfast:'#F0A23C',lunch:'#4DD9B0',dinner:'#5BA8F5',soup:'#9B8CFF',snack:'#F2586A'};
+ list.innerHTML=mealPlan.map(id=>{
+ const r=RECIPES.find(x=>x.id===id);if(!r)return'';
+ return `<div class="plan-item">
+ <div style="width:7px;height:7px;border-radius:2px;background:${BAND[r.cat]};flex-shrink:0"></div>
+ <div style="flex:1;min-width:0">
+ <div class="pi-name">${esc(r.name)}</div>
+ <div class="pi-cat">${r.cat} · ${r.time}m</div>
+ </div>
+ <button data-prm="${r.id}" title="Remove">×</button>
+ </div>`;
+ }).join('');
+ list.querySelectorAll('[data-prm]').forEach(b=>b.onclick=()=>{mealPlan=mealPlan.filter(x=>x!==b.dataset.prm);renderRecipes()});
+}
+$('rxq').oninput=e=>{rxQuery=e.target.value;renderRecipes()};
+$('bShop').onclick=openShopList;
 function openRecipe(id){
  rxDetail=RECIPES.find(r=>r.id===id);if(!rxDetail)return;
  const r=rxDetail;
@@ -2716,9 +3144,9 @@ function openShopList(){
 $('shopClose').onclick=$('shopCloseBtn').onclick=()=>$('shopModal').classList.remove('on');
 $('shopModal').onclick=e=>{if(e.target===$('shopModal'))$('shopModal').classList.remove('on')};
 function renderAll(){
- fillCatSelect();renderCatBar();renderCatMgr();renderStage();
- renderTasks();renderBillKPIs();renderBills();renderBillMonthly();renderDash();
- renderKanban();
+ fillCatSelect();fillNoteSelects();renderCatBar();renderCatMgr();renderStage();
+ renderTasks();renderBillKPIs();renderBills();renderBillMonthly();renderDash();renderWeek();
+ renderNotes();renderRecipes();renderStaples();
  renderClock();renderBell();updNotifBtn();
 }
 const PIN='2000';
@@ -3186,28 +3614,107 @@ function renderFocus(){
 const SWIPE_KEY='ledger:swipe-enabled';
 let swipeEnabled=true;
 try{const s=localStorage.getItem(SWIPE_KEY);if(s!==null)swipeEnabled=s==='1'}catch(e){}
+function initSwipe(el,taskId){
+ if(!swipeEnabled)return;
+ let startX=0,startY=0,dx=0,swiping=false;
+ const THRESHOLD=80;
+ el.addEventListener('touchstart',e=>{
+ startX=e.touches[0].clientX;startY=e.touches[0].clientY;dx=0;swiping=false;
+ },{passive:true});
+ el.addEventListener('touchmove',e=>{
+ const cx=e.touches[0].clientX,cy=e.touches[0].clientY;
+ dx=cx-startX;
+ const dy=Math.abs(cy-startY);
+ if(Math.abs(dx)<8&&dy<8)return;
+ if(!swiping&&dy>Math.abs(dx)){return} // vertical scroll wins
+ swiping=true;
+ el.classList.add('swiping');
+ el.style.transform=`translateX(${dx}px)`;
+ const hr=el.querySelector('.swipe-hint-right'),hl=el.querySelector('.swipe-hint-left');
+ if(hr)hr.style.opacity=dx>30?Math.min((dx-30)/50,1):0;
+ if(hl)hl.style.opacity=dx<-30?Math.min((-dx-30)/50,1):0;
+ if(Math.abs(dx)>10)e.preventDefault();
+ },{passive:false});
+ el.addEventListener('touchend',()=>{
+ el.classList.remove('swiping');
+ el.style.transform='';
+ const hr=el.querySelector('.swipe-hint-right'),hl=el.querySelector('.swipe-hint-left');
+ if(hr)hr.style.opacity=0;
+ if(hl)hl.style.opacity=0;
+ if(!swiping)return;
+ if(dx>THRESHOLD){
+ // swipe right = complete
+ const t=S.tasks.find(x=>x.id===taskId);
+ if(t&&!t.done){completeTask(t);touch(t);save();renderAll();toast('✓ Done');}
+ }else if(dx<-THRESHOLD){
+ // swipe left = delete
+ if(confirm('Delete this task?')){
+ S.tasks=S.tasks.filter(x=>x.id!==taskId);save();renderAll();toast('Task removed');
+ }
+ }
+ swiping=false;dx=0;
+ });
+}
 
 const STAPLES_KEY='ledger:staples';
 let staples=[];
 const STAPLE_SECTIONS=['produce','dairy','proteins','pantry','frozen','other'];
 const STAPLE_LABELS={produce:'🥦 Produce',dairy:'🥛 Dairy',proteins:'🥩 Proteins',pantry:'🥫 Pantry',frozen:'🧊 Frozen',other:'📦 Other'};
-
-
-
+function loadStaples(){
+ try{staples=JSON.parse(localStorage.getItem(STAPLES_KEY)||'[]')}catch(e){staples=[]}
+}
+function saveStaples(){
+ try{localStorage.setItem(STAPLES_KEY,JSON.stringify(staples))}catch(e){}
+}
+function renderStaples(){
+ const grouped={};
+ STAPLE_SECTIONS.forEach(s=>{grouped[s]=staples.filter(x=>x.sec===s)});
+ const list=$('stapleList');
+ const hasItems=staples.length>0;
+ if(!hasItems){
+ list.innerHTML=`<div style="text-align:center;padding:20px 10px;color:var(--text-dim);font-family:var(--mono);font-size:11px">ADD YOUR REGULAR ITEMS ABOVE</div>`;
+ return;
+ }
+ list.innerHTML=STAPLE_SECTIONS.map(sec=>{
+ const items=grouped[sec];
+ if(!items.length)return'';
+ return `<div class="staple-section">
+ <div class="staple-sec-h">${STAPLE_LABELS[sec]}</div>
+ ${items.map(item=>`
+ <div class="staple-item ${item.got?'got':''}" data-stid="${item.id}">
+ <div class="shop-cb"><svg viewBox="0 0 12 12"><polyline points="1.5,6 4.5,9 10.5,3"/></svg></div>
+ <span class="si-name">${esc(item.name)}</span>
+ <button class="btn btn-sm" data-stdel="${item.id}" style="color:var(--text-dim);font-size:11px;height:24px;padding:0 7px" onclick="event.stopPropagation()">×</button>
+ </div>`).join('')}
+ </div>`;
+ }).join('');
+ list.querySelectorAll('[data-stid]').forEach(el=>el.onclick=()=>{
+ const s=staples.find(x=>x.id===el.dataset.stid);
+ if(s){s.got=!s.got;saveStaples();renderStaples();}
+ });
+ list.querySelectorAll('[data-stdel]').forEach(el=>el.onclick=e=>{
+ e.stopPropagation();
+ staples=staples.filter(x=>x.id!==el.dataset.stdel);
+ saveStaples();renderStaples();
+ });
+}
+function addStaple(){
+ const inp=$('stapleInput'),v=inp.value.trim();
+ if(!v)return;
+ staples.push({id:uid(),name:v,sec:$('stapleSection').value,got:false});
+ inp.value='';saveStaples();renderStaples();inp.focus();
+}
+$('bStapleAdd').onclick=addStaple;
+$('stapleInput').onkeydown=e=>{if(e.key==='Enter')addStaple()};
+$('bStaplesReset').onclick=()=>{staples.forEach(s=>s.got=false);saveStaples();renderStaples();toast('All unchecked — ready for next trip')};
 
 function linkify(text){
  if(!text)return'';
- // Split on URLs first, then escape non-URL parts
- const parts=text.split(/(https?:\/\/[^\s<>"]+)/g);
- return parts.map((part,i)=>{
-  if(i%2===1){
-   // This is a URL
-   const display=part.length>55?part.slice(0,52)+'…':part;
-   const escapedUrl=esc(part);
-   return `<a href="${escapedUrl}" target="_blank" rel="noopener" class="auto-link">${esc(display)}</a>`;
-  }
-  return esc(part).replace(/\n/g,'<br>');
- }).join('');
+ const escaped=esc(text);
+ return escaped.replace(/(https?:\/\/[^\s<>"]+)/g,url=>{
+ const display=url.length>50?url.slice(0,47)+'…':url;
+ return `<a href="${url}" target="_blank" rel="noopener" class="auto-link">${display}</a>`;
+ });
 }
 
 // Theme button already wired above
@@ -3221,8 +3728,9 @@ function initTabs(){
  const v=$('v-'+b.dataset.v);
  if(v)v.classList.add('on');
  if(b.dataset.v==='dash')renderDash();
- if(b.dataset.v==='kanban')renderKanban();
- if(b.dataset.v==='recipes'){}
+ if(b.dataset.v==='week')renderWeek();
+ if(b.dataset.v==='notes'){fillNoteSelects();renderNotes();}
+ if(b.dataset.v==='recipes'){renderRecipes();renderStaples();}
  });
 }
 /* ================= TASK TEMPLATES ================= */
@@ -3358,21 +3866,149 @@ function renderStreak(){
 }
 
 /* ================= BILL HISTORY CHART ================= */
+function renderBillChart(){
+  const el=$('billChart');
+  if(!el)return;
+  // Build last 6 months of bill spend from payment history
+  const months=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date();
+    d.setDate(1);d.setMonth(d.getMonth()-i);
+    const label=d.toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+    const mStart=new Date(d.getFullYear(),d.getMonth(),1);
+    const mEnd=new Date(d.getFullYear(),d.getMonth()+1,0,23,59,59);
+    let total=0;
+    S.bills.forEach(b=>{
+      (b.history||[]).forEach(h=>{
+        const pd=new Date(h.paid);
+        if(pd>=mStart&&pd<=mEnd)total+=Number(h.amount||0);
+      });
+    });
+    months.push({label,total});
+  }
+  const max=Math.max(1,...months.map(m=>m.total));
+  if(max<=1){
+    el.innerHTML=`<div style="text-align:center;padding:30px 10px;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.06em">NO PAYMENT HISTORY YET — MARK BILLS AS PAID TO SEE CHART</div>`;
+    return;
+  }
+  const W=100,H=100,pad=8,barW=10,gap=4;
+  const totalW=months.length*(barW+gap)-gap;
+  const startX=(W-totalW)/2;
+  const bars=months.map((m,i)=>{
+    const x=startX+i*(barW+gap);
+    const barH=Math.max(2,Math.round((m.total/max)*(H-pad*2)));
+    const y=H-pad-barH;
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" rx="2" fill="var(--mint)" opacity="${m.total>0?0.85:0.2}"/>
+      <text x="${(x+barW/2).toFixed(1)}" y="${H.toFixed(1)}" text-anchor="middle" fill="#66727F" font-family="JetBrains Mono" font-size="5">${m.label}</text>
+      ${m.total>0?`<text x="${(x+barW/2).toFixed(1)}" y="${(y-2).toFixed(1)}" text-anchor="middle" fill="#4DD9B0" font-family="Space Grotesk" font-size="5" font-weight="600">$${Math.round(m.total)}</text>`:''}`;
+  }).join('');
+  el.innerHTML=`<svg class="bchart-svg" viewBox="0 0 ${W} ${H+8}" preserveAspectRatio="xMidYMid meet">${bars}</svg>
+    <div class="bchart-foot">
+      <span>Monthly bill payments — last 6 months</span>
+      <span style="color:var(--mint)">Total: ${money(months.reduce((a,b)=>a+b.total,0))}</span>
+    </div>`;
+}
 
 /* ================= PDF EXPORT ================= */
+$('bPdfExport').onclick=()=>$('pdfModal').classList.add('on');
+$('pdfClose').onclick=$('pdfCancel').onclick=()=>$('pdfModal').classList.remove('on');
+$('pdfModal').onclick=e=>{if(e.target===$('pdfModal'))$('pdfModal').classList.remove('on')};
 
+function buildPdfHtml(title,bodyHtml){
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>${title}</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1f24;margin:0;padding:32px;max-width:800px;margin:0 auto}
+h1{font-size:24px;font-weight:700;margin-bottom:4px;color:#0E1116}
+.subtitle{font-size:12px;color:#8A9099;margin-bottom:28px;font-family:monospace;letter-spacing:0.06em}
+h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#4A5568;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}
+.task{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0}
+.cb{width:14px;height:14px;border:2px solid #CBD5E0;border-radius:3px;flex-shrink:0;margin-top:2px}
+.cb.done{background:#4DD9B0;border-color:#4DD9B0}
+.t{flex:1}
+.t-title{font-size:13.5px;font-weight:450}
+.t-meta{font-size:11px;color:#8A9099;margin-top:3px;font-family:monospace}
+.sub{display:flex;gap:8px;padding:4px 0 4px 22px;font-size:12px;color:#4A5568}
+.sub .cb{width:11px;height:11px;margin-top:1px}
+.bill-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.bill-amt{font-weight:600}
+.tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-right:4px}
+.high{background:#fff5f5;color:#e53e3e}.med{background:#fffbeb;color:#d97706}.low{background:#f7f7f7;color:#718096}
+.od{color:#e53e3e;font-weight:500}
+footer{margin-top:40px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#8A9099;font-family:monospace}
+@media print{body{padding:20px}button{display:none}}
+</style>
+</head><body>${bodyHtml}
+<footer>Generated by Ledger · ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</footer>
+<script>window.onload=()=>window.print()<\/script>
+</body></html>`;
+}
 
+function openPdfWindow(title,html){
+  const w=window.open('','_blank');
+  if(!w){toast('Pop-up blocked — allow pop-ups and try again');return}
+  w.document.write(buildPdfHtml(title,html));
+  w.document.close();
+}
 
+$('pdfOptTasks').onclick=()=>{
+  $('pdfModal').classList.remove('on');
+  const open=S.tasks.filter(t=>!t.done);
+  const byCat=S.cats.map(c=>({c,tasks:open.filter(t=>t.cat===c.id)})).filter(x=>x.tasks.length);
+  let html=`<h1>Open Tasks</h1><div class="subtitle">${open.length} tasks · ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}).toUpperCase()}</div>`;
+  byCat.forEach(({c,tasks})=>{
+    html+=`<h2>${c.name}</h2>`;
+    tasks.forEach(t=>{
+      const dl=dueLabel(t);
+      html+=`<div class="task"><div class="cb"></div><div class="t"><div class="t-title">${t.title}</div><div class="t-meta"><span class="tag ${t.pri}">${t.pri}</span>${dl?`<span class="${bucketOf(t)==='overdue'?'od':''}">${dl}</span>`:''}</div></div></div>`;
+      (t.subtasks||[]).forEach(s=>html+=`<div class="sub"><div class="cb ${s.done?'done':''}"></div>${s.title}</div>`);
+    });
+  });
+  openPdfWindow('Open Tasks — Ledger',html);
+};
 
+$('pdfOptAll').onclick=()=>{
+  $('pdfModal').classList.remove('on');
+  const byCat=S.cats.map(c=>({c,tasks:S.tasks.filter(t=>t.cat===c.id)})).filter(x=>x.tasks.length);
+  let html=`<h1>Full Board</h1><div class="subtitle">${S.tasks.length} tasks · ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}).toUpperCase()}</div>`;
+  byCat.forEach(({c,tasks})=>{
+    html+=`<h2>${c.name}</h2>`;
+    tasks.forEach(t=>{
+      html+=`<div class="task"><div class="cb ${t.done?'done':''}"></div><div class="t"><div class="t-title" style="${t.done?'text-decoration:line-through;color:#8A9099':''}">${t.title}</div></div></div>`;
+    });
+  });
+  openPdfWindow('Full Board — Ledger',html);
+};
 
+$('pdfOptBills').onclick=()=>{
+  $('pdfModal').classList.remove('on');
+  const active=S.bills.filter(b=>!b.paused);
+  let html=`<h1>Bills Summary</h1><div class="subtitle">${active.length} active bills · ${money(active.reduce((a,b)=>a+monthlyEquiv(b),0))}/month</div>`;
+  html+=`<h2>All Bills</h2>`;
+  const sorted=active.slice().sort((a,b)=>(parseDue(a.due)||0)-(parseDue(b.due)||0));
+  sorted.forEach(b=>{
+    const st=billStatus(b),dl=billLabel(b);
+    html+=`<div class="bill-row"><div><div>${b.name}${b.autopay?' <span class="tag" style="background:#f0fff4;color:#276749">AUTO</span>':''}</div><div style="font-size:11px;color:#8A9099;font-family:monospace">${CAD[b.cadence].label}${dl?' · '+dl:''}</div></div><div class="bill-amt ${st==='overdue'?'od':''}">${money(b.amount)}</div></div>`;
+  });
+  openPdfWindow('Bills Summary — Ledger',html);
+};
 
-
-
-
-
-
-
-
+$('pdfOptWeek').onclick=()=>{
+  $('pdfModal').classList.remove('on');
+  const w=weekData(wkOffset);
+  const {start,end}=weekBounds(wkOffset);
+  const f=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  let html=`<h1>Weekly Review</h1><div class="subtitle">${f(start).toUpperCase()} — ${f(new Date(end.getTime()-DAY)).toUpperCase()}</div>`;
+  html+=`<h2>Completed (${w.done.length})</h2>`;
+  w.done.forEach(t=>html+=`<div class="task"><div class="cb done"></div><div class="t"><div class="t-title">${t.title}</div><div class="t-meta">${catOf(t.cat).name}</div></div></div>`);
+  if(!w.done.length)html+=`<p style="color:#8A9099;font-size:13px">Nothing completed this week.</p>`;
+  html+=`<h2>Slipped (${w.slipped.length})</h2>`;
+  w.slipped.forEach(t=>html+=`<div class="task"><div class="cb"></div><div class="t"><div class="t-title">${t.title}</div><div class="t-meta od">${Math.abs(dayDiff(parseDue(t.due)))}d overdue</div></div></div>`);
+  if(!w.slipped.length)html+=`<p style="color:#38a169;font-size:13px">Nothing slipped this week.</p>`;
+  html+=`<h2>Up next (${w.ahead.length})</h2>`;
+  w.ahead.forEach(t=>html+=`<div class="task"><div class="cb"></div><div class="t"><div class="t-title">${t.title}</div><div class="t-meta"><span class="tag ${t.pri}">${t.pri}</span>${t.due?' due '+t.due:''}</div></div></div>`);
+  openPdfWindow('Weekly Review — Ledger',html);
+};
 
 /* ================= SMART DUE DATE IN ASSISTANT ================= */
 // Patch sendToAsst system prompt to include due date suggestion logic
@@ -3395,30 +4031,211 @@ Today is ${iso(today0())}. When suggesting due dates, consider that ${weekTasks.
 }
 
 /* ================= UPDATE renderDash TO INCLUDE NEW FEATURES ================= */
+/* ================= NORMALIZE - add status field ================= */
+const _origNormalize=window._origNormalize||normalize;
+function normalize(t){
+  const r=_origNormalize(t);
+  if(!r.status)r.status=r.done?'done':'todo';
+  return r;
+}
+
+/* ================= TASK STATUS - addTask update ================= */
+const _origAddTask=addTask;
+function addTask(){
+  // patch to include status
+  const orig=_origAddTask;
+  const title=$('cTitle').value.trim();
+  if(!title){$('cTitle').focus();return;}
+  S.tasks.unshift({id:uid(),title,cat:$('cCat').value,pri:$('cPri').value,due:$('cDue').value,
+    repeat:$('cRep').value,notes:$('cNotes').value.trim(),done:false,
+    status:$('cStatus')&&$('cStatus').value||'todo',
+    created:Date.now(),touched:Date.now(),pushes:0,subtasks:staged.slice()});
+  $('cTitle').value='';$('cNotes').value='';$('cDue').value='';$('cRep').value='none';
+  if($('cStatus'))$('cStatus').value='todo';
+  $('cStage').classList.remove('on');
+  staged=[];renderStage();save();renderAll();toast('Task added');
+}
+
+/* ================= KANBAN ================= */
+let kbFilters={pri:'all',due:'all',cat:'all',q:''};
+let kbDragId=null,kbCatBuilt=false;
+
+function kbStatus(t){return t.done?'done':(t.status||'todo');}
+
+function kbDueBucket(t){
+  if(!t.due)return'none';
+  const b=bucketOf(t);
+  if(b==='overdue')return'overdue';
+  if(b==='today')return'today';
+  if(b==='tomorrow')return'tomorrow';
+  if(['week','soon'].includes(b))return'week';
+  const diff=Math.floor((parseDue(t.due)-today0())/DAY);
+  if(diff>=7&&diff<14)return'next';
+  return'none';
+}
+
+function kbMatches(t){
+  if(kbFilters.pri!=='all'&&t.pri!==kbFilters.pri)return false;
+  if(kbFilters.cat!=='all'&&t.cat!==kbFilters.cat)return false;
+  if(kbFilters.due!=='all'&&kbDueBucket(t)!==kbFilters.due)return false;
+  if(kbFilters.q){const q=kbFilters.q.toLowerCase();if(!t.title.toLowerCase().includes(q))return false;}
+  return true;
+}
+
+function renderKanban(){
+  const kanbanView=$('v-kanban');
+  if(!kanbanView||!kanbanView.classList.contains('on'))return;
+
+  // Build category filter once
+  if(!kbCatBuilt){
+    const seg=$('kbCat');
+    S.cats.forEach(c=>{
+      const b=document.createElement('button');
+      b.dataset.kc=c.id;b.textContent=c.name;
+      b.onclick=()=>{
+        seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+        b.classList.add('on');kbFilters.cat=c.id;renderKanban();
+      };
+      seg.appendChild(b);
+    });
+    kbCatBuilt=true;
+  }
+
+  const cols=['todo','inprogress','blocked','done'];
+  cols.forEach(col=>{
+    const cards=$('kbCards-'+col);
+    const cnt=$('kbCnt-'+col);
+    if(!cards||!cnt)return;
+    const tasks=S.tasks.filter(t=>kbStatus(t)===col&&kbMatches(t));
+    cnt.textContent=tasks.length;
+    if(!tasks.length){
+      cards.innerHTML=`<div class="kb-empty">NO CARDS</div>`;
+      return;
+    }
+    cards.innerHTML=tasks.map(t=>{
+      const c=catOf(t.cat),dl=dueLabel(t),bkt=bucketOf(t),sp=subProg(t);
+      return `<div class="kb-card" draggable="true" data-kbid="${t.id}">
+        <div class="kb-pri-bar ${t.pri}"></div>
+        <div class="kb-card-title" data-kbedit="${t.id}">${esc(t.title)}</div>
+        <div class="kb-card-meta">
+          <span class="chip-cat"><span class="swatch" style="background:${c.color}"></span>${esc(c.name)}</span>
+          <span class="pri ${t.pri}">${t.pri}</span>
+          ${dl?`<span class="chip-due ${bkt==='overdue'?'od':''}">${dl}</span>`:''}
+          ${sp?`<span class="sub-pill"><span class="mini-bar"><i style="width:${sp.pct}%"></i></span>${sp.done}/${sp.total}</span>`:''}
+        </div>
+      </div>`;
+    }).join('');
+
+    // Wire card drag
+    cards.querySelectorAll('.kb-card').forEach(card=>{
+      card.ondragstart=e=>{
+        kbDragId=card.dataset.kbid;
+        setTimeout(()=>card.classList.add('dragging'),0);
+        e.dataTransfer.effectAllowed='move';
+      };
+      card.ondragend=()=>{
+        card.classList.remove('dragging');
+        document.querySelectorAll('.kb-col').forEach(c=>c.classList.remove('drop-target'));
+        kbDragId=null;
+      };
+      card.ondragover=e=>{e.preventDefault();card.classList.add('drag-over');};
+      card.ondragleave=()=>card.classList.remove('drag-over');
+      card.ondrop=e=>{e.preventDefault();card.classList.remove('drag-over');/* handled by col */};
+      // Click title to go to task in tasks tab
+      const titleEl=card.querySelector('[data-kbedit]');
+      if(titleEl)titleEl.onclick=()=>{
+        const id=titleEl.dataset.kbedit;
+        editing=editing===id?null:id;
+        openTasks.delete(id);
+        // switch to tasks tab
+        document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+        document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+        document.querySelector('[data-v="tasks"]').classList.add('on');
+        $('v-tasks').classList.add('on');
+        renderTasks();
+        setTimeout(()=>{
+          const el=document.querySelector(`[data-id="${id}"]`)||document.querySelector(`.task`);
+          if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+        },100);
+      };
+    });
+  });
+
+  // Wire column drop zones
+  document.querySelectorAll('.kb-col').forEach(col=>{
+    col.ondragover=e=>{e.preventDefault();col.classList.add('drop-target');};
+    col.ondragleave=e=>{if(!col.contains(e.relatedTarget))col.classList.remove('drop-target');};
+    col.ondrop=e=>{
+      e.preventDefault();col.classList.remove('drop-target');
+      if(!kbDragId)return;
+      const newStatus=col.dataset.col;
+      const t=S.tasks.find(x=>x.id===kbDragId);
+      if(!t)return;
+      if(newStatus==='done'){
+        if(!t.done){completeTask(t);touch(t);}
+      }else{
+        t.done=false;t.completed=null;t.status=newStatus;touch(t);
+      }
+      save();renderAll();
+    };
+  });
+}
+
+// Wire Kanban filters
+$('kbQ').oninput=function(){kbFilters.q=this.value;renderKanban();};
+$('kbPri').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  $('kbPri').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');kbFilters.pri=b.dataset.kp;renderKanban();
+});
+$('kbDue').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  $('kbDue').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');kbFilters.due=b.dataset.kd;renderKanban();
+});
+$('kbClear').onclick=()=>{
+  kbFilters={pri:'all',due:'all',cat:'all',q:''};
+  $('kbQ').value='';
+  ['kbPri','kbDue','kbCat'].forEach(id=>{
+    const el=$(id);
+    if(el){el.querySelectorAll('button').forEach(b=>b.classList.remove('on'));el.querySelector('button').classList.add('on');}
+  });
+  renderKanban();
+};
+
+/* ================= INSIGHTS TABS ================= */
+document.querySelectorAll('.ins-tab').forEach(tab=>tab.onclick=()=>{
+  document.querySelectorAll('.ins-tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.ins-panel').forEach(p=>p.classList.remove('on'));
+  tab.classList.add('on');
+  $('it-'+tab.dataset.it).classList.add('on');
+});
+
 /* ================= DAILY / WEEKLY PLANNER ================= */
-async function runPlanner(mode,out,btn){
+async function runPlanner(mode,outEl,btn){
   const key=getAKey();
-  if(!key){out.innerHTML=`<div class="ins-err">No API key configured. Open ⚙ Settings.</div>`;return;}
+  if(!key){outEl.innerHTML=`<div class="ins-err">No API key configured. Open ⚙ Settings.</div>`;return;}
   const open=S.tasks.filter(t=>!t.done);
-  if(!open.length){out.innerHTML=`<div class="ins-err">No open tasks to plan.</div>`;return;}
-  const origText=btn.textContent;btn.textContent='Thinking…';btn.disabled=true;
+  if(!open.length){outEl.innerHTML=`<div class="ins-err">No open tasks to plan.</div>`;return;}
+  const origText=btn.textContent;
+  btn.textContent='Thinking…';btn.disabled=true;
   const bills=S.bills.filter(b=>!b.paused&&['overdue','soon','today'].includes(billStatus(b)));
-  const snapshot=open.map(t=>`- [${catOf(t.cat).name}/${t.pri}/${t.status||'todo'}] ${t.title}${t.due?' due '+t.due:''}${isStalled(t)?' STALLED':''}${bucketOf(t)==='overdue'?' OVERDUE':''}`).join('\n');
+  const snapshot=open.map(t=>`- [${catOf(t.cat).name}/${t.pri}] ${t.title}${t.due?' due '+t.due:''}${isStalled(t)?' STALLED':''}${bucketOf(t)==='overdue'?' OVERDUE':''}`).join('\n');
   const billSnap=bills.map(b=>`- ${b.name} ${money(b.amount)} ${billStatus(b)}`).join('\n');
   const todayStr=iso(today0());
+  const weekTasks=open.filter(t=>['today','tomorrow','week'].includes(bucketOf(t)));
   const prompt=mode==='day'
-    ?`You are a personal productivity coach. Today is ${todayStr}. Create a focused daily plan.
+    ?`You are a personal productivity coach. Today is ${todayStr}. ${weekTasks.length} tasks due this week already.
 
 OPEN TASKS:\n${snapshot}\nBILLS NEEDING ATTENTION:\n${billSnap||'None'}
 
-Return ONLY valid JSON:
-{"greeting":"one motivating sentence referencing real tasks","time_estimate":"e.g. ~4 hours","blocks":[{"time":"Morning|After lunch|End of day","tasks":[{"title":"exact task title","rank":1,"urgency":"urgent|high|med|low","why":"specific reason NOW","est":"15 min"}]}],"skip_today":["title"],"skip_reason":"why these can wait"}`
-    :`You are a personal productivity coach. Today is ${todayStr}. Create a weekly plan Mon–Sun.
+Return ONLY valid JSON (no markdown):
+{"greeting":"one motivating sentence","time_estimate":"~X hours","blocks":[{"time":"Morning|After lunch|End of day","tasks":[{"title":"exact title","rank":1,"urgency":"urgent|high|med|low","why":"specific reason","est":"15 min"}]}],"skip_today":["title"],"skip_reason":"why"}`
+    :`You are a personal productivity coach. Today is ${todayStr}.
 
-OPEN TASKS:\n${snapshot}\nBILLS NEEDING ATTENTION:\n${billSnap||'None'}
+OPEN TASKS:\n${snapshot}\nBILLS:\n${billSnap||'None'}
 
-Return ONLY valid JSON:
-{"overview":"2 sentences about the week","days":[{"day":"Monday","date":"YYYY-MM-DD","theme":"short theme","tasks":[{"title":"exact task title","urgency":"urgent|high|med|low","why":"brief reason"}],"note":"coaching tip"}],"weekly_tip":"one actionable tip"}`;
+Return ONLY valid JSON (no markdown):
+{"overview":"2 sentences about the week","days":[{"day":"Monday","date":"YYYY-MM-DD","theme":"short theme","tasks":[{"title":"exact title","urgency":"urgent|high|med|low","why":"brief reason"}],"note":"coaching tip"}],"weekly_tip":"one tip"}`;
+
   try{
     const resp=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
@@ -3428,49 +4245,70 @@ Return ONLY valid JSON:
     const data=await resp.json();
     const raw=data.content?.filter(x=>x.type==='text').map(x=>x.text).join('')||'';
     const j=JSON.parse(raw.replace(/```json|```/g,'').trim());
-    if(mode==='day')renderDayPlan(j,out);
-    else renderWeekPlan(j,out);
-  }catch(e){out.innerHTML=`<div class="ins-err">Couldn't generate plan. Check connection and try again.</div>`;}
+    if(mode==='day')renderDayPlan(j,outEl);
+    else renderWeekPlan(j,outEl);
+  }catch(e){
+    outEl.innerHTML=`<div class="ins-err">Couldn't generate plan. Check your API key and connection.</div>`;
+    console.error('Planner error:',e);
+  }
   btn.textContent=origText;btn.disabled=false;
 }
 
 function renderDayPlan(j,out){
-  let html=`<div class="panel" style="margin-bottom:20px"><div class="p-head"><div class="p-title">Today's plan</div><div class="hint">${esc(j.time_estimate||'')}</div></div><div class="p-body">`;
-  html+=`<div style="font-size:13.5px;color:var(--text-mid);line-height:1.6;margin-bottom:16px;font-style:italic">${esc(j.greeting||'')}</div>`;
-  html+=`<div style="font-size:11px;color:var(--text-dim);margin-bottom:12px;font-family:var(--mono)">DRAG TO REORDER · CLICK × TO REMOVE FROM PLAN</div>`;
-  html+=`<div id="dayPlanList">`;
+  let html=`<div class="panel" style="margin-bottom:20px">
+    <div class="p-head"><div class="p-title">Today's plan</div><div class="hint">${esc(j.time_estimate||'')}</div></div>
+    <div class="p-body">
+    <div style="font-size:13.5px;color:var(--text-mid);line-height:1.6;margin-bottom:16px;font-style:italic">${esc(j.greeting||'')}</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;font-family:var(--mono)">DRAG TO REORDER · × TO REMOVE FROM PLAN</div>
+    <div id="dayPlanList">`;
   (j.blocks||[]).forEach(block=>{
     html+=`<div class="plan-day-label">${esc(block.time)}</div>`;
     (block.tasks||[]).forEach((t,i)=>{
-      html+=`<div class="plan-item ${t.urgency||'med'}" draggable="true" data-planidx="${i}">
+      html+=`<div class="plan-item" draggable="true">
         <div class="plan-num">${t.rank||i+1}</div>
-        <div class="plan-body"><div class="plan-title">${esc(t.title)}</div><div class="plan-why">${esc(t.why||'')}</div>
-        <div class="plan-chips"><span class="pri ${t.urgency||'med'}">${t.urgency||'med'}</span>${t.est?`<span class="badge auto" style="font-size:10px">${esc(t.est)}</span>`:''}</div></div>
-        <button onclick="this.closest('.plan-item').remove()" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;flex-shrink:0;padding:0 4px" title="Remove from plan">×</button>
+        <div class="plan-body">
+          <div class="plan-title">${esc(t.title)}</div>
+          <div class="plan-why">${esc(t.why||'')}</div>
+          <div class="plan-chips">
+            <span class="pri ${t.urgency||'med'}">${t.urgency||'med'}</span>
+            ${t.est?`<span class="badge auto" style="font-size:10px">${esc(t.est)}</span>`:''}
+          </div>
+        </div>
+        <button class="plan-remove" title="Remove from plan">×</button>
       </div>`;
     });
   });
   html+=`</div>`;
-  if(j.skip_today?.length){
-    html+=`<div style="margin-top:14px;padding:10px 12px;background:var(--panel-hi);border-radius:8px;font-size:12.5px;color:var(--text-dim)"><span style="font-weight:500;color:var(--text-mid)">Leave for later:</span> ${j.skip_today.map(t=>esc(t)).join(', ')}${j.skip_reason?`<div style="margin-top:4px;font-style:italic">${esc(j.skip_reason)}</div>`:''}</div>`;
+  if(j.skip_today&&j.skip_today.length){
+    html+=`<div style="margin-top:14px;padding:10px 12px;background:var(--panel-hi);border-radius:8px;font-size:12.5px;color:var(--text-dim)">
+      <span style="font-weight:500;color:var(--text-mid)">Leave for later:</span> ${j.skip_today.map(t=>esc(t)).join(', ')}
+      ${j.skip_reason?`<div style="margin-top:4px;font-style:italic">${esc(j.skip_reason)}</div>`:''}
+    </div>`;
   }
   html+=`</div></div>`;
   out.innerHTML=html;
-  // Wire drag-to-reorder
-  initPlanDrag($('dayPlanList'));
+  // Wire remove buttons and drag
+  out.querySelectorAll('.plan-remove').forEach(btn=>btn.onclick=()=>btn.closest('.plan-item').remove());
+  initPlanDrag(out.querySelector('#dayPlanList'));
 }
 
 function renderWeekPlan(j,out){
-  let html=`<div class="panel" style="margin-bottom:20px"><div class="p-head"><div class="p-title">Week plan</div></div><div class="p-body">`;
-  html+=`<div style="font-size:13.5px;color:var(--text-mid);line-height:1.6;margin-bottom:18px;font-style:italic">${esc(j.overview||'')}</div>`;
+  let html=`<div class="panel" style="margin-bottom:20px">
+    <div class="p-head"><div class="p-title">Week plan</div></div>
+    <div class="p-body">
+    <div style="font-size:13.5px;color:var(--text-mid);line-height:1.6;margin-bottom:18px;font-style:italic">${esc(j.overview||'')}</div>`;
   (j.days||[]).forEach(day=>{
-    if(!day.tasks?.length)return;
-    html+=`<div class="plan-day-label">${esc(day.day)}${day.date?` <span style="font-weight:400;color:var(--text-dim)">${day.date}</span>`:''} ${day.theme?`<span style="color:var(--violet);margin-left:4px">· ${esc(day.theme)}</span>`:''}</div>`;
+    if(!day.tasks||!day.tasks.length)return;
+    html+=`<div class="plan-day-label">${esc(day.day)}${day.date?` <span style="font-weight:400">${day.date}</span>`:''} ${day.theme?`<span style="color:var(--violet)">· ${esc(day.theme)}</span>`:''}</div>`;
     day.tasks.forEach((t,i)=>{
-      html+=`<div class="plan-item ${t.urgency||'med'}" draggable="true">
+      html+=`<div class="plan-item" draggable="true">
         <div class="plan-num">${i+1}</div>
-        <div class="plan-body"><div class="plan-title">${esc(t.title)}</div>${t.why?`<div class="plan-why">${esc(t.why)}</div>`:''}<div class="plan-chips"><span class="pri ${t.urgency||'med'}">${t.urgency||'med'}</span></div></div>
-        <button onclick="this.closest('.plan-item').remove()" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;flex-shrink:0;padding:0 4px" title="Remove">×</button>
+        <div class="plan-body">
+          <div class="plan-title">${esc(t.title)}</div>
+          ${t.why?`<div class="plan-why">${esc(t.why)}</div>`:''}
+          <div class="plan-chips"><span class="pri ${t.urgency||'med'}">${t.urgency||'med'}</span></div>
+        </div>
+        <button class="plan-remove" title="Remove">×</button>
       </div>`;
     });
     if(day.note)html+=`<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:4px 6px 10px">${esc(day.note)}</div>`;
@@ -3478,37 +4316,58 @@ function renderWeekPlan(j,out){
   if(j.weekly_tip)html+=`<div style="margin-top:8px;padding:12px 14px;background:rgba(91,168,245,.07);border:1px solid rgba(91,168,245,.2);border-radius:8px;font-size:13px;color:var(--blue)">💡 ${esc(j.weekly_tip)}</div>`;
   html+=`</div></div>`;
   out.innerHTML=html;
+  out.querySelectorAll('.plan-remove').forEach(btn=>btn.onclick=()=>btn.closest('.plan-item').remove());
 }
 
 function initPlanDrag(container){
   if(!container)return;
   let dragEl=null;
   container.querySelectorAll('.plan-item').forEach(item=>{
-    item.ondragstart=()=>{dragEl=item;setTimeout(()=>item.style.opacity='.35',0)};
-    item.ondragend=()=>{item.style.opacity='';dragEl=null;container.querySelectorAll('.plan-item').forEach(i=>i.classList.remove('drag-over'))};
-    item.ondragover=e=>{
-      e.preventDefault();
-      if(dragEl&&dragEl!==item){
-        container.querySelectorAll('.plan-item').forEach(i=>i.classList.remove('drag-over'));
-        item.classList.add('drag-over');
-      }
-    };
+    item.ondragstart=()=>{dragEl=item;setTimeout(()=>item.style.opacity='.35',0);};
+    item.ondragend=()=>{item.style.opacity='';dragEl=null;container.querySelectorAll('.plan-item').forEach(i=>i.classList.remove('drag-over'));};
+    item.ondragover=e=>{e.preventDefault();if(dragEl&&dragEl!==item){container.querySelectorAll('.plan-item').forEach(i=>i.classList.remove('drag-over'));item.classList.add('drag-over');}};
     item.ondrop=e=>{
       e.preventDefault();
       if(dragEl&&dragEl!==item){
         const items=[...container.querySelectorAll('.plan-item')];
-        const from=items.indexOf(dragEl),to=items.indexOf(item);
-        if(from<to)item.after(dragEl); else item.before(dragEl);
+        if(items.indexOf(dragEl)<items.indexOf(item))item.after(dragEl);else item.before(dragEl);
         container.querySelectorAll('.plan-item').forEach(i=>i.classList.remove('drag-over'));
       }
     };
   });
 }
 
+$('bPlanDay').onclick=()=>runPlanner('day',$('planDayOut'),$('bPlanDay'));
+$('bPlanWeek').onclick=()=>runPlanner('week',$('planWeekOut'),$('bPlanWeek'));
+
+/* ================= UPDATE renderAll to include Kanban ================= */
+const _baseRenderAll=renderAll;
+function renderAll(){
+  _baseRenderAll();
+  renderKanban();
+}
+
+/* ================= UPDATE TAB HANDLER to include Kanban ================= */
+// Override initTabs to add kanban support
+function initTabs(){
+  $('tabBar').querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+    $('tabBar').querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    const v=$('v-'+b.dataset.v);
+    if(v)v.classList.add('on');
+    if(b.dataset.v==='dash')renderDash();
+    if(b.dataset.v==='week')renderWeek();
+    if(b.dataset.v==='kanban')renderKanban();
+    if(b.dataset.v==='notes'){fillNoteSelects();renderNotes();}
+    if(b.dataset.v==='recipes'){renderRecipes();renderStaples();}
+  });
+}
+
 cacheShell();
 if(!navigator.onLine)updateConnStatus();
-
-
+loadStaples();
+renderStaples();
 initDraggableTabs();
 initTabs();
 </script>
