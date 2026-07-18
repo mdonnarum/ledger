@@ -756,6 +756,37 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 .plan-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
 .plan-remove{background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:0 2px;flex-shrink:0;line-height:1}
 .plan-remove:hover{color:var(--rose)}
+/* ---- SHOPPING ---- */
+.shop-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:600px){.shop-layout{grid-template-columns:1fr}}
+.shop-section{background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:16px}
+.shop-sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.shop-sec-title{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:-0.01em}
+.shop-add-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.shop-add-row input{flex:1;min-width:120px;background:var(--panel-hi);border:1px solid var(--line-soft);border-radius:7px;height:34px;padding:0 10px;font-size:13.5px;outline:none;color:var(--text)}
+.shop-add-row input:focus{border-color:var(--mint)}
+.shop-add-row select{height:34px;background:var(--panel-hi);border:1px solid var(--line-soft);border-radius:7px;padding:0 8px;font-size:12px;color:var(--text);outline:none}
+.shop-aisle{margin-bottom:12px}
+.shop-aisle-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:600}
+.shop-item{display:flex;align-items:center;gap:10px;padding:8px 4px;border-radius:6px;cursor:pointer;transition:.12s}
+.shop-item:hover{background:var(--panel-hi)}
+.shop-item.done{opacity:.4}
+.shop-item.done .shop-name{text-decoration:line-through}
+.shop-cb{width:20px;height:20px;border-radius:5px;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.13s}
+.shop-cb.on{background:var(--mint);border-color:var(--mint)}
+.shop-cb svg{width:11px;height:11px;stroke:#08120F;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;display:none}
+.shop-cb.on svg{display:block}
+.shop-name{flex:1;font-size:13.5px}
+.shop-del{background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;opacity:0;transition:opacity .12s}
+.shop-item:hover .shop-del{opacity:1}
+.shop-empty{text-align:center;padding:20px 10px;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.06em}
+/* ---- ACTIVE KPI TILE ---- */
+.kpi{cursor:pointer;transition:border-color .14s,transform .14s}
+.kpi:hover{border-color:var(--line)!important;transform:translateY(-1px)}
+.active-kpi{border-color:var(--mint)!important;box-shadow:0 0 0 2px rgba(77,217,176,.15)!important}
+/* ---- TASK DRAG ---- */
+#taskZone .task.dragging{opacity:.35;cursor:grabbing}
+#taskZone .task.drag-over{border-top:2px solid var(--mint)!important}
 </style>
 </head>
 <body>
@@ -789,7 +820,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v18</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v20</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -809,14 +840,14 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
       <button class="tab" data-v="kanban">Kanban</button>
       <button class="tab" data-v="bills">Bills</button>
       <button class="tab" data-v="notes">Notes</button>
-      <button class="tab" data-v="recipes">Recipes</button>
+      <button class="tab" data-v="shop">Shopping</button>
       <button class="tab" data-v="dash">Dashboard</button>
       <button class="tab" data-v="week">Weekly Review</button>
       <button class="tab" data-v="ins">Insights</button>
     </div>
     <button class="btn btn-sm" id="bFocus" style="white-space:nowrap">🎯 Focus mode</button>
     <button class="btn btn-sm" id="bTemplates" style="white-space:nowrap">📋 Templates</button>
-    <button class="btn btn-sm" id="bPdfExport" style="white-space:nowrap">📄 Export PDF</button>
+    <button class="btn btn-sm" id="bWordExport" style="white-space:nowrap">📝 Export to Word</button>
   </div>
 
   <!-- FOCUS MODE OVERLAY -->
@@ -1007,56 +1038,50 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
     <div id="noteZone"></div>
   </div>
 
-  <!-- ===== RECIPES ===== -->
-  <div class="view" id="v-recipes">
-    <div class="recipe-layout">
-      <div>
-        <div class="rx-filters">
-          <input class="rx-search" id="rxq" placeholder="Search recipes…">
-          <span class="rx-chip on" data-rx="all">All</span>
-          <span class="rx-chip" data-rx="breakfast">Breakfast</span>
-          <span class="rx-chip" data-rx="lunch">Lunch</span>
-          <span class="rx-chip" data-rx="dinner">Dinner</span>
-          <span class="rx-chip" data-rx="snack">Snack</span>
-          <span class="rx-chip" data-rx="soup">Soup</span>
+  <!-- ===== SHOPPING ===== -->
+  <div class="view" id="v-shop">
+    <div class="shop-layout">
+      <!-- ONE-TIME ITEMS -->
+      <div class="shop-section">
+        <div class="shop-sec-head">
+          <div class="shop-sec-title">Shopping list</div>
+          <div class="hint">Checked items disappear</div>
         </div>
-        <div class="rx-grid" id="rxGrid"></div>
+        <div class="shop-add-row">
+          <input id="shopInput" placeholder="Add item…" maxlength="80">
+          <select id="shopAisle">
+            <option value="produce">🥦 Produce</option>
+            <option value="dairy" selected>🥛 Dairy</option>
+            <option value="proteins">🥩 Proteins</option>
+            <option value="pantry">🥫 Pantry</option>
+            <option value="frozen">🧊 Frozen</option>
+            <option value="household">🧹 Household</option>
+            <option value="other">📦 Other</option>
+          </select>
+          <button class="btn btn-go btn-sm" id="bShopAdd">Add</button>
+        </div>
+        <div id="shopList"></div>
       </div>
-      <div class="rx-sidebar">
-        <div class="panel" style="margin-bottom:14px">
-          <div class="p-head">
-            <div class="p-title">Meal plan</div>
-            <div class="hint" id="planCount">0 recipes</div>
-          </div>
-          <div class="p-body" style="padding:10px">
-            <div id="planList"></div>
-            <button class="btn btn-go" id="bShop" style="width:100%;justify-content:center;margin-top:10px" disabled>🛒 Generate shopping list</button>
-          </div>
+      <!-- STAPLES -->
+      <div class="shop-section">
+        <div class="shop-sec-head">
+          <div class="shop-sec-title">Staples</div>
+          <button class="btn btn-sm" id="bStaplesReset">Uncheck all</button>
         </div>
-        <!-- STAPLES LIST -->
-        <div class="panel staples-panel">
-          <div class="p-head">
-            <div class="p-title">Grocery staples</div>
-            <button class="btn btn-sm" id="bStaplesReset" style="font-size:11px">Uncheck all</button>
-          </div>
-          <div class="p-body" style="padding:10px">
-            <div class="staple-add-row">
-              <input id="stapleInput" placeholder="Add item (e.g. milk)…" maxlength="60">
-              <div class="field" style="height:34px"><label>Aisle</label>
-                <select id="stapleSection" style="font-size:12px">
-                  <option value="produce">Produce</option>
-                  <option value="dairy" selected>Dairy</option>
-                  <option value="proteins">Proteins</option>
-                  <option value="pantry">Pantry</option>
-                  <option value="frozen">Frozen</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <button class="btn btn-go btn-sm" id="bStapleAdd" style="margin-left:0">Add</button>
-            </div>
-            <div id="stapleList"></div>
-          </div>
+        <div class="shop-add-row">
+          <input id="stapleInput" placeholder="Add staple (e.g. milk)…" maxlength="80">
+          <select id="stapleAisle">
+            <option value="produce">🥦 Produce</option>
+            <option value="dairy" selected>🥛 Dairy</option>
+            <option value="proteins">🥩 Proteins</option>
+            <option value="pantry">🥫 Pantry</option>
+            <option value="frozen">🧊 Frozen</option>
+            <option value="household">🧹 Household</option>
+            <option value="other">📦 Other</option>
+          </select>
+          <button class="btn btn-go btn-sm" id="bStapleAdd">Add</button>
         </div>
+        <div id="stapleList"></div>
       </div>
     </div>
   </div>
@@ -1102,6 +1127,8 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
         <div class="bill-chart-wrap" id="billChart"></div>
       </div>
     </div>
+  
+    <div id="dashDetail" style="display:none;margin-top:16px"></div>
   </div>
 
   <!-- ===== WEEKLY REVIEW ===== -->
@@ -1137,34 +1164,20 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 
   <!-- ===== INSIGHTS ===== -->
   <div class="view" id="v-ins">
-    <div class="ins-tabs">
-      <button class="ins-tab on" data-it="today">📅 Today</button>
-      <button class="ins-tab" data-it="week">📆 This Week</button>
-      <button class="ins-tab" data-it="board">🔍 Board Review</button>
+    <div class="ins-hero">
+      <h2>Full board analysis</h2>
+      <p>Claude generates your daily plan, weekly schedule, and board review all at once — one click, complete picture.</p>
+      <button class="btn-ai" id="bGenAll">✦ Generate everything</button>
     </div>
-    <div class="ins-panel on" id="it-today">
-      <div class="ins-hero">
-        <h2>Plan my day</h2>
-        <p>Claude ranks what to tackle today with time estimates and reasoning. Drag to reorder, × to remove.</p>
-        <button class="btn-ai" id="bPlanDay">Generate today's plan</button>
+    <div id="insAllOut">
+      <div class="ins-tabs" style="margin-top:20px">
+        <button class="ins-tab on" data-it="today">📅 Today</button>
+        <button class="ins-tab" data-it="week">📆 This Week</button>
+        <button class="ins-tab" data-it="board">🔍 Board Review</button>
       </div>
-      <div id="planDayOut"></div>
-    </div>
-    <div class="ins-panel" id="it-week">
-      <div class="ins-hero">
-        <h2>Plan this week</h2>
-        <p>Claude spreads tasks across the week with themes and coaching notes. Drag to reorder.</p>
-        <button class="btn-ai" id="bPlanWeek" style="background:linear-gradient(135deg,var(--violet),var(--blue))">Generate week plan</button>
-      </div>
-      <div id="planWeekOut"></div>
-    </div>
-    <div class="ins-panel" id="it-board">
-      <div class="ins-hero">
-        <h2>Read the board for me</h2>
-        <p>Claude looks at what's aging, what you keep pushing, what's sitting untouched, and what bills are landing — then tells you what's stuck and what to do first.</p>
-        <button class="btn-ai" id="bGen">Generate board review</button>
-      </div>
-      <div id="insOut"></div>
+      <div class="ins-panel on" id="it-today"><div id="planDayOut"></div></div>
+      <div class="ins-panel" id="it-week"><div id="planWeekOut"></div></div>
+      <div class="ins-panel" id="it-board"><div id="insOut"></div></div>
     </div>
   </div>
 </div><!-- end .app -->
@@ -1583,6 +1596,7 @@ function normalize(t){
  t.repeat=t.repeat||'none';
  t.pushes=t.pushes||0;
  if(!t.status)t.status=t.done?'done':'todo';
+ if(t.sortOrder===undefined)t.sortOrder=Date.now();
  return t;
 }
 async function load(){
@@ -2231,7 +2245,8 @@ function wireTasks(){
  });
  Q('[data-subadd]').forEach(el=>el.onclick=()=>addSub(el.dataset.subadd));
  Q('[data-subin]').forEach(el=>el.onkeydown=e=>{if(e.key==='Enter')addSub(el.dataset.subin)});
-}
+
+wireTaskDrag();}
 function addSub(tid){
  const inp=document.querySelector(`[data-subin="${tid}"]`),v=inp.value.trim();
  if(!v)return;
@@ -2487,7 +2502,7 @@ function renderPmx(){
  }).join('');
  document.querySelectorAll('[data-pri]').forEach(el=>el.onclick=()=>drillPri(el.dataset.pri));
 }
-function renderDash(){renderStreak();renderKPIs();renderHorizon();renderDonut();renderPbars();renderAging();renderMomentum();renderPmx();renderBillChart();}
+function renderDash(){renderStreak();renderKPIs();renderHorizon();renderDonut();renderPbars();renderAging();renderMomentum();renderPmx();renderBillChart();;setTimeout(wireKpiTiles,100);}
 
 function weekBounds(offset){
  const d=today0();
@@ -2687,104 +2702,7 @@ function applyBreakdown(titleKey,subs,btn){
  btn.disabled=true;btn.textContent=`✓ Added ${subs.length} items`;
  toast(`Added ${subs.length} checklist items to "${t.title}"`);
 }
-$('bGen').onclick=async()=>{
- const b=$('bGen'),out=$('insOut');
- if(!getAKey()){out.innerHTML=`<div class="ins-err">No API key configured. Open ⚙ Settings and paste your Anthropic API key to enable this feature.</div>`;return;}
- const open=S.tasks.filter(t=>!t.done);
- if(!open.length&&!S.bills.length){out.innerHTML=`<div class="ins-err">Nothing to analyze — add some tasks or bills first.</div>`;return}
- b.disabled=true;b.innerHTML=`<span class="spin"></span> Reading the board…`;out.innerHTML='';
- const tasks=open.map(t=>({
- title:t.title,category:catOf(t.cat).name,priority:t.pri,due:t.due||'unscheduled',status:bucketOf(t),
- repeats:t.repeat!=='none'?REPEAT[t.repeat].label:'no',
- days_overdue:bucketOf(t)==='overdue'?Math.abs(dayDiff(parseDue(t.due))):0,
- age_days:ageDays(t),days_untouched:idleDays(t),times_pushed:t.pushes||0,
- checklist:(t.subtasks||[]).map(s=>({item:s.title,done:s.done,progress_note:s.notes||''})),
- notes:t.notes||''
- }));
- const bills=S.bills.filter(x=>!x.paused).map(x=>({
- name:x.name,amount:x.amount,recurs:CAD[x.cadence].label,due:x.due,
- days_until:dayDiff(parseDue(x.due)),autopay:x.autopay,status:billStatus(x)
- }));
- const recent=S.tasks.filter(t=>t.done&&t.completed&&t.completed>Date.now()-14*DAY).length;
- const prompt=`You are a blunt, perceptive planning coach. Below is a person's open task board and their recurring bills. They completed ${recent} tasks in the last 14 days.
-TASKS:
-${JSON.stringify(tasks,null,1)}
-BILLS:
-${JSON.stringify(bills,null,1)}
-Today is ${new Date().toDateString()}.
-Read these signals carefully:
-- times_pushed: how many times they deferred the due date. High = avoidance.
-- days_untouched: no edits, no checklist progress. High + old = being circled, not worked.
-- age_days with an empty checklist and no notes: usually means too vague or too big to start.
-- progress_note on checklist items: where they actually are. If a note says they're waiting on someone, the real blocker may be a follow-up, not the task itself.
-- unscheduled + high priority: they know it matters but won't commit to a date.
-- category clustering: one area quietly eating the whole board.
-- bills past due with autopay=false: real money consequences.
-Respond with ONLY a JSON object, no fences, no preamble:
-{
- "headline": "one blunt sentence naming the real problem with this board right now",
- "stalled": [{"task":"exact task title","diagnosis":"TOO BIG|TOO VAGUE|NO FIRST STEP|BEING AVOIDED|BLOCKED ON SOMEONE|OVERLOOKED","why":"1-2 sentences citing the actual numbers or a progress note","breakdown":["concrete item","concrete item","concrete item"]}],
- "plan": [{"task":"exact task title or bill name","why":"why this one first","first_step":"a concrete physical action under 15 minutes"}],
- "quick_wins": [{"task":"exact task title","why":"why it's fast"}],
- "blind_spots": [{"title":"short name","detail":"1-2 sentences"}]
-}
-Rules:
-- "stalled": 2-3 genuinely stuck tasks. Include "breakdown" (3-5 concrete checklist items) ONLY for TOO BIG / TOO VAGUE / NO FIRST STEP, and only if the task has no checklist already. Otherwise empty array.
-- If a task has a checklist with progress notes, read them: the right advice may be "chase the person you're waiting on", and the first_step should say exactly who to chase.
-- "plan": exactly 3 items in order. A past-due bill with no autopay should usually rank high. first_step must be physical and specific, never "start working on it".
-- "quick_wins": 1-3 small items worth clearing for momentum.
-- "blind_spots": 2-3 patterns they haven't noticed.
-- Titles must match exactly. Be direct. No generic productivity advice.`;
- try{
- const r=await fetch("https://api.anthropic.com/v1/messages",{
- method:"POST",headers:{"Content-Type":"application/json","x-api-key":getAKey(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
- body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:2200,messages:[{role:"user",content:prompt}]})
- });
- const d=await r.json();
- const txt=d.content.filter(x=>x.type==='text').map(x=>x.text).join('\n').replace(/```json|```/g,'').trim();
- const j=JSON.parse(txt);
- const stalledHTML=(j.stalled||[]).map((s,i)=>`
- <div class="ins-card ins-stall">
- <div class="ins-idx">⚑</div>
- <div style="flex:1;min-width:0">
- <div class="ins-t">${esc(s.task)}</div>
- <span class="ins-diag">${esc(s.diagnosis)}</span>
- <div class="ins-w">${esc(s.why)}</div>
- ${(s.breakdown&&s.breakdown.length)?`<div class="brk">
- <div class="brk-h">Suggested breakdown</div>
- ${s.breakdown.map(x=>`<div class="brk-s"><span class="d">└</span><span>${esc(x)}</span></div>`).join('')}
- <button class="brk-btn" data-brk="${i}">＋ Add these ${s.breakdown.length} checklist items</button>
- </div>`:''}
- </div>
- </div>`).join('');
- out.innerHTML=`
- <div class="ins-head">${esc(j.headline)}</div>
- ${stalledHTML?`<div class="ins-sec"><div class="p-title">Stuck — and why</div>${stalledHTML}</div>`:''}
- <div class="ins-sec">
- <div class="p-title">Attack plan — in this order</div>
- ${(j.plan||[]).map((p,i)=>`<div class="ins-card">
- <div class="ins-idx">0${i+1}</div>
- <div style="flex:1;min-width:0">
- <div class="ins-t">${esc(p.task)}</div>
- <div class="ins-w">${esc(p.why)}</div>
- <div class="ins-first"><b>Start here</b>${esc(p.first_step)}</div>
- </div></div>`).join('')}
- </div>
- ${(j.quick_wins||[]).length?`<div class="ins-sec"><div class="p-title">Quick wins — clear these for momentum</div>
- ${j.quick_wins.map(w=>`<div class="ins-card ins-win"><div class="ins-idx">⚡</div>
- <div><div class="ins-t">${esc(w.task)}</div><div class="ins-w">${esc(w.why)}</div></div></div>`).join('')}</div>`:''}
- ${(j.blind_spots||[]).length?`<div class="ins-sec"><div class="p-title">Blind spots</div>
- ${j.blind_spots.map(x=>`<div class="ins-card ins-blind"><div class="ins-idx">◆</div>
- <div><div class="ins-t">${esc(x.title)}</div><div class="ins-w">${esc(x.detail)}</div></div></div>`).join('')}</div>`:''}
- <div class="ins-note">Generated from your board just now — not stored, not remembered.<br>Regenerate any time the board changes.</div>`;
- out.querySelectorAll('[data-brk]').forEach(btn=>btn.onclick=()=>{
- const s=j.stalled[+btn.dataset.brk];applyBreakdown(s.task,s.breakdown,btn);
- });
- }catch(e){
- out.innerHTML=`<div class="ins-err">Couldn't generate a plan just now. Check your connection and try again.</div>`;
- }
- b.disabled=false;b.textContent='Regenerate plan';
-};
+
 
 function renderClock(){
  const d=new Date();
@@ -3000,40 +2918,20 @@ function renderRecipes(){
  return catOk&&qOk;
  });
  const BAND={breakfast:'#F0A23C',lunch:'#4DD9B0',dinner:'#5BA8F5',soup:'#9B8CFF',snack:'#F2586A'};
- $('rxGrid').innerHTML=list.map(r=>{
- const planned=mealPlan.includes(r.id);
- return `<div class="rx-card ${planned?'planned':''}" data-rxid="${r.id}">
- <div class="rx-band" style="background:${BAND[r.cat]||'#5A6673'}"></div>
- <div class="rx-body">
- <div class="rx-name">${esc(r.name)}</div>
- <div class="rx-desc">${esc(r.desc)}</div>
- <div class="rx-meta">
- <span class="rx-time">⏱ ${r.time} min</span>
- <span class="rx-tag">${r.cat}</span>
- ${r.toddler?`<span class="rx-tag" style="color:var(--mint);border-color:rgba(77,217,176,.3)">👶 toddler</span>`:''}
- </div>
- </div>
- <button class="rx-add-btn" data-rxplan="${r.id}" title="${planned?'Remove from plan':'Add to plan'}">${planned?'✓':'+'}</button>
- </div>`;
- }).join('');
- $('rxGrid').querySelectorAll('[data-rxid]').forEach(el=>el.onclick=e=>{
- if(e.target.closest('[data-rxplan]'))return;
- openRecipe(el.dataset.rxid);
- });
- $('rxGrid').querySelectorAll('[data-rxplan]').forEach(el=>el.onclick=e=>{
- e.stopPropagation();togglePlan(el.dataset.rxplan);
- });
+
+ 
+ 
  renderPlan();
 }
 function togglePlan(id){
  if(mealPlan.includes(id))mealPlan=mealPlan.filter(x=>x!==id);
  else mealPlan.push(id);
- renderRecipes();
+ 
 }
 function renderPlan(){
  const n=mealPlan.length;
- $('planCount').textContent=`${n} recipe${n===1?'':'s'}`;
- $('bShop').disabled=n===0;
+
+
  const list=$('planList');
  if(!n){
  list.innerHTML=`<div class="plan-empty"><div class="big">No meals planned.</div><div class="small">CLICK + ON ANY RECIPE</div></div>`;
@@ -3053,8 +2951,8 @@ function renderPlan(){
  }).join('');
  list.querySelectorAll('[data-prm]').forEach(b=>b.onclick=()=>{mealPlan=mealPlan.filter(x=>x!==b.dataset.prm);renderRecipes()});
 }
-$('rxq').oninput=e=>{rxQuery=e.target.value;renderRecipes()};
-$('bShop').onclick=openShopList;
+
+
 function openRecipe(id){
  rxDetail=RECIPES.find(r=>r.id===id);if(!rxDetail)return;
  const r=rxDetail;
@@ -3105,27 +3003,6 @@ function openShopList(){
  const totalItems=Object.values(sections).reduce((a,b)=>a+b.length,0);
  const recipes=mealPlan.map(id=>RECIPES.find(x=>x.id===id)).filter(Boolean);
  $('shopSubtitle').textContent=`${recipes.length} recipe${recipes.length===1?'':'s'}: ${recipes.map(r=>r.name).join(', ')}`;
- function renderShop(){
- $('shopBody').innerHTML=STORE_SECTIONS.map(sec=>{
- const items=sections[sec];if(!items.length)return'';
- return `<div class="shop-section">
- <div class="shop-sec-h">${SECTION_LABELS[sec]}</div>
- ${items.map(item=>`
- <div class="shop-item ${shopChecked.has(item.uid)?'got':''}" data-sit="${item.uid}">
- <div class="shop-cb"><svg viewBox="0 0 12 12"><polyline points="1.5,6 4.5,9 10.5,3"/></svg></div>
- <span class="si-name">${esc(item.name)}</span>
- <span class="si-amt">${esc(item.combined)}</span>
- </div>`).join('')}
- </div>`;
- }).join('');
- $('shopBody').querySelectorAll('[data-sit]').forEach(el=>el.onclick=()=>{
- const id=el.dataset.sit;
- shopChecked.has(id)?shopChecked.delete(id):shopChecked.add(id);
- renderShop();
- });
- const done=shopChecked.size, pct=totalItems?Math.round(done/totalItems*100):0;
- $('shopModal').querySelector('h3').textContent=`🛒 Shopping list${done?` — ${pct}% done`:''}`;
- }
  renderShop();
  $('shopReset').onclick=()=>{shopChecked=new Set();renderShop()};
  $('shopCopy').onclick=async()=>{
@@ -3143,7 +3020,7 @@ $('shopModal').onclick=e=>{if(e.target===$('shopModal'))$('shopModal').classList
 function renderAll(){
  fillCatSelect();fillNoteSelects();renderCatBar();renderCatMgr();renderStage();
  renderTasks();renderBillKPIs();renderBills();renderBillMonthly();renderDash();renderWeek();
- renderNotes();renderRecipes();renderStaples();renderKanban();
+ renderNotes();renderShop();renderKanban();
  renderClock();renderBell();updNotifBtn();
 }
 const PIN='2000';
@@ -3653,65 +3530,27 @@ function initSwipe(el,taskId){
  });
 }
 
-const STAPLES_KEY='ledger:staples';
-let staples=[];
 const STAPLE_SECTIONS=['produce','dairy','proteins','pantry','frozen','other'];
-const STAPLE_LABELS={produce:'🥦 Produce',dairy:'🥛 Dairy',proteins:'🥩 Proteins',pantry:'🥫 Pantry',frozen:'🧊 Frozen',other:'📦 Other'};
-function loadStaples(){
- try{staples=JSON.parse(localStorage.getItem(STAPLES_KEY)||'[]')}catch(e){staples=[]}
-}
-function saveStaples(){
- try{localStorage.setItem(STAPLES_KEY,JSON.stringify(staples))}catch(e){}
-}
-function renderStaples(){
- const grouped={};
- STAPLE_SECTIONS.forEach(s=>{grouped[s]=staples.filter(x=>x.sec===s)});
- const list=$('stapleList');
- const hasItems=staples.length>0;
- if(!hasItems){
- list.innerHTML=`<div style="text-align:center;padding:20px 10px;color:var(--text-dim);font-family:var(--mono);font-size:11px">ADD YOUR REGULAR ITEMS ABOVE</div>`;
- return;
- }
- list.innerHTML=STAPLE_SECTIONS.map(sec=>{
- const items=grouped[sec];
- if(!items.length)return'';
- return `<div class="staple-section">
- <div class="staple-sec-h">${STAPLE_LABELS[sec]}</div>
- ${items.map(item=>`
- <div class="staple-item ${item.got?'got':''}" data-stid="${item.id}">
- <div class="shop-cb"><svg viewBox="0 0 12 12"><polyline points="1.5,6 4.5,9 10.5,3"/></svg></div>
- <span class="si-name">${esc(item.name)}</span>
- <button class="btn btn-sm" data-stdel="${item.id}" style="color:var(--text-dim);font-size:11px;height:24px;padding:0 7px" onclick="event.stopPropagation()">×</button>
- </div>`).join('')}
- </div>`;
- }).join('');
- list.querySelectorAll('[data-stid]').forEach(el=>el.onclick=()=>{
- const s=staples.find(x=>x.id===el.dataset.stid);
- if(s){s.got=!s.got;saveStaples();renderStaples();}
- });
- list.querySelectorAll('[data-stdel]').forEach(el=>el.onclick=e=>{
- e.stopPropagation();
- staples=staples.filter(x=>x.id!==el.dataset.stdel);
- saveStaples();renderStaples();
- });
-}
 function addStaple(){
  const inp=$('stapleInput'),v=inp.value.trim();
  if(!v)return;
- staples.push({id:uid(),name:v,sec:$('stapleSection').value,got:false});
- inp.value='';saveStaples();renderStaples();inp.focus();
+ staples.push({id:uid(),name:v,aisle:$('stapleAisle').value,done:false});
+ inp.value='';saveShopData();renderShop();inp.focus();
 }
 $('bStapleAdd').onclick=addStaple;
-$('stapleInput').onkeydown=e=>{if(e.key==='Enter')addStaple()};
-$('bStaplesReset').onclick=()=>{staples.forEach(s=>s.got=false);saveStaples();renderStaples();toast('All unchecked — ready for next trip')};
+$('stapleInput').onkeydown=e=>{if(e.key==='Enter')addStaple();};
+$('bStaplesReset').onclick=()=>{staples.forEach(s=>s.done=false);saveShopData();renderShop();toast('All unchecked — ready for next trip');};
 
 function linkify(text){
  if(!text)return'';
- const escaped=esc(text);
- return escaped.replace(/(https?:\/\/[^\s<>"]+)/g,url=>{
- const display=url.length>50?url.slice(0,47)+'…':url;
- return `<a href="${url}" target="_blank" rel="noopener" class="auto-link">${display}</a>`;
- });
+ const parts=text.split(/(https?:\/\/[^\s<>"]+)/g);
+ return parts.map((part,i)=>{
+  if(i%2===1){
+   const display=part.length>55?part.slice(0,52)+'…':part;
+   return `<a href="${esc(part)}" target="_blank" rel="noopener" class="auto-link">${esc(display)}</a>`;
+  }
+  return esc(part).replace(/\n/g,'<br>');
+ }).join('');
 }
 
 // Theme button already wired above
@@ -3728,7 +3567,7 @@ function initTabs(){
  if(b.dataset.v==='week')renderWeek();
  if(b.dataset.v==='kanban')renderKanban();
  if(b.dataset.v==='notes'){fillNoteSelects();renderNotes();}
- if(b.dataset.v==='recipes'){renderRecipes();renderStaples();}
+ if(b.dataset.v==='shop'){renderShop();}
  });
 }
 /* ================= TASK TEMPLATES ================= */
@@ -3908,9 +3747,7 @@ function renderBillChart(){
 }
 
 /* ================= PDF EXPORT ================= */
-$('bPdfExport').onclick=()=>$('pdfModal').classList.add('on');
-$('pdfClose').onclick=$('pdfCancel').onclick=()=>$('pdfModal').classList.remove('on');
-$('pdfModal').onclick=e=>{if(e.target===$('pdfModal'))$('pdfModal').classList.remove('on')};
+;
 
 function buildPdfHtml(title,bodyHtml){
   return `<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -4196,13 +4033,314 @@ function initPlanDrag(container){
     item.ondrop=e=>{e.preventDefault();if(dragEl&&dragEl!==item){const items=[...container.querySelectorAll('.plan-item')];if(items.indexOf(dragEl)<items.indexOf(item))item.after(dragEl);else item.before(dragEl);container.querySelectorAll('.plan-item').forEach(i=>i.classList.remove('drag-over'));}};
   });
 }
-$('bPlanDay').onclick=()=>runPlanner('day',$('planDayOut'),$('bPlanDay'));
-$('bPlanWeek').onclick=()=>runPlanner('week',$('planWeekOut'),$('bPlanWeek'));
 
+
+
+/* ================= SHOPPING LIST ================= */
+const SHOP_KEY='ledger:shop-items';
+const STAPLES_KEY='ledger:staples-v2';
+const SHOP_AISLES=['produce','dairy','proteins','pantry','frozen','household','other'];
+const SHOP_LABELS={produce:'🥦 Produce',dairy:'🥛 Dairy',proteins:'🥩 Proteins',pantry:'🥫 Pantry',frozen:'🧊 Frozen',household:'🧹 Household',other:'📦 Other'};
+let shopItems=[], staples=[];
+
+function loadShopData(){
+  try{shopItems=JSON.parse(localStorage.getItem(SHOP_KEY)||'[]');}catch(e){shopItems=[];}
+  try{staples=JSON.parse(localStorage.getItem(STAPLES_KEY)||'[]');}catch(e){staples=[];}
+}
+function saveShopData(){
+  try{localStorage.setItem(SHOP_KEY,JSON.stringify(shopItems));}catch(e){}
+  try{localStorage.setItem(STAPLES_KEY,JSON.stringify(staples));}catch(e){}
+}
+function renderShopSection(items, el, isStaple){
+  if(!el)return;
+  const grouped={};
+  SHOP_AISLES.forEach(a=>grouped[a]=[]);
+  items.forEach(i=>{(grouped[i.aisle]||(grouped['other']=[],grouped['other'])).push(i);});
+  const sections=SHOP_AISLES.filter(a=>grouped[a]&&grouped[a].length);
+  if(!sections.length){el.innerHTML=`<div class="shop-empty">Nothing here yet — add items above</div>`;return;}
+  el.innerHTML=sections.map(sec=>`
+    <div class="shop-aisle">
+      <div class="shop-aisle-label">${SHOP_LABELS[sec]||sec}</div>
+      ${grouped[sec].map(item=>`
+        <div class="shop-item ${item.done?'done':''}" data-sid="${item.id}">
+          <div class="shop-cb ${item.done?'on':''}"><svg viewBox="0 0 12 12"><polyline points="1.5,6 4.5,9 10.5,3"/></svg></div>
+          <span class="shop-name">${esc(item.name)}</span>
+          <button class="shop-del" data-sdel="${item.id}">×</button>
+        </div>`).join('')}
+    </div>`).join('');
+  el.querySelectorAll('[data-sid]').forEach(el2=>el2.onclick=e=>{
+    if(e.target.closest('[data-sdel]'))return;
+    const id=el2.dataset.sid;
+    if(isStaple){
+      const s=staples.find(x=>x.id===id);if(s){s.done=!s.done;saveShopData();renderShop();}
+    }else{
+      const s=shopItems.find(x=>x.id===id);
+      if(s){
+        if(!s.done){s.done=true;saveShopData();renderShop();
+          // Remove after brief delay
+          setTimeout(()=>{shopItems=shopItems.filter(x=>x.id!==id);saveShopData();renderShop();},800);
+        }
+      }
+    }
+  });
+  el.querySelectorAll('[data-sdel]').forEach(btn=>btn.onclick=e=>{
+    e.stopPropagation();
+    const id=btn.dataset.sdel;
+    if(isStaple)staples=staples.filter(x=>x.id!==id);
+    else shopItems=shopItems.filter(x=>x.id!==id);
+    saveShopData();renderShop();
+  });
+}
+function renderShop(){
+  if(!$('shopList'))return;
+  renderShopSection(shopItems,$('shopList'),false);
+  renderShopSection(staples,$('stapleList'),true);
+}
+function addShopItem(){
+  const v=$('shopInput').value.trim();if(!v)return;
+  shopItems.push({id:uid(),name:v,aisle:$('shopAisle').value,done:false});
+  $('shopInput').value='';saveShopData();renderShop();$('shopInput').focus();
+}
+$('bShopAdd').onclick=addShopItem;
+$('shopInput').onkeydown=e=>{if(e.key==='Enter')addShopItem();};
+$('bStapleAdd').onclick=addStaple;
+$('stapleInput').onkeydown=e=>{if(e.key==='Enter')addStaple();};
+$('bStaplesReset').onclick=()=>{staples.forEach(s=>s.done=false);saveShopData();renderShop();toast('All unchecked — ready for next trip');};
+
+/* ================= WORD EXPORT ================= */
+$('bWordExport').onclick=()=>{
+  const open=S.tasks.filter(t=>!t.done);
+  const byCat=S.cats.map(c=>({c,tasks:open.filter(t=>t.cat===c.id)})).filter(x=>x.tasks.length);
+  const now=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  let body=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Ledger Export</title><style>
+body{font-family:Calibri,sans-serif;color:#1a1f24;margin:40px}
+h1{font-size:28px;font-weight:700;margin-bottom:4px}
+.sub{font-size:12px;color:#8A9099;margin-bottom:28px}
+h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#4A5568;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}
+.task{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #f5f5f5}
+.pri{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;margin-right:6px;text-transform:uppercase}
+.high{background:#fff0f0;color:#c53030}.med{background:#fffbeb;color:#b7791f}.low{background:#f7f7f7;color:#718096}
+.sub-item{padding:4px 0 4px 20px;font-size:12px;color:#555;border-bottom:1px solid #fafafa}
+</style></head><body>`;
+  body+=`<h1>Ledger — Open Tasks</h1><div class="sub">${now} · ${open.length} open tasks</div>`;
+  byCat.forEach(({c,tasks})=>{
+    body+=`<h2>${c.name}</h2>`;
+    tasks.forEach(t=>{
+      body+=`<div class="task"><div><span class="pri ${t.pri}">${t.pri}</span>${esc(t.title)}${t.due?` <span style="color:#8A9099;font-size:11px">· due ${t.due}</span>`:''}</div></div>`;
+      (t.subtasks||[]).filter(s=>!s.done).forEach(s=>{body+=`<div class="sub-item">☐ ${esc(s.title)}</div>`;});
+    });
+  });
+  // Bills section
+  const bills=S.bills.filter(b=>!b.paused);
+  if(bills.length){
+    body+=`<h2>Active Bills</h2>`;
+    bills.forEach(b=>{body+=`<div class="task"><div>${esc(b.name)} <span style="font-weight:600">$${Number(b.amount).toFixed(2)}</span> <span style="color:#8A9099;font-size:11px">· ${b.cadence} · due ${b.due||'—'}</span></div></div>`;});
+  }
+  body+=`</body></html>`;
+  const blob=new Blob([body],{type:'application/msword'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`Ledger-${iso(today0())}.doc`;a.click();
+  URL.revokeObjectURL(url);toast('Word doc downloaded');
+};
+
+/* ================= INSIGHTS: GENERATE ALL ================= */
+$('bGenAll').onclick=async()=>{
+  const key=getAKey();
+  if(!key){$('planDayOut').innerHTML=`<div class="ins-err">No API key configured. Open ⚙ Settings.</div>`;return;}
+  const btn=$('bGenAll');
+  btn.textContent='Generating…';btn.disabled=true;
+  // Switch to today tab to show progress
+  document.querySelectorAll('.ins-tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.ins-panel').forEach(p=>p.classList.remove('on'));
+  document.querySelector('[data-it="today"]').classList.add('on');
+  $('it-today').classList.add('on');
+  $('planDayOut').innerHTML=`<div style="text-align:center;padding:30px;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.06em">GENERATING TODAY'S PLAN…</div>`;
+  $('planWeekOut').innerHTML=`<div style="text-align:center;padding:30px;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.06em">QUEUED…</div>`;
+  $('insOut').innerHTML=`<div style="text-align:center;padding:30px;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.06em">QUEUED…</div>`;
+  // Run all three in parallel
+  await Promise.all([
+    runPlanner('day',$('planDayOut'),{textContent:'',disabled:false}),
+    runPlanner('week',$('planWeekOut'),{textContent:'',disabled:false}),
+    (async()=>{
+      try{
+        const b=$('bGen'),out=$('insOut');
+        b.textContent='Generating…';b.disabled=true;
+        b.click();
+        await new Promise(r=>setTimeout(r,100));
+      }catch(e){}
+      // Trigger board review
+      const open=S.tasks.filter(t=>!t.done);
+      const out=$('insOut');
+      if(!open.length&&!S.bills.length){out.innerHTML=`<div class="ins-err">Nothing to analyze.</div>`;return;}
+      const snapshot=buildBoardSnapshot();
+      try{
+        const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+          headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2200,messages:[{role:'user',content:snapshot}]})});
+        const data=await resp.json();
+        const raw=data.content?.filter(x=>x.type==='text').map(x=>x.text).join('')||'';
+        applyBreakdown(JSON.parse(raw.replace(/```json|```/g,'').trim()),out);
+      }catch(e){out.innerHTML=`<div class="ins-err">Board review failed. Try again.</div>`;}
+    })()
+  ]);
+  btn.textContent='✦ Generate everything';btn.disabled=false;
+  toast('All three plans generated — switch tabs to view each');
+};
+
+/* ================= DASHBOARD TILE DETAIL ================= */
+function renderDashDetail(type){
+  const detail=$('dashDetail');
+  if(!detail)return;
+  const open=S.tasks.filter(t=>!t.done);
+  let title='',tasks=[],bills=[];
+  switch(type){
+    case'open': title=`All open tasks (${open.length})`; tasks=open; break;
+    case'overdue': tasks=open.filter(t=>bucketOf(t)==='overdue'); title=`Overdue (${tasks.length})`; break;
+    case'stalled': tasks=open.filter(isStalled); title=`Stalled tasks (${tasks.length})`; break;
+    case'week': tasks=open.filter(t=>['today','tomorrow','week','soon'].includes(bucketOf(t))); title=`Due next 7 days (${tasks.length})`; break;
+    case'bills': bills=S.bills.filter(b=>!b.paused&&['overdue','soon','today'].includes(billStatus(b))); title=`Bills needing attention (${bills.length})`; break;
+    default: detail.style.display='none'; return;
+  }
+  detail.style.display='block';
+  let html=`<div class="panel"><div class="p-head"><div class="p-title">${title}</div><button class="btn btn-sm" id="dashDetailClose" style="color:var(--text-dim)">✕ Close</button></div><div class="p-body">`;
+  if(bills.length){
+    bills.forEach(b=>{
+      html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-soft)">
+        <div style="flex:1"><div style="font-size:13.5px;font-weight:450">${esc(b.name)}</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px">${CAD[b.cadence]?.label||b.cadence} · due ${b.due||'—'}</div></div>
+        <div style="font-family:var(--display);font-size:16px;font-weight:600;color:${billStatus(b)==='overdue'?'var(--rose)':'var(--amber)'}">${money(b.amount)}</div>
+      </div>`;
+    });
+  }
+  if(tasks.length){
+    tasks.forEach(t=>{
+      const c=catOf(t.cat),dl=dueLabel(t),bkt=bucketOf(t),sp=subProg(t);
+      html+=`<div class="task" data-dash-tid="${t.id}">
+        <div class="tick ${t.done?'on':''}" data-tog="${t.id}"><svg viewBox="0 0 24 24"><rect class="bx" x="2.5" y="2.5" width="19" height="19" rx="5"/><path class="ck" d="M6.5 12.5l3.6 3.6 7.4-8.2"/></svg></div>
+        <div class="t-body" style="flex:1">
+          <div class="t-title" data-tedit="${t.id}" style="cursor:pointer">${esc(t.title)}</div>
+          <div class="t-meta">
+            <span class="chip-cat"><span class="swatch" style="background:${c.color}"></span>${esc(c.name)}</span>
+            ${dl?`<span class="chip-due ${bkt==='overdue'?'od':''}">${dl}</span>`:''}
+            <span class="pri ${t.pri}">${t.pri}</span>
+            ${sp?`<span class="sub-pill"><span class="mini-bar"><i style="width:${sp.pct}%"></i></span>${sp.done}/${sp.total}</span>`:''}
+          </div>
+        </div>
+        <div class="t-acts">
+          <button data-tedit="${t.id}" title="Edit">✎</button>
+        </div>
+      </div>`;
+      // Inline edit panel (hidden by default)
+      if(editing===t.id){
+        const catOpts=S.cats.map(c=>`<option value="${c.id}" ${t.cat===c.id?'selected':''}>${esc(c.name)}</option>`).join('');
+        html+=`<div class="t-edit">
+          <input class="te-title" data-etitle="${t.id}" value="${esc(t.title)}" maxlength="160">
+          <div class="te-row">
+            <div class="field"><label>Cat</label><select data-ecat="${t.id}">${catOpts}</select></div>
+            <div class="field"><label>Pri</label><select data-epri="${t.id}">
+              <option value="low" ${t.pri==='low'?'selected':''}>Low</option>
+              <option value="med" ${t.pri==='med'?'selected':''}>Med</option>
+              <option value="high" ${t.pri==='high'?'selected':''}>High</option>
+            </select></div>
+            <div class="field"><label>Due</label><input type="date" data-edue="${t.id}" value="${t.due||''}"></div>
+            <button class="btn btn-go" data-esave="${t.id}">Save</button>
+            <button class="btn" data-ecancel="${t.id}">Cancel</button>
+          </div>
+          <textarea class="te-notes" data-enotes="${t.id}" placeholder="Notes…" style="min-height:80px;resize:vertical">${esc(t.notes||'')}</textarea>
+        </div>`;
+      }
+    });
+  }
+  if(!tasks.length&&!bills.length)html+=`<div style="padding:20px;text-align:center;color:var(--text-dim);font-family:var(--mono);font-size:11px">NOTHING HERE</div>`;
+  html+=`</div></div>`;
+  detail.innerHTML=html;
+  // Wire close
+  const closeBtn=detail.querySelector('#dashDetailClose');
+  if(closeBtn)closeBtn.onclick=()=>{detail.style.display='none';};
+  // Wire tick toggles
+  detail.querySelectorAll('[data-tog]').forEach(el=>el.onclick=e=>{
+    e.stopPropagation();
+    const t=S.tasks.find(x=>x.id===el.dataset.tog);
+    if(!t)return;
+    if(t.done){t.done=false;t.completed=null;touch(t);}else completeTask(t);
+    save();renderAll();renderDashDetail(type);
+  });
+  // Wire edit buttons
+  detail.querySelectorAll('[data-tedit]').forEach(el=>el.onclick=e=>{
+    e.stopPropagation();
+    const id=el.dataset.tedit;
+    editing=editing===id?null:id;
+    renderDashDetail(type);
+  });
+  // Wire save/cancel
+  detail.querySelectorAll('[data-esave]').forEach(el=>el.onclick=()=>{
+    const id=el.dataset.esave,t=S.tasks.find(x=>x.id===id);if(!t)return;
+    const nt=detail.querySelector(`[data-etitle="${id}"]`).value.trim();
+    if(!nt){toast('Title cannot be empty');return;}
+    t.title=nt;
+    t.cat=detail.querySelector(`[data-ecat="${id}"]`).value;
+    t.pri=detail.querySelector(`[data-epri="${id}"]`).value;
+    t.due=detail.querySelector(`[data-edue="${id}"]`).value;
+    t.notes=detail.querySelector(`[data-enotes="${id}"]`).value.trim();
+    touch(t);editing=null;save();renderAll();renderDashDetail(type);toast('Saved');
+  });
+  detail.querySelectorAll('[data-ecancel]').forEach(el=>el.onclick=()=>{editing=null;renderDashDetail(type);});
+}
+
+// Store current dashboard detail type
+let dashDetailType=null;
+
+// Patch renderKPIs to make tiles clickable
+
+
+/* ================= TASK DRAG TO REORDER ================= */
+let taskDragId=null,taskDragOverId=null;
+
+
+/* Wire KPI tiles to show detail */
+function wireKpiTiles(){
+  const kpisEl=$('kpis');
+  if(!kpisEl)return;
+  const typeMap={open:'open',overdue:'overdue',stalled:'stalled','next 7':'week','7 day':'week',bill:'bills'};
+  kpisEl.querySelectorAll('.kpi').forEach(tile=>{
+    tile.style.cursor='pointer';
+    const text=tile.textContent.toLowerCase();
+    let type=null;
+    Object.entries(typeMap).forEach(([k,v])=>{if(text.includes(k))type=v;});
+    if(!type)return;
+    tile.onclick=()=>{
+      dashDetailType=dashDetailType===type?null:type;
+      kpisEl.querySelectorAll('.kpi').forEach(k=>k.classList.remove('active-kpi'));
+      const detail=$('dashDetail');
+      if(dashDetailType){tile.classList.add('active-kpi');renderDashDetail(dashDetailType);}
+      else if(detail)detail.style.display='none';
+    };
+  });
+}
+/* Wire task drag-to-reorder */
+function wireTaskDrag(){
+  let dragId=null;
+  document.querySelectorAll('#taskZone .task[data-swipe]').forEach(el=>{
+    const id=el.dataset.swipe;
+    if(!id)return;
+    el.draggable=true;
+    el.style.cursor='grab';
+    el.ondragstart=e=>{dragId=id;setTimeout(()=>el.style.opacity='.4',0);e.dataTransfer.effectAllowed='move';};
+    el.ondragend=()=>{el.style.opacity='';dragId=null;document.querySelectorAll('#taskZone .task').forEach(t=>t.classList.remove('drag-over'));};
+    el.ondragover=e=>{e.preventDefault();if(dragId&&dragId!==id){document.querySelectorAll('#taskZone .task').forEach(t=>t.classList.remove('drag-over'));el.classList.add('drag-over');}};
+    el.ondrop=e=>{
+      e.preventDefault();el.classList.remove('drag-over');
+      if(!dragId||dragId===id)return;
+      const fi=S.tasks.findIndex(t=>t.id===dragId),ti=S.tasks.findIndex(t=>t.id===id);
+      if(fi>-1&&ti>-1){const[mv]=S.tasks.splice(fi,1);S.tasks.splice(ti,0,mv);save();renderTasks();}
+      dragId=null;
+    };
+  });
+}
+loadShopData();
 cacheShell();
 if(!navigator.onLine)updateConnStatus();
-loadStaples();
-renderStaples();
+
+
 initDraggableTabs();
 initTabs();
 </script>
