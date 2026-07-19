@@ -831,7 +831,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v32</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v33</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -2169,9 +2169,9 @@ function taskHTML(t){
  <span class="chip-cat"><span class="swatch" style="background:${c.color}"></span>${esc(c.name)}</span>
  ${dl2?`<span class="chip-due ${dcls}">${dl2}</span>`:''}
  <span class="pri ${t.pri}">${t.pri}</span>
- ${!t.done&&(t.status==='todo'||!t.status)?`<span class="badge" style="background:rgba(154,167,181,.1);color:var(--text-dim);border-color:rgba(154,167,181,.25)">○ To Do</span>`:''}
- ${t.status==='inprogress'?`<span class="badge" style="background:rgba(91,168,245,.12);color:var(--blue);border-color:rgba(91,168,245,.3)">▶ In Progress</span>`:''}
- ${t.status==='blocked'?`<span class="badge" style="background:rgba(242,88,106,.1);color:var(--rose);border-color:rgba(242,88,106,.3)">⊘ Blocked</span>`:''}
+ ${!t.done&&(t.status==='todo'||!t.status)?`<span class="badge" style="background:transparent;color:var(--text-dim);border-color:var(--line);font-weight:400">○ To Do</span>`:''}
+ ${!t.done&&t.status==='inprogress'?`<span class="badge" style="background:rgba(91,168,245,.12);color:var(--blue);border-color:rgba(91,168,245,.3)">▶ In Progress</span>`:''}
+ ${!t.done&&t.status==='blocked'?`<span class="badge" style="background:rgba(242,88,106,.1);color:var(--rose);border-color:rgba(242,88,106,.3)">⊘ Blocked</span>`:''}
  ${t.done?`<span class="badge" style="background:rgba(77,217,176,.1);color:var(--mint);border-color:rgba(77,217,176,.3)">✓ Done</span>`:''}
  ${t.repeat&&t.repeat!=='none'?`<span class="badge rep">↻ ${REPEAT[t.repeat].label}</span>`:''}
  ${st?`<span class="badge stall">Stalled</span>`:''}
@@ -2181,7 +2181,7 @@ function taskHTML(t){
  </div>
  <div class="t-acts">
  ${!t.done?`<button class="push" data-push="${t.id}" title="Push a week">↷</button>`:''}
- ${t.due?`<button data-cal="${t.id}" title="Add to calendar" style="color:var(--blue)">📅</button>`:''}
+ ${!t.done?`<button data-cal="${t.id}" title="Add to calendar" style="color:var(--blue)">📅</button>`:''}
  <button data-edit="${t.id}" title="Edit">✎</button>
  <button data-exp="${t.id}" title="Open"><span class="caret">›</span></button>
  <button class="del" data-del="${t.id}" title="Delete">×</button>
@@ -2227,11 +2227,11 @@ function taskHTML(t){
  <textarea class="te-notes" data-enotes="${t.id}" placeholder="Notes, context, links…" style="min-height:120px;resize:vertical">${esc(t.notes||'')}</textarea>
  <div style="margin-top:10px">
  <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">Checklist</div>
- ${(t.subtasks||[]).map(s=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-soft)">
- <div class="tick ${s.done?'on':''}" data-sub="${s.id}" data-stask="${t.id}" style="flex-shrink:0"><svg viewBox="0 0 24 24"><rect class="bx" x="2.5" y="2.5" width="19" height="19" rx="5"/><path class="ck" d="M6.5 12.5l3.6 3.6 7.4-8.2"/></svg></div>
+ ${(t.subtasks||[]).map(s=>{const k=`${t.id}|${s.id}`;return`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-soft)">
+ <div class="tick ${s.done?'on':''}" data-sub="${k}" style="flex-shrink:0"><svg viewBox="0 0 24 24"><rect class="bx" x="2.5" y="2.5" width="19" height="19" rx="5"/><path class="ck" d="M6.5 12.5l3.6 3.6 7.4-8.2"/></svg></div>
  <span style="flex:1;font-size:13px;${s.done?'text-decoration:line-through;color:var(--text-dim)':''}">${esc(s.title)}</span>
- <button data-subdel="${s.id}" data-stask="${t.id}" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;line-height:1">×</button>
- </div>`).join('')}
+ <button data-subdel="${k}" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;line-height:1">×</button>
+ </div>`}).join('')}
  <div class="sub-new" style="margin-top:8px">
  <input placeholder="Add checklist item…" data-subin="${t.id}" maxlength="140">
  <button data-subadd="${t.id}">Add</button>
@@ -4586,10 +4586,11 @@ function closeCalPopup(){
 
 $('calIcs').onclick=()=>{
   const t=S.tasks.find(x=>x.id===calTaskId);
-  if(!t||!t.due){closeCalPopup();return;}
-  const d=formatICSDate(t.due);
+  if(!t){closeCalPopup();return;}
+  const dueStr=t.due||iso(today0()); // fallback to today if no due date
+  const d=formatICSDate(dueStr);
   // Next day for DTEND (all-day event)
-  const endDate=new Date(t.due+'T00:00:00');
+  const endDate=new Date(dueStr+'T00:00:00');
   endDate.setDate(endDate.getDate()+1);
   const dEnd=formatICSDate(endDate.toISOString().slice(0,10));
   // Lead time: alarm 1 day before at 9am
@@ -4634,12 +4635,13 @@ $('calIcs').onclick=()=>{
 
 $('calGoogle').onclick=()=>{
   const t=S.tasks.find(x=>x.id===calTaskId);
-  if(!t||!t.due){closeCalPopup();return;}
-  const d=t.due.replace(/-/g,'');
+  if(!t){closeCalPopup();return;}
+  const dueStr=t.due||iso(today0());
+  const d=dueStr.replace(/-/g,'');
   // Google wants YYYYMMDD/YYYYMMDD for all-day
-  const endDate=new Date(t.due+'T00:00:00');
-  endDate.setDate(endDate.getDate()+1);
-  const dEnd=endDate.toISOString().slice(0,10).replace(/-/g,'');
+  const endDate2=new Date(dueStr+'T00:00:00');
+  endDate2.setDate(endDate2.getDate()+1);
+  const dEnd=endDate2.toISOString().slice(0,10).replace(/-/g,'');
   const desc=[
     t.notes||'',
     (t.subtasks||[]).filter(s=>!s.done).length
