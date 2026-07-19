@@ -831,7 +831,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v29</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v30</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -2148,8 +2148,10 @@ function taskHTML(t){
  <span class="chip-cat"><span class="swatch" style="background:${c.color}"></span>${esc(c.name)}</span>
  ${dl2?`<span class="chip-due ${dcls}">${dl2}</span>`:''}
  <span class="pri ${t.pri}">${t.pri}</span>
+ ${!t.done&&(t.status==='todo'||!t.status)?`<span class="badge" style="background:rgba(154,167,181,.1);color:var(--text-dim);border-color:rgba(154,167,181,.25)">○ To Do</span>`:''}
  ${t.status==='inprogress'?`<span class="badge" style="background:rgba(91,168,245,.12);color:var(--blue);border-color:rgba(91,168,245,.3)">▶ In Progress</span>`:''}
  ${t.status==='blocked'?`<span class="badge" style="background:rgba(242,88,106,.1);color:var(--rose);border-color:rgba(242,88,106,.3)">⊘ Blocked</span>`:''}
+ ${t.done?`<span class="badge" style="background:rgba(77,217,176,.1);color:var(--mint);border-color:rgba(77,217,176,.3)">✓ Done</span>`:''}
  ${t.repeat&&t.repeat!=='none'?`<span class="badge rep">↻ ${REPEAT[t.repeat].label}</span>`:''}
  ${st?`<span class="badge stall">Stalled</span>`:''}
  ${(t.pushes||0)>=1?`<span class="badge push">Pushed ${t.pushes}×</span>`:''}
@@ -3501,7 +3503,7 @@ async function sendToAsst(msg){
  const taskList=open.map(t=>{
    const sub=(t.subtasks||[]);
    const done=sub.filter(s=>s.done).length;
-   return `- [${t.id.slice(-6)}] "${t.title}" cat=${catOf(t.cat).name} pri=${t.pri} status=${t.status||'todo'}${t.due?' due='+t.due:''}${isStalled(t)?' STALLED':''}${bucketOf(t)==='overdue'?' OVERDUE':''}${t.notes?' notes="'+t.notes.slice(0,100)+'"':''}${sub.length?' checklist=('+done+'/'+sub.length+' done: '+sub.map(s=>(s.done?'✓':'○')+s.title).join(' | ')+')':''}`;
+   return `- [${t.id.slice(-6)}] "${t.title}" cat=${catOf(t.cat).name} pri=${t.pri} status=${t.status||'todo'}${t.due?' due='+t.due:''}${isStalled(t)?' STALLED':''}${bucketOf(t)==='overdue'?' OVERDUE':''}${t.notes?' notes="'+t.notes+'"':''}${sub.length?' checklist=('+done+'/'+sub.length+' done: '+sub.map(s=>(s.done?'✓':'○')+s.title).join(' | ')+')':''}`;
  }).join('\n');
 
  const cats=S.cats.map(c=>c.name.toLowerCase()).join('|');
@@ -3509,6 +3511,8 @@ async function sendToAsst(msg){
 
 TODAY: ${new Date().toDateString()}
 CATEGORIES AVAILABLE: ${cats}
+
+IMPORTANT: Each task below includes its full notes field. Notes often contain status updates, context, waiting-on info, and progress. Read them carefully — they are essential for understanding what's actually happening with each task.
 
 OPEN TASKS (${open.length} total):
 ${taskList||'(no open tasks)'}
@@ -4158,7 +4162,7 @@ Bills needing attention: ${bills.length}${bills.length?'\n'+bills.map(b=>`  - ${
 Top overdue tasks:${od.slice(0,5).map(t=>`\n  - ${t.title} (${Math.abs(dayDiff(parseDue(t.due)))}d late, ${catOf(t.cat).name}, ${t.pri})`).join('')}
 Due today:${today.map(t=>`\n  - ${t.title} (${catOf(t.cat).name}, ${t.pri})`).join('')}
 Stalled:${stalled.slice(0,4).map(t=>`\n  - ${t.title} (pushed ${t.pushes||0}x, ${idleDays(t)}d untouched)`).join('')}
-All open tasks:${open.map(t=>`\n  - [${catOf(t.cat).name}/${t.pri}] ${t.title}${t.due?' due '+t.due:''}${t.notes?' | '+t.notes.slice(0,80)+(t.notes.length>80?'…':''):''}${(t.subtasks||[]).filter(s=>!s.done).length?' [todo: '+(t.subtasks.filter(s=>!s.done).map(s=>s.title).join(', '))+']':''}`).join('')}
+All open tasks:${open.map(t=>`\n  - [${catOf(t.cat).name}/${t.pri}] ${t.title}${t.due?' due '+t.due:''}${t.status&&t.status!=='todo'?' status='+t.status:''}${t.notes?' | notes: '+t.notes:''}${(t.subtasks||[]).filter(s=>!s.done).length?' [todo: '+(t.subtasks.filter(s=>!s.done).map(s=>s.title).join(', '))+']':''}`).join('')}
 Today is ${iso(today0())}. When suggesting due dates, consider that ${weekTasks.length} tasks are already due this week. If that number is high (4+), suggest dates in the following week instead.`;
 }
 
