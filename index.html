@@ -2233,8 +2233,8 @@ function taskHTML(t){
  <button data-subdel="${k}" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;line-height:1">×</button>
  </div>`}).join('')}
  <div class="sub-new" style="margin-top:8px">
- <input placeholder="Add checklist item…" data-subin="${t.id}" maxlength="140">
- <button data-subadd="${t.id}">Add</button>
+ <input placeholder="Add checklist item…" data-esubin="${t.id}" maxlength="140">
+ <button data-esubadd="${t.id}">Add</button>
  </div>
  </div>
  </div>
@@ -2334,6 +2334,9 @@ function wireTasks(){
  });
  Q('[data-subadd]').forEach(el=>el.onclick=()=>addSub(el.dataset.subadd));
  Q('[data-subin]').forEach(el=>el.onkeydown=e=>{if(e.key==='Enter')addSub(el.dataset.subin)});
+ // Edit panel checklist add (separate attrs to avoid querySelector collision)
+ Q('[data-esubadd]').forEach(el=>el.onclick=()=>addSubEdit(el.dataset.esubadd));
+ Q('[data-esubin]').forEach(el=>el.onkeydown=e=>{if(e.key==='Enter')addSubEdit(el.dataset.esubin)});
 
 wireTaskDrag();}
 function addSub(tid){
@@ -2344,6 +2347,20 @@ function addSub(tid){
  t.subtasks.push({id:uid(),title:v,done:false,notes:''});
  touch(t);inp.value='';save();renderAll();
  const ni=document.querySelector(`[data-subin="${tid}"]`);if(ni)ni.focus();
+}
+function addSubEdit(tid){
+ // Used by the edit panel — separate from addSub to avoid querySelector collision
+ const inp=document.querySelector(`[data-esubin="${tid}"]`),v=inp?.value.trim();
+ if(!v)return;
+ const t=S.tasks.find(x=>x.id===tid);
+ if(!t)return;
+ t.subtasks=t.subtasks||[];
+ t.subtasks.push({id:uid(),title:v,done:false,notes:''});
+ touch(t);inp.value='';save();renderTasks();
+ // Refocus the input after re-render
+ setTimeout(()=>{
+  const ni=document.querySelector(`[data-esubin="${tid}"]`);if(ni)ni.focus();
+ },50);
 }
 $('q').oninput=e=>{uiQuery=e.target.value;renderTasks()};
 $('segStatus').querySelectorAll('button').forEach(b=>b.onclick=()=>{
