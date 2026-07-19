@@ -831,7 +831,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v31</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v32</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -1549,7 +1549,6 @@ const DEFCATS=[
 let S={tasks:[],bills:[],cats:DEFCATS.slice(),notes:[],staples:[]};
 let staged=[], uiStatus='open', uiSort='due', uiQuery='', uiCat='', uiStatusFilter='all';
 let hzFilter=null, openTasks=new Set(), openBills=new Set(), openSubs=new Set(), editing=null;
-let wkOffset=0;
 const $=id=>document.getElementById(id);
 const uid=()=>Math.random().toString(36).slice(2,10);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2299,6 +2298,8 @@ function wireTasks(){
  t.pri=document.querySelector(`[data-epri="${id}"]`).value;
  t.due=nd;
  t.repeat=document.querySelector(`[data-erep="${id}"]`).value;
+ const statusEl=document.querySelector(`[data-estatus="${id}"]`);
+ if(statusEl&&statusEl.value)t.status=statusEl.value;
  t.notes=document.querySelector(`[data-enotes="${id}"]`).value.trim();
  touch(t);editing=null;save();renderAll();toast('Saved');
  });
@@ -2594,136 +2595,9 @@ function renderPmx(){
  }).join('');
  document.querySelectorAll('[data-pri]').forEach(el=>el.onclick=()=>drillPri(el.dataset.pri));
 }
-function renderDash(){renderStreak();renderKPIs();renderHorizon();renderDonut();renderPbars();renderAging();renderMomentum();renderPmx();renderBillChart();;setTimeout(wireKpiTiles,100);}
+function renderDash(){renderStreak();renderKPIs();renderHorizon();renderDonut();renderPbars();renderAging();renderMomentum();renderPmx();renderBillChart();setTimeout(wireKpiTiles,100);}
 
-function weekBounds(offset){
- const d=today0();
- const dow=(d.getDay()+6)%7;                 /* Monday = 0 */
- const start=new Date(d.getTime()-dow*DAY+offset*7*DAY);
- const end=new Date(start.getTime()+7*DAY);
- return {start,end};
-}
-function weekData(offset){
- const {start,end}=weekBounds(offset);
- const s=start.getTime(),e=end.getTime();
- const done=S.tasks.filter(t=>t.done&&t.completed&&t.completed>=s&&t.completed<e);
- const created=S.tasks.filter(t=>t.created&&t.created>=s&&t.created<e);
- const slipped=S.tasks.filter(t=>!t.done&&t.due&&parseDue(t.due)>=start&&parseDue(t.due)<end&&dayDiff(parseDue(t.due))<0);
- const paid=[];
- S.bills.forEach(b=>(b.history||[]).forEach(h=>{
- if(h.paid>=s&&h.paid<e)paid.push({name:b.name,amount:h.amount,paid:h.paid});
- }));
- const {start:ns}=weekBounds(offset+1);
- const ne=new Date(ns.getTime()+7*DAY);
- const ahead=S.tasks.filter(t=>!t.done&&t.due&&parseDue(t.due)>=ns&&parseDue(t.due)<ne);
- const billsAhead=S.bills.filter(b=>!b.paused&&b.due&&parseDue(b.due)>=ns&&parseDue(b.due)<ne);
- return {start,end,done,created,slipped,paid,ahead,billsAhead};
-}
-function renderWeek(){
- const w=weekData(wkOffset);
- const f=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
- const endShow=new Date(w.end.getTime()-DAY);
- $('wkR1').textContent=wkOffset===0?'This week':(wkOffset===-1?'Last week':`${Math.abs(wkOffset)} weeks ago`);
- $('wkR2').textContent=`${f(w.start).toUpperCase()} — ${f(endShow).toUpperCase()}`;
- $('wkNext').disabled=wkOffset>=0;
- const net=w.created.length-w.done.length;
- const paidTotal=w.paid.reduce((a,b)=>a+Number(b.amount||0),0);
- const k=(cls,lab,num,sub)=>`<div class="kpi ${cls}"><div class="k-lab">${lab}</div><div class="k-num">${num}</div><div class="k-sub">${sub}</div></div>`;
- $('wkScore').innerHTML=
- k('good','Shipped',w.done.length,'tasks completed')+
- k('','Added',w.created.length,'new tasks in')+
- k(w.slipped.length?'alert':'','Slipped',w.slipped.length,w.slipped.length?'due this week, still open':'nothing dropped')+
- k('','Bills paid',w.paid.length,w.paid.length?money(paidTotal):'none logged');
- const good=net<=0;
- const totalMove=Math.max(1,w.done.length+w.created.length);
- $('wkNet').innerHTML=`
- <div class="wk-net-num" style="color:${good?'var(--mint)':'var(--amber)'}">${net>0?'+':''}${net}</div>
- <div class="wk-net-txt">
- <div class="h">${good?(net===0?'You held the line.':'Your backlog shrank.'):'Your backlog grew.'}</div>
- <div class="s">${w.done.length} finished, ${w.created.length} added.
- ${good?(net===0?'In equals out — steady state.':`Net ${Math.abs(net)} fewer open than when the week started.`):`${Math.abs(net)} more open than when the week started. Worth asking whether you're taking on faster than you can clear.`}</div>
- </div>
- <div class="wk-scale">
- <i style="width:${w.done.length/totalMove*100}%;background:var(--mint)"></i>
- <i style="width:${w.created.length/totalMove*100}%;background:var(--violet)"></i>
- </div>`;
- $('wkDoneN').textContent=w.done.length;
- $('wkDone').innerHTML=w.done.length?w.done.sort((a,b)=>b.completed-a.completed).map(t=>`
- <div class="wk-item wk-done"><div class="wk-ico">✓</div>
- <div style="flex:1;min-width:0"><div class="wk-t">${esc(t.title)}</div>
- <div class="wk-d">${esc(catOf(t.cat).name).toUpperCase()} · ${new Date(t.completed).toLocaleDateString('en-US',{weekday:'short'}).toUpperCase()}</div>
- </div></div>`).join('')
- :`<div class="empty" style="padding:34px 10px"><div class="small">NOTHING COMPLETED THIS WEEK</div></div>`;
- $('wkSlipN').textContent=w.slipped.length;
- $('wkSlip').innerHTML=w.slipped.length?w.slipped.map(t=>`
- <div class="wk-item wk-slip"><div class="wk-ico">✕</div>
- <div style="flex:1;min-width:0"><div class="wk-t">${esc(t.title)}</div>
- <div class="wk-d">${Math.abs(dayDiff(parseDue(t.due)))}D LATE · ${esc(catOf(t.cat).name).toUpperCase()}${(t.pushes||0)?` · PUSHED ${t.pushes}×`:''}</div>
- </div></div>`).join('')
- :`<div class="empty" style="padding:34px 10px"><div class="big" style="color:var(--mint);font-size:14px">Nothing slipped.</div><div class="small">EVERYTHING DUE GOT DONE</div></div>`;
- const aheadAll=[
- ...w.billsAhead.map(b=>({t:`${b.name} — ${money(b.amount)}`,d:`BILL · ${parseDue(b.due).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}).toUpperCase()}${b.autopay?' · AUTOPAY':''}`,sort:parseDue(b.due)})),
- ...w.ahead.map(t=>({t:t.title,d:`${esc(catOf(t.cat).name).toUpperCase()} · ${t.pri.toUpperCase()} · ${parseDue(t.due).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}).toUpperCase()}`,sort:parseDue(t.due)}))
- ].sort((a,b)=>a.sort-b.sort);
- $('wkAheadN').textContent=aheadAll.length;
- $('wkAhead').innerHTML=aheadAll.length?aheadAll.map(x=>`
- <div class="wk-item wk-ahead"><div class="wk-ico">→</div>
- <div style="flex:1;min-width:0"><div class="wk-t">${esc(x.t)}</div><div class="wk-d">${x.d}</div></div>
- </div>`).join('')
- :`<div class="empty" style="padding:34px 10px"><div class="small">NOTHING SCHEDULED FOR THAT WEEK</div></div>`;
-}
-$('wkPrev').onclick=()=>{wkOffset--;$('revOut').innerHTML='';renderWeek()};
-$('wkNext').onclick=()=>{if(wkOffset<0){wkOffset++;$('revOut').innerHTML='';renderWeek()}};
-$('bRev').onclick=async()=>{
- const b=$('bRev'),out=$('revOut'),w=weekData(wkOffset);
- if(!getAKey()){out.innerHTML=`<div class="ins-err">No API key configured. Open ⚙ Settings and paste your Anthropic API key to enable this feature.</div>`;return;}
- b.disabled=true;b.innerHTML=`<span class="spin"></span> Looking back…`;out.innerHTML='';
- const payload={
- week:`${w.start.toDateString()} to ${new Date(w.end.getTime()-DAY).toDateString()}`,
- completed:w.done.map(t=>({title:t.title,category:catOf(t.cat).name,priority:t.pri})),
- added:w.created.map(t=>({title:t.title,category:catOf(t.cat).name})),
- slipped:w.slipped.map(t=>({title:t.title,category:catOf(t.cat).name,days_late:Math.abs(dayDiff(parseDue(t.due))),times_pushed:t.pushes||0})),
- bills_paid:w.paid.map(p=>({name:p.name,amount:p.amount})),
- week_ahead_tasks:w.ahead.map(t=>({title:t.title,priority:t.pri,due:t.due})),
- week_ahead_bills:w.billsAhead.map(x=>({name:x.name,amount:x.amount,due:x.due,autopay:x.autopay})),
- still_stalled:S.tasks.filter(t=>!t.done&&isStalled(t)).map(t=>({title:t.title,age_days:ageDays(t),days_untouched:idleDays(t),times_pushed:t.pushes||0}))
- };
- const prompt=`You are an honest, warm but unsentimental coach writing a weekly retrospective. Here is the person's week:
-${JSON.stringify(payload,null,1)}
-Respond with ONLY JSON, no fences, no preamble:
-{
- "verdict": "one honest sentence summarizing the week — earned praise if deserved, plain truth if not",
- "wins": [{"title":"what they actually did","note":"why it mattered, one sentence"}],
- "drags": [{"title":"what held them back","note":"one or two sentences, specific, citing the numbers"}],
- "next_week": [{"title":"exact task or bill name","note":"why it belongs at the top of next week"}]
-}
-Rules: wins 1-3 (if the week was genuinely empty, say so honestly rather than inventing praise). drags 1-3. next_week exactly 3, drawn from week_ahead or still_stalled. Reference real titles. Be specific, not generic.`;
- try{
- const r=await fetch("https://api.anthropic.com/v1/messages",{
- method:"POST",headers:{"Content-Type":"application/json","x-api-key":getAKey(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
- body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1400,messages:[{role:"user",content:prompt}]})
- });
- const d=await r.json();
- if(d.error)throw new Error(d.error.message);
- const txt=d.content.filter(x=>x.type==='text').map(x=>x.text).join('\n');
- const j=extractJSON(txt);
- out.innerHTML=`
- <div class="ins-head">${esc(j.verdict)}</div>
- ${(j.wins||[]).length?`<div class="ins-sec"><div class="p-title">Wins</div>
- ${j.wins.map(x=>`<div class="ins-card"><div class="ins-idx">✓</div>
- <div><div class="ins-t">${esc(x.title)}</div><div class="ins-w">${esc(x.note)}</div></div></div>`).join('')}</div>`:''}
- ${(j.drags||[]).length?`<div class="ins-sec"><div class="p-title">What dragged</div>
- ${j.drags.map(x=>`<div class="ins-card ins-stall"><div class="ins-idx">⚑</div>
- <div><div class="ins-t">${esc(x.title)}</div><div class="ins-w">${esc(x.note)}</div></div></div>`).join('')}</div>`:''}
- ${(j.next_week||[]).length?`<div class="ins-sec"><div class="p-title">Top of next week</div>
- ${j.next_week.map((x,i)=>`<div class="ins-card ins-win"><div class="ins-idx">0${i+1}</div>
- <div><div class="ins-t">${esc(x.title)}</div><div class="ins-w">${esc(x.note)}</div></div></div>`).join('')}</div>`:''}
- <div class="ins-note">Written from this week's board — not stored, not remembered.</div>`;
- }catch(e){
- out.innerHTML=`<div class="ins-err">Couldn't write the review just now. Check your connection and try again.</div>`;
- }
- b.disabled=false;b.textContent='Rewrite my review';
-};
+
 
 function itemHTML(t){
  const c=catOf(t.cat),sp=subProg(t),dl2=dueLabel(t),b=bucketOf(t);
@@ -2918,83 +2792,6 @@ function renderNotes(){
  });
 }
 
-const RECIPES=[
- {id:'rx01',cat:'breakfast',name:'Banana Oat Pancakes',time:15,toddler:true,desc:'Naturally sweet, no syrup needed. Soft, small rounds perfect for little hands.',tags:['no sugar','gluten-free option'],
- ingredients:[{a:'2',n:'ripe bananas',sec:'produce'},{a:'1 cup',n:'rolled oats',sec:'pantry'},{a:'2',n:'eggs',sec:'dairy'},{a:'½ tsp',n:'cinnamon',sec:'pantry'},{a:'1 tsp',n:'vanilla extract',sec:'pantry'},{a:'1 tsp',n:'coconut oil',sec:'pantry'}],
- steps:['Blend oats into flour. Mash bananas well in a large bowl.','Mix mashed banana, oat flour, eggs, cinnamon, and vanilla until combined.','Heat coconut oil in a non-stick pan over medium-low heat.','Drop 2-tbsp rounds. Cook 2–3 min until bubbles form on top, flip, cook 1 min more.','Serve with sliced fruit. Makes about 12 small pancakes. Fridge 3 days.']},
- {id:'rx02',cat:'breakfast',name:'Veggie Egg Muffins',time:25,toddler:true,desc:'Batch-cook Sunday, grab one each morning. Soft, no mess, great for toddlers.',tags:['meal prep','protein'],
- ingredients:[{a:'6',n:'eggs',sec:'dairy'},{a:'½ cup',n:'diced bell pepper',sec:'produce'},{a:'½ cup',n:'baby spinach, chopped',sec:'produce'},{a:'¼ cup',n:'shredded cheddar',sec:'dairy'},{a:'¼ cup',n:'milk',sec:'dairy'},{a:'pinch',n:'salt',sec:'pantry'}],
- steps:['Preheat oven to 350°F. Grease a 12-cup muffin tin well.','Whisk eggs with milk and salt.','Fold in diced vegetables and cheese.','Fill muffin cups ¾ full. Bake 18–20 min until set and lightly golden.','Cool 5 min before removing. Store in fridge up to 4 days.']},
- {id:'rx03',cat:'breakfast',name:'Greek Yogurt Parfait',time:5,toddler:true,desc:'No cooking. Stack yogurt, berries, and oats. Packed with protein and probiotics.',tags:['no cook','quick'],
- ingredients:[{a:'1 cup',n:'plain Greek yogurt',sec:'dairy'},{a:'½ cup',n:'mixed berries',sec:'produce'},{a:'2 tbsp',n:'granola or rolled oats',sec:'pantry'},{a:'1 tsp',n:'honey (over-2 only)',sec:'pantry'}],
- steps:['Spoon half the yogurt into a bowl or jar.','Add a layer of berries.','Top with remaining yogurt, then berries again.','Sprinkle granola or oats on top. Drizzle honey if using.','Serve immediately or refrigerate up to 2 hours.']},
- {id:'rx04',cat:'breakfast',name:'Avocado Toast with Egg',time:10,toddler:true,desc:'Healthy fats and protein. Cut into strips for toddlers — easy to hold.',tags:['protein','healthy fats'],
- ingredients:[{a:'2 slices',n:'whole grain bread',sec:'pantry'},{a:'1',n:'ripe avocado',sec:'produce'},{a:'2',n:'eggs',sec:'dairy'},{a:'1 tsp',n:'lemon juice',sec:'produce'},{a:'pinch',n:'salt',sec:'pantry'}],
- steps:['Toast the bread to desired doneness.','Mash avocado with lemon juice and a pinch of salt.','Scramble or fry eggs to preference — scrambled softest for toddlers.','Spread avocado on toast. Top with egg.','Cut into strips for the toddler. Serve immediately.']},
- {id:'rx05',cat:'lunch',name:'Turkey & Cheese Quesadilla',time:12,toddler:true,desc:'Crispy outside, melty inside. Cut into triangles for little hands.',tags:['protein','kid favorite'],
- ingredients:[{a:'2',n:'small flour tortillas',sec:'pantry'},{a:'2 oz',n:'sliced turkey breast',sec:'proteins'},{a:'¼ cup',n:'shredded mozzarella',sec:'dairy'},{a:'¼ cup',n:'baby spinach',sec:'produce'},{a:'1 tsp',n:'olive oil',sec:'pantry'}],
- steps:['Heat olive oil in a pan over medium heat.','Lay one tortilla flat. Layer turkey, cheese, and spinach on half.','Fold tortilla in half over the filling.','Cook 2–3 min per side until golden and cheese is melted.','Cool slightly, then cut into small triangles. Serve with salsa or yogurt dip.']},
- {id:'rx06',cat:'lunch',name:'Sweet Potato & Black Bean Bowl',time:20,toddler:true,desc:'Filling, colorful, and nutritious. Sweet potato is naturally soft for toddlers.',tags:['vegetarian','fiber'],
- ingredients:[{a:'1 large',n:'sweet potato, diced',sec:'produce'},{a:'1 can',n:'black beans, rinsed',sec:'pantry'},{a:'½ cup',n:'frozen corn',sec:'pantry'},{a:'1 tsp',n:'cumin',sec:'pantry'},{a:'1 tbsp',n:'olive oil',sec:'pantry'},{a:'¼ cup',n:'shredded cheddar',sec:'dairy'}],
- steps:['Toss sweet potato with olive oil and cumin. Roast at 400°F for 18 min until soft.','Warm black beans and corn in a pan or microwave.','Assemble bowls: sweet potato, beans, corn.','Top with cheese. Mash sweet potato pieces slightly for toddler.','Optional: add plain yogurt or salsa. Serve warm.']},
- {id:'rx07',cat:'lunch',name:'Simple Chicken Salad',time:10,toddler:true,desc:'Light and creamy. Serve on bread, crackers, or lettuce cups.',tags:['protein','no cook if using rotisserie'],
- ingredients:[{a:'2 cups',n:'cooked chicken, shredded',sec:'proteins'},{a:'3 tbsp',n:'plain Greek yogurt',sec:'dairy'},{a:'1 tbsp',n:'mayo',sec:'pantry'},{a:'1 stalk',n:'celery, finely diced',sec:'produce'},{a:'½ tsp',n:'lemon juice',sec:'produce'},{a:'pinch',n:'salt & pepper',sec:'pantry'}],
- steps:['Shred cooked or rotisserie chicken with two forks.','Mix Greek yogurt, mayo, lemon juice, salt and pepper in a bowl.','Fold in chicken and celery until evenly coated.','Taste and adjust seasoning.','Serve on toast, crackers, or in a wrap. Fridge 3 days.']},
- {id:'rx08',cat:'lunch',name:'Grilled Cheese & Tomato Soup',time:15,toddler:true,desc:'Classic comfort combo. Use a good quality canned soup for a weeknight shortcut.',tags:['kid favorite','quick'],
- ingredients:[{a:'2 slices',n:'whole grain bread',sec:'pantry'},{a:'2 slices',n:'American or cheddar cheese',sec:'dairy'},{a:'1 tbsp',n:'butter',sec:'dairy'},{a:'1 can',n:'tomato soup (low sodium)',sec:'pantry'},{a:'½ cup',n:'milk (for soup)',sec:'dairy'}],
- steps:['Make soup per can instructions, using milk for creamier texture.','Butter outside of both bread slices.','Place one slice butter-side down in pan over medium heat. Add cheese. Top with second slice butter-side up.','Cook 2–3 min per side until golden and cheese melts.','Cut sandwich into strips or triangles. Serve alongside soup in a small cup.']},
- {id:'rx09',cat:'dinner',name:'Sheet Pan Chicken & Vegetables',time:40,toddler:true,desc:'One pan, minimal cleanup. Everything roasts together — tender chicken, soft veggies.',tags:['meal prep','family dinner'],
- ingredients:[{a:'4',n:'chicken thighs, bone-in',sec:'proteins'},{a:'2',n:'carrots, sliced',sec:'produce'},{a:'1',n:'zucchini, sliced',sec:'produce'},{a:'1',n:'red bell pepper, diced',sec:'produce'},{a:'2 tbsp',n:'olive oil',sec:'pantry'},{a:'1 tsp',n:'garlic powder',sec:'pantry'},{a:'1 tsp',n:'paprika',sec:'pantry'}],
- steps:['Preheat oven to 425°F. Line a large baking sheet with foil.','Toss vegetables with 1 tbsp olive oil and half the spices.','Rub chicken with remaining oil and spices.','Arrange chicken and vegetables on sheet in single layer.','Roast 35–40 min until chicken is 165°F and vegetables are tender.','For toddler: remove chicken from bone, cut small. Mash or chop vegetables.']},
- {id:'rx10',cat:'dinner',name:'Salmon with Roasted Broccoli',time:25,toddler:true,desc:'Omega-3 rich, quick, and the kids will eat more salmon than you expect.',tags:['omega-3','healthy'],
- ingredients:[{a:'2',n:'salmon fillets (6 oz each)',sec:'proteins'},{a:'2 cups',n:'broccoli florets',sec:'produce'},{a:'2 tbsp',n:'olive oil',sec:'pantry'},{a:'1 tbsp',n:'lemon juice',sec:'produce'},{a:'1 tsp',n:'garlic powder',sec:'pantry'},{a:'pinch',n:'salt',sec:'pantry'}],
- steps:['Preheat oven to 400°F.','Toss broccoli with 1 tbsp olive oil and garlic powder. Spread on baking sheet.','Roast broccoli 10 min. Push to side.','Season salmon with salt, drizzle with remaining oil and lemon juice.','Add salmon to pan. Roast 12–14 min until fish flakes easily.','For toddler: flake salmon into small pieces, cut broccoli small. Serve with rice.']},
- {id:'rx11',cat:'dinner',name:'Beef & Vegetable Stir Fry',time:20,toddler:true,desc:'Quick weeknight dinner. Serve over rice — the toddler can eat the rice and soft veggies.',tags:['protein','quick'],
- ingredients:[{a:'1 lb',n:'ground beef (lean)',sec:'proteins'},{a:'1 cup',n:'snap peas',sec:'produce'},{a:'1',n:'carrot, thinly sliced',sec:'produce'},{a:'2 cloves',n:'garlic, minced',sec:'produce'},{a:'2 tbsp',n:'low-sodium soy sauce',sec:'pantry'},{a:'1 tsp',n:'sesame oil',sec:'pantry'},{a:'2 cups',n:'cooked rice',sec:'pantry'}],
- steps:['Heat a wok or large pan over high heat. Brown ground beef, breaking it up. Drain fat.','Add garlic, cook 30 seconds.','Add carrots, cook 3 min. Add snap peas, cook 2 more min.','Stir in soy sauce and sesame oil. Toss everything together.','Serve over rice. For toddler: skip soy sauce on their portion, serve vegetables soft-cooked on the side.']},
- {id:'rx12',cat:'dinner',name:'Lemon Herb Baked Chicken',time:35,toddler:true,desc:'Simple, moist, and versatile. Leftovers become lunch tomorrow.',tags:['family dinner','meal prep'],
- ingredients:[{a:'4',n:'chicken breasts',sec:'proteins'},{a:'3 tbsp',n:'olive oil',sec:'pantry'},{a:'2',n:'lemons (juice + zest)',sec:'produce'},{a:'3 cloves',n:'garlic, minced',sec:'produce'},{a:'1 tsp',n:'dried thyme',sec:'pantry'},{a:'1 tsp',n:'dried rosemary',sec:'pantry'},{a:'pinch',n:'salt',sec:'pantry'}],
- steps:['Mix olive oil, lemon juice, zest, garlic, and herbs in a bowl.','Pound chicken to even thickness. Marinate in herb mixture 15–30 min (or overnight).','Preheat oven to 400°F. Place chicken in baking dish.','Bake 25–28 min until internal temp reaches 165°F.','Rest 5 min before slicing. Slice thin for toddlers.']},
- {id:'rx13',cat:'dinner',name:'Turkey Meatballs & Zucchini Pasta',time:30,toddler:true,desc:'Sneaky veggies in the meatballs. Toddlers love meatballs. Everyone wins.',tags:['hidden veggies','kid favorite'],
- ingredients:[{a:'1 lb',n:'ground turkey',sec:'proteins'},{a:'1',n:'zucchini, grated',sec:'produce'},{a:'¼ cup',n:'breadcrumbs',sec:'pantry'},{a:'1',n:'egg',sec:'dairy'},{a:'1 clove',n:'garlic, minced',sec:'produce'},{a:'8 oz',n:'pasta of choice',sec:'pantry'},{a:'1 cup',n:'marinara sauce',sec:'pantry'}],
- steps:['Grate zucchini, squeeze out excess moisture with a towel.','Mix turkey, zucchini, breadcrumbs, egg, and garlic. Form into 1-inch balls.','Bake at 400°F for 18–20 min, or cook in a skillet over medium heat 8–10 min.','Cook pasta per package directions.','Warm marinara. Toss with pasta and meatballs. Cut meatballs in half for toddler.']},
- {id:'rx14',cat:'dinner',name:'Black Bean Tacos',time:15,toddler:true,desc:'Fast meatless dinner. Build your own — toddler gets a deconstructed version.',tags:['vegetarian','quick'],
- ingredients:[{a:'2 cans',n:'black beans, rinsed',sec:'pantry'},{a:'1 tsp',n:'cumin',sec:'pantry'},{a:'½ tsp',n:'chili powder (mild)',sec:'pantry'},{a:'8',n:'small corn tortillas',sec:'pantry'},{a:'1',n:'avocado, sliced',sec:'produce'},{a:'½ cup',n:'shredded cheese',sec:'dairy'},{a:'½ cup',n:'plain yogurt (sour cream sub)',sec:'dairy'}],
- steps:['Warm beans in a pan with cumin and chili powder, mashing slightly.','Warm tortillas in a dry pan 30 sec per side.','Set out toppings: avocado, cheese, yogurt.','Build tacos. For toddler: skip chili powder, serve beans and avocado in a bowl with cheese.','Good as-is or with a simple salad.']},
- {id:'rx15',cat:'soup',name:'Chicken & Rice Soup',time:35,toddler:true,desc:'The ultimate comfort soup. Freezes well — make a big batch on Sunday.',tags:['meal prep','freezer-friendly'],
- ingredients:[{a:'2',n:'chicken breasts',sec:'proteins'},{a:'½ cup',n:'white rice',sec:'pantry'},{a:'3',n:'carrots, diced',sec:'produce'},{a:'3 stalks',n:'celery, diced',sec:'produce'},{a:'1',n:'onion, diced',sec:'produce'},{a:'6 cups',n:'low-sodium chicken broth',sec:'pantry'},{a:'1 tsp',n:'dried thyme',sec:'pantry'}],
- steps:['Sauté onion, carrots, celery in a large pot 5 min until softened.','Add broth, chicken breasts, and thyme. Bring to boil.','Reduce heat, simmer 20 min until chicken is cooked through.','Remove chicken, shred with forks, return to pot.','Add rice, simmer 15 more min until rice is tender. Season to taste.']},
- {id:'rx16',cat:'soup',name:'Red Lentil Soup',time:30,toddler:true,desc:'Naturally thick, creamy without cream. Blends smooth for younger toddlers.',tags:['vegetarian','high protein','freezer-friendly'],
- ingredients:[{a:'1 cup',n:'red lentils, rinsed',sec:'pantry'},{a:'1',n:'onion, diced',sec:'produce'},{a:'2',n:'carrots, diced',sec:'produce'},{a:'2 cloves',n:'garlic',sec:'produce'},{a:'1 can',n:'diced tomatoes',sec:'pantry'},{a:'4 cups',n:'vegetable broth',sec:'pantry'},{a:'1 tsp',n:'cumin',sec:'pantry'},{a:'1 tbsp',n:'olive oil',sec:'pantry'}],
- steps:['Sauté onion and carrots in olive oil 5 min. Add garlic and cumin, cook 1 min.','Add lentils, tomatoes, and broth. Bring to boil.','Reduce heat, simmer 20–25 min until lentils are very soft.','Blend partially or fully for smoother texture.','Season to taste. For toddler: thin with extra broth if needed, serve lukewarm.']},
- {id:'rx17',cat:'snack',name:'Apple Slices with Peanut Butter',time:5,toddler:true,desc:'Classic, nutritious, fast. Use sunflower butter if nut allergy is a concern.',tags:['no cook','quick','healthy fats'],
- ingredients:[{a:'1',n:'apple, thinly sliced',sec:'produce'},{a:'2 tbsp',n:'peanut or sunflower butter',sec:'pantry'}],
- steps:['Core and thinly slice the apple. For toddlers under 2, peel first.','Serve slices arranged with a small portion of nut butter for dipping.','Alternatively, spread nut butter on apple slices and serve flat.','Optional: sprinkle with cinnamon.','Serve immediately — apple browns quickly once cut.']},
- {id:'rx18',cat:'snack',name:'Hummus & Veggie Sticks',time:8,toddler:true,desc:'Great afternoon snack. Steamed carrot sticks are softer and safer for toddlers.',tags:['no cook','fiber','protein'],
- ingredients:[{a:'½ cup',n:'hummus',sec:'pantry'},{a:'2',n:'carrots, cut into sticks',sec:'produce'},{a:'1',n:'cucumber, sliced',sec:'produce'},{a:'½',n:'bell pepper, sliced',sec:'produce'}],
- steps:['Wash and cut vegetables. For toddlers: steam carrot sticks 4–5 min until slightly softened.','Arrange vegetables around a small bowl of hummus.','For toddlers: dice or slice vegetables into thin, short pieces to avoid choking.','Serve immediately.']},
- {id:'rx19',cat:'snack',name:'Banana Nice Cream',time:5,toddler:true,desc:'Frozen banana blended = ice cream. One ingredient, zero guilt, toddler-approved.',tags:['no sugar','dessert','1 ingredient'],
- ingredients:[{a:'3',n:'ripe bananas, frozen',sec:'produce'},{a:'optional:',n:'1 tbsp peanut butter or cocoa powder',sec:'pantry'}],
- steps:['Freeze ripe bananas in chunks overnight (peel before freezing).','Blend frozen banana chunks in a food processor until smooth and creamy, scraping down sides.','Add peanut butter or cocoa powder if desired.','Serve immediately for soft-serve texture.','Refreeze 1 hour for firmer scoopable ice cream.']},
- {id:'rx20',cat:'snack',name:'Oatmeal Energy Balls',time:15,toddler:true,desc:'No bake. Make a batch, keep in the fridge all week. Great on-the-go snack.',tags:['meal prep','no bake','energy'],
- ingredients:[{a:'1 cup',n:'rolled oats',sec:'pantry'},{a:'⅓ cup',n:'peanut butter',sec:'pantry'},{a:'¼ cup',n:'honey',sec:'pantry'},{a:'¼ cup',n:'mini chocolate chips',sec:'pantry'},{a:'1 tsp',n:'vanilla extract',sec:'pantry'}],
- steps:['Mix all ingredients in a bowl until well combined.','Refrigerate mixture 30 min to firm up — makes rolling easier.','Roll into 1-inch balls with your hands.','Store in fridge in an airtight container up to 1 week.','For toddlers under 2: omit honey — substitute extra peanut butter.']},
- {id:'rx21',cat:'breakfast',name:'Blueberry Chia Pudding',time:5,toddler:true,desc:'Make the night before — breakfast is done. Creamy, fruity, omega-3 rich.',tags:['overnight','no cook','omega-3'],
- ingredients:[{a:'1½ cups',n:'milk (any kind)',sec:'dairy'},{a:'¼ cup',n:'chia seeds',sec:'pantry'},{a:'1 tbsp',n:'maple syrup',sec:'pantry'},{a:'½ tsp',n:'vanilla extract',sec:'pantry'},{a:'½ cup',n:'fresh or frozen blueberries',sec:'produce'}],
- steps:['Whisk milk, chia seeds, maple syrup, and vanilla in a jar or bowl.','Stir again after 5 minutes to prevent clumping.','Cover and refrigerate overnight (or at least 4 hours).','Top with blueberries before serving. Stir pudding if needed.','For toddlers: mash berries slightly. Pudding is soft and spoonable.']},
- {id:'rx22',cat:'dinner',name:'Pasta Primavera',time:20,toddler:true,desc:'Loaded with vegetables, tossed with olive oil and parmesan. Simple and satisfying.',tags:['vegetarian','quick','kid favorite'],
- ingredients:[{a:'8 oz',n:'penne or fusilli pasta',sec:'pantry'},{a:'1 cup',n:'cherry tomatoes, halved',sec:'produce'},{a:'1',n:'zucchini, diced small',sec:'produce'},{a:'1 cup',n:'frozen peas',sec:'pantry'},{a:'3 tbsp',n:'olive oil',sec:'pantry'},{a:'2 cloves',n:'garlic, minced',sec:'produce'},{a:'¼ cup',n:'parmesan, grated',sec:'dairy'}],
- steps:['Cook pasta per package directions. Reserve ½ cup pasta water before draining.','Sauté garlic in olive oil 1 min. Add zucchini, cook 3 min.','Add tomatoes and peas, cook 2 more min.','Toss with drained pasta. Add pasta water if too dry.','Top with parmesan. For toddler: cut pasta short and ensure veggies are soft.']},
- {id:'rx23',cat:'lunch',name:'Egg Salad on Toast',time:10,toddler:true,desc:'Hard boiled eggs mashed creamy. High protein, easy to prepare ahead.',tags:['protein','meal prep'],
- ingredients:[{a:'4',n:'eggs, hard boiled',sec:'dairy'},{a:'2 tbsp',n:'mayo',sec:'pantry'},{a:'1 tsp',n:'mustard',sec:'pantry'},{a:'1 tsp',n:'lemon juice',sec:'produce'},{a:'4 slices',n:'whole grain bread',sec:'pantry'},{a:'pinch',n:'salt & pepper',sec:'pantry'}],
- steps:['Hard boil eggs: cover with cold water, bring to boil, boil 10 min, cool in ice water.','Peel and roughly chop or mash eggs.','Mix with mayo, mustard, lemon juice, salt and pepper.','Toast bread. Spoon egg salad generously on each slice.','For toddler: serve on soft bread, cut into small pieces or fingers.']},
- {id:'rx24',cat:'soup',name:'Butternut Squash Soup',time:40,toddler:true,desc:'Silky smooth, naturally sweet. Blends completely — perfect for toddlers.',tags:['vegetarian','freezer-friendly','hidden veggies'],
- ingredients:[{a:'1 large',n:'butternut squash, cubed',sec:'produce'},{a:'1',n:'onion, diced',sec:'produce'},{a:'2 cloves',n:'garlic',sec:'produce'},{a:'3 cups',n:'vegetable broth',sec:'pantry'},{a:'½ cup',n:'coconut milk',sec:'pantry'},{a:'1 tbsp',n:'olive oil',sec:'pantry'},{a:'½ tsp',n:'cinnamon',sec:'pantry'}],
- steps:['Sauté onion in olive oil 5 min. Add garlic, cook 1 min.','Add squash, broth, and cinnamon. Bring to boil.','Reduce heat, simmer 20–25 min until squash is very tender.','Blend until silky smooth. Stir in coconut milk.','Season to taste. Serve warm with bread for dipping. Freezes beautifully.']},
- {id:'rx25',cat:'dinner',name:'Teriyaki Chicken Rice Bowl',time:25,toddler:true,desc:'Sweet and savory. Use low-sodium soy sauce and serve toddler portion plain.',tags:['kid favorite','protein'],
- ingredients:[{a:'1 lb',n:'chicken thighs, diced',sec:'proteins'},{a:'3 tbsp',n:'low-sodium soy sauce',sec:'pantry'},{a:'1 tbsp',n:'honey',sec:'pantry'},{a:'1 tsp',n:'sesame oil',sec:'pantry'},{a:'1 clove',n:'garlic, minced',sec:'produce'},{a:'2 cups',n:'cooked rice',sec:'pantry'},{a:'1 cup',n:'broccoli florets, steamed',sec:'produce'}],
- steps:['Mix soy sauce, honey, sesame oil, and garlic for sauce.','Cook chicken in a pan over medium-high heat 6–8 min until cooked through.','Pour sauce over chicken, simmer 2 min until it thickens and coats.','Serve chicken and sauce over rice with steamed broccoli on the side.','For toddler under 2: skip honey and soy sauce — season plain chicken separately.']}
-];
 const STORE_SECTIONS=['produce','proteins','dairy','pantry'];
 const SECTION_LABELS={produce:'🥦 Produce',proteins:'🥩 Proteins & Meat',dairy:'🥛 Dairy & Eggs',pantry:'🥫 Pantry & Dry Goods'};
 let rxFilter='all', rxQuery='', mealPlan=[], rxDetail=null, shopChecked=new Set();
@@ -3010,7 +2807,7 @@ function renderRecipes(){
  const qOk=!q||r.name.toLowerCase().includes(q)||r.desc.toLowerCase().includes(q)||r.tags.some(t=>t.includes(q));
  return catOk&&qOk;
  });
- const BAND={breakfast:'#F0A23C',lunch:'#4DD9B0',dinner:'#5BA8F5',soup:'#9B8CFF',snack:'#F2586A'};
+
 
  
  
@@ -3030,7 +2827,7 @@ function renderPlan(){
  list.innerHTML=`<div class="plan-empty"><div class="big">No meals planned.</div><div class="small">CLICK + ON ANY RECIPE</div></div>`;
  return;
  }
- const BAND={breakfast:'#F0A23C',lunch:'#4DD9B0',dinner:'#5BA8F5',soup:'#9B8CFF',snack:'#F2586A'};
+
  list.innerHTML=mealPlan.map(id=>{
  const r=RECIPES.find(x=>x.id===id);if(!r)return'';
  return `<div class="plan-item">
@@ -3049,7 +2846,7 @@ function renderPlan(){
 function openRecipe(id){
  rxDetail=RECIPES.find(r=>r.id===id);if(!rxDetail)return;
  const r=rxDetail;
- const BAND={breakfast:'#F0A23C',lunch:'#4DD9B0',dinner:'#5BA8F5',soup:'#9B8CFF',snack:'#F2586A'};
+
  $('rxMTitle').textContent=r.name;
  $('rxMMeta').innerHTML=`
  <span class="rx-tag" style="background:${BAND[r.cat]};color:#0E1116;border:none">${r.cat}</span>
@@ -3112,7 +2909,7 @@ $('shopClose').onclick=$('shopCloseBtn').onclick=()=>$('shopModal').classList.re
 $('shopModal').onclick=e=>{if(e.target===$('shopModal'))$('shopModal').classList.remove('on')};
 function renderAll(){
  fillCatSelect();fillNoteSelects();renderCatBar();renderCatMgr();renderStage();
- renderTasks();renderBillKPIs();renderBills();renderBillMonthly();renderDash();renderWeek();
+ renderTasks();renderBillKPIs();renderBills();renderBillMonthly();renderDash();
  renderNotes();renderShop();renderKanban();
  renderClock();renderBell();updNotifBtn();
 }
@@ -3891,7 +3688,7 @@ function initTabs(){
  const v=$('v-'+b.dataset.v);
  if(v)v.classList.add('on');
  if(b.dataset.v==='dash')renderDash();
- if(b.dataset.v==='week')renderWeek();
+ if(b.dataset.v==='week')
  if(b.dataset.v==='kanban')renderKanban();
  if(b.dataset.v==='notes'){fillNoteSelects();renderNotes();}
  if(b.dataset.v==='shop'){renderShop();}
@@ -4072,105 +3869,6 @@ function renderBillChart(){
       <span style="color:var(--mint)">Total: ${money(months.reduce((a,b)=>a+b.total,0))}</span>
     </div>`;
 }
-
-/* ================= PDF EXPORT ================= */
-;
-
-function buildPdfHtml(title,bodyHtml){
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>${title}</title>
-<style>
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1f24;margin:0;padding:32px;max-width:800px;margin:0 auto}
-h1{font-size:24px;font-weight:700;margin-bottom:4px;color:#0E1116}
-.subtitle{font-size:12px;color:#8A9099;margin-bottom:28px;font-family:monospace;letter-spacing:0.06em}
-h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#4A5568;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}
-.task{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0}
-.cb{width:14px;height:14px;border:2px solid #CBD5E0;border-radius:3px;flex-shrink:0;margin-top:2px}
-.cb.done{background:#4DD9B0;border-color:#4DD9B0}
-.t{flex:1}
-.t-title{font-size:13.5px;font-weight:450}
-.t-meta{font-size:11px;color:#8A9099;margin-top:3px;font-family:monospace}
-.sub{display:flex;gap:8px;padding:4px 0 4px 22px;font-size:12px;color:#4A5568}
-.sub .cb{width:11px;height:11px;margin-top:1px}
-.bill-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
-.bill-amt{font-weight:600}
-.tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-right:4px}
-.high{background:#fff5f5;color:#e53e3e}.med{background:#fffbeb;color:#d97706}.low{background:#f7f7f7;color:#718096}
-.od{color:#e53e3e;font-weight:500}
-footer{margin-top:40px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#8A9099;font-family:monospace}
-@media print{body{padding:20px}button{display:none}}
-</style>
-</head><body>${bodyHtml}
-<footer>Generated by Ledger · ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</footer>
-<script>window.onload=()=>window.print()<\/script>
-</body></html>`;
-}
-
-function openPdfWindow(title,html){
-  const w=window.open('','_blank');
-  if(!w){toast('Pop-up blocked — allow pop-ups and try again');return}
-  w.document.write(buildPdfHtml(title,html));
-  w.document.close();
-}
-
-$('pdfOptTasks').onclick=()=>{
-  $('pdfModal').classList.remove('on');
-  const open=S.tasks.filter(t=>!t.done);
-  const byCat=S.cats.map(c=>({c,tasks:open.filter(t=>t.cat===c.id)})).filter(x=>x.tasks.length);
-  let html=`<h1>Open Tasks</h1><div class="subtitle">${open.length} tasks · ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}).toUpperCase()}</div>`;
-  byCat.forEach(({c,tasks})=>{
-    html+=`<h2>${c.name}</h2>`;
-    tasks.forEach(t=>{
-      const dl=dueLabel(t);
-      html+=`<div class="task"><div class="cb"></div><div class="t"><div class="t-title">${t.title}</div><div class="t-meta"><span class="tag ${t.pri}">${t.pri}</span>${dl?`<span class="${bucketOf(t)==='overdue'?'od':''}">${dl}</span>`:''}</div></div></div>`;
-      (t.subtasks||[]).forEach(s=>html+=`<div class="sub"><div class="cb ${s.done?'done':''}"></div>${s.title}</div>`);
-    });
-  });
-  openPdfWindow('Open Tasks — Ledger',html);
-};
-
-$('pdfOptAll').onclick=()=>{
-  $('pdfModal').classList.remove('on');
-  const byCat=S.cats.map(c=>({c,tasks:S.tasks.filter(t=>t.cat===c.id)})).filter(x=>x.tasks.length);
-  let html=`<h1>Full Board</h1><div class="subtitle">${S.tasks.length} tasks · ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}).toUpperCase()}</div>`;
-  byCat.forEach(({c,tasks})=>{
-    html+=`<h2>${c.name}</h2>`;
-    tasks.forEach(t=>{
-      html+=`<div class="task"><div class="cb ${t.done?'done':''}"></div><div class="t"><div class="t-title" style="${t.done?'text-decoration:line-through;color:#8A9099':''}">${t.title}</div></div></div>`;
-    });
-  });
-  openPdfWindow('Full Board — Ledger',html);
-};
-
-$('pdfOptBills').onclick=()=>{
-  $('pdfModal').classList.remove('on');
-  const active=S.bills.filter(b=>!b.paused);
-  let html=`<h1>Bills Summary</h1><div class="subtitle">${active.length} active bills · ${money(active.reduce((a,b)=>a+monthlyEquiv(b),0))}/month</div>`;
-  html+=`<h2>All Bills</h2>`;
-  const sorted=active.slice().sort((a,b)=>(parseDue(a.due)||0)-(parseDue(b.due)||0));
-  sorted.forEach(b=>{
-    const st=billStatus(b),dl=billLabel(b);
-    html+=`<div class="bill-row"><div><div>${b.name}${b.autopay?' <span class="tag" style="background:#f0fff4;color:#276749">AUTO</span>':''}</div><div style="font-size:11px;color:#8A9099;font-family:monospace">${CAD[b.cadence].label}${dl?' · '+dl:''}</div></div><div class="bill-amt ${st==='overdue'?'od':''}">${money(b.amount)}</div></div>`;
-  });
-  openPdfWindow('Bills Summary — Ledger',html);
-};
-
-$('pdfOptWeek').onclick=()=>{
-  $('pdfModal').classList.remove('on');
-  const w=weekData(wkOffset);
-  const {start,end}=weekBounds(wkOffset);
-  const f=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  let html=`<h1>Weekly Review</h1><div class="subtitle">${f(start).toUpperCase()} — ${f(new Date(end.getTime()-DAY)).toUpperCase()}</div>`;
-  html+=`<h2>Completed (${w.done.length})</h2>`;
-  w.done.forEach(t=>html+=`<div class="task"><div class="cb done"></div><div class="t"><div class="t-title">${t.title}</div><div class="t-meta">${catOf(t.cat).name}</div></div></div>`);
-  if(!w.done.length)html+=`<p style="color:#8A9099;font-size:13px">Nothing completed this week.</p>`;
-  html+=`<h2>Slipped (${w.slipped.length})</h2>`;
-  w.slipped.forEach(t=>html+=`<div class="task"><div class="cb"></div><div class="t"><div class="t-title">${t.title}</div><div class="t-meta od">${Math.abs(dayDiff(parseDue(t.due)))}d overdue</div></div></div>`);
-  if(!w.slipped.length)html+=`<p style="color:#38a169;font-size:13px">Nothing slipped this week.</p>`;
-  html+=`<h2>Up next (${w.ahead.length})</h2>`;
-  w.ahead.forEach(t=>html+=`<div class="task"><div class="cb"></div><div class="t"><div class="t-title">${t.title}</div><div class="t-meta"><span class="tag ${t.pri}">${t.pri}</span>${t.due?' due '+t.due:''}</div></div></div>`);
-  openPdfWindow('Weekly Review — Ledger',html);
-};
 
 /* ================= SMART DUE DATE IN ASSISTANT ================= */
 // Patch sendToAsst system prompt to include due date suggestion logic
