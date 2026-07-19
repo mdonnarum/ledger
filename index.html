@@ -831,7 +831,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v33</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v34</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -2227,14 +2227,16 @@ function taskHTML(t){
  <textarea class="te-notes" data-enotes="${t.id}" placeholder="Notes, context, links…" style="min-height:120px;resize:vertical">${esc(t.notes||'')}</textarea>
  <div style="margin-top:10px">
  <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">Checklist</div>
+ <div data-chklist="${t.id}">
  ${(t.subtasks||[]).map(s=>{const k=`${t.id}|${s.id}`;return`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-soft)">
- <div class="tick ${s.done?'on':''}" data-sub="${k}" style="flex-shrink:0"><svg viewBox="0 0 24 24"><rect class="bx" x="2.5" y="2.5" width="19" height="19" rx="5"/><path class="ck" d="M6.5 12.5l3.6 3.6 7.4-8.2"/></svg></div>
+ <div class="tick ${s.done?'on':''}" data-sub="${k}" style="flex-shrink:0;cursor:pointer"><svg viewBox="0 0 24 24"><rect class="bx" x="2.5" y="2.5" width="19" height="19" rx="5"/><path class="ck" d="M6.5 12.5l3.6 3.6 7.4-8.2"/></svg></div>
  <span style="flex:1;font-size:13px;${s.done?'text-decoration:line-through;color:var(--text-dim)':''}">${esc(s.title)}</span>
  <button data-subdel="${k}" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;line-height:1">×</button>
  </div>`}).join('')}
+ </div>
  <div class="sub-new" style="margin-top:8px">
- <input placeholder="Add checklist item…" data-esubin="${t.id}" maxlength="140">
- <button data-esubadd="${t.id}">Add</button>
+ <input placeholder="Add checklist item…" data-esubin="${t.id}" maxlength="140" id="esubin-${t.id}" onkeydown="if(event.key==='Enter')addSubEdit('${t.id}')">
+ <button onclick="addSubEdit('${t.id}')">Add</button>
  </div>
  </div>
  </div>
@@ -2349,18 +2351,18 @@ function addSub(tid){
  const ni=document.querySelector(`[data-subin="${tid}"]`);if(ni)ni.focus();
 }
 function addSubEdit(tid){
- // Used by the edit panel — separate from addSub to avoid querySelector collision
- const inp=document.querySelector(`[data-esubin="${tid}"]`),v=inp?.value.trim();
+ const inp=document.getElementById('esubin-'+tid);
+ if(!inp)return;
+ const v=inp.value.trim();
  if(!v)return;
  const t=S.tasks.find(x=>x.id===tid);
  if(!t)return;
  t.subtasks=t.subtasks||[];
  t.subtasks.push({id:uid(),title:v,done:false,notes:''});
- touch(t);inp.value='';save();renderTasks();
- // Refocus the input after re-render
- setTimeout(()=>{
-  const ni=document.querySelector(`[data-esubin="${tid}"]`);if(ni)ni.focus();
- },50);
+ touch(t);save();
+ inp.value='';
+ renderTasks();
+ setTimeout(()=>{const ni=document.getElementById('esubin-'+tid);if(ni)ni.focus();},50);
 }
 $('q').oninput=e=>{uiQuery=e.target.value;renderTasks()};
 $('segStatus').querySelectorAll('button').forEach(b=>b.onclick=()=>{
