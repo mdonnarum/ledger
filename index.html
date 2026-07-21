@@ -660,6 +660,8 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 .staple-sec-h{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:600;display:flex;align-items:center;gap:8px}
 .staple-sec-h::after{content:'';flex:1;height:1px;background:var(--line-soft)}
 .auto-link{color:var(--mint);text-decoration:none;font-weight:500;border-bottom:1px solid rgba(77,217,176,.3);word-break:break-all}
+.auto-link.auto-phone{color:var(--blue);border-bottom-color:rgba(91,168,245,.3);word-break:normal;white-space:nowrap}
+.auto-link.auto-phone::before{content:"📞 ";font-size:0.9em}
 .auto-link:hover{border-bottom-color:var(--mint)}
 /* ---- TASK TEMPLATES ---- */
 .tmpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:18px}
@@ -856,7 +858,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v35</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v36</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -3721,11 +3723,23 @@ $('bStaplesReset').onclick=()=>{staples.forEach(s=>s.done=false);saveShopData();
 
 function linkify(text){
  if(!text)return'';
- const parts=text.split(/(https?:\/\/[^\s<>"]+)/g);
+ // Combined regex: URLs OR phone numbers (US-style: optional +1, area code, 7 digits, various separators)
+ const combined=/(https?:\/\/[^\s<>"]+)|(\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}(?:\s*(?:x|ext\.?)\s*\d+)?)/g;
+ const parts=text.split(combined);
  return parts.map((part,i)=>{
-  if(i%2===1){
+  if(part===undefined)return'';
+  const mod=i%3; // split with 2 capture groups yields groups of 3: [text, url, phone]
+  if(mod===1){
+   // URL match
    const display=part.length>55?part.slice(0,52)+'…':part;
    return `<a href="${esc(part)}" target="_blank" rel="noopener" class="auto-link">${esc(display)}</a>`;
+  }
+  if(mod===2){
+   // Phone match — use only the main 10 digits for tel:, ignore extension digits
+   const mainMatch=part.match(/\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/);
+   const digits=mainMatch?mainMatch[0].replace(/\D/g,''):part.replace(/\D/g,'');
+   if(digits.length<10)return esc(part); // too short to be a real phone number, skip
+   return `<a href="tel:${digits}" class="auto-link auto-phone">${esc(part)}</a>`;
   }
   return esc(part).replace(/\n/g,'<br>');
  }).join('');
