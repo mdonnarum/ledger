@@ -833,12 +833,14 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <!-- PIN LOCK SCREEN -->
 <div class="pin-screen" id="pinScreen">
   <div class="pin-logo"><div class="mark"></div>Ledger</div>
-  <div class="pin-sub">Enter your PIN to continue</div>
+  <div class="pin-sub">Enter your code to continue</div>
   <div class="pin-dots" id="pinDots">
     <div class="pin-dot" id="pd0"></div>
     <div class="pin-dot" id="pd1"></div>
     <div class="pin-dot" id="pd2"></div>
     <div class="pin-dot" id="pd3"></div>
+    <div class="pin-dot" id="pd4"></div>
+    <div class="pin-dot" id="pd5"></div>
   </div>
   <div class="pin-pad">
     <button class="pin-key" data-k="1">1</button>
@@ -1557,6 +1559,7 @@ function initFirebase(){
  return true;
  }catch(e){console.error('Firebase init:',e);return false;}
 }
+const AUTH_EMAIL='mdonnarum@gmail.com';
 function ensureAuth(){
  if(_authReady)return _authReady;
  _authReady=new Promise(resolve=>{
@@ -1565,11 +1568,8 @@ function ensureAuth(){
  const auth=firebase.auth();
  let settled=false;
  const done=v=>{if(!settled){settled=true;resolve(v);}};
- auth.onAuthStateChanged(user=>{if(user)done(true);});
- auth.signInAnonymously().catch(err=>{
- console.error('Anonymous sign-in failed:',err);done(false);
- });
- setTimeout(()=>done(false),8000);
+ auth.onAuthStateChanged(user=>{done(!!user);});
+ setTimeout(()=>done(!!auth.currentUser),5000);
  }catch(e){console.error('Auth init:',e);resolve(false);}
  });
  return _authReady;
@@ -1597,6 +1597,7 @@ const sharedStorage={
  });
  }
 };
+initFirebase(); // init early so auth is ready for the PIN screen
 const PALETTE=['#4DD9B0','#5BA8F5','#9B8CFF','#F0A23C','#F2586A','#48C4E0','#B8D94D','#E85DA1'];
 const DEFCATS=[
  {id:'work',name:'Work',color:'#5BA8F5'},{id:'personal',name:'Personal',color:'#4DD9B0'},
@@ -2993,9 +2994,10 @@ function renderAll(){
  renderNotes();renderShop();renderKanban();
  renderClock();renderBell();updNotifBtn();
 }
-const PIN='2000';
+const CODE_LEN=6;
 const PIN_SESSION='ledger:unlocked';
 let pinEntry='';
+let pinBusy=false;
 function pinUnlocked(){
  return sessionStorage.getItem(PIN_SESSION)==='1';
 }
@@ -3005,22 +3007,22 @@ function unlockApp(){
  load().then(()=>setTimeout(fireNotif,900));
 }
 function updateDots(){
- for(let i=0;i<PIN.length;i++){
+ for(let i=0;i<CODE_LEN;i++){
  const dot=$('pd'+i);
  dot.classList.toggle('filled',i<pinEntry.length);
  dot.classList.remove('error');
  }
 }
-function pinError(){
- for(let i=0;i<PIN.length;i++){
+function pinError(msg){
+ for(let i=0;i<CODE_LEN;i++){
  const dot=$('pd'+i);
  dot.classList.remove('filled');
  dot.classList.add('error','shake');
  }
- $('pinErr').textContent='Incorrect PIN — try again';
+ $('pinErr').textContent=msg||'Incorrect code — try again';
  pinEntry='';
  setTimeout(()=>{
- for(let i=0;i<PIN.length;i++){
+ for(let i=0;i<CODE_LEN;i++){
  const dot=$('pd'+i);
  dot.classList.remove('error','shake');
  }
@@ -3028,14 +3030,23 @@ function pinError(){
  updateDots();
  },900);
 }
-function pinPress(k){
- if(pinEntry.length>=PIN.length)return;
+async function pinPress(k){
+ if(pinBusy||pinEntry.length>=CODE_LEN)return;
  pinEntry+=k;
  updateDots();
- if(pinEntry.length===PIN.length){
- setTimeout(()=>{
- if(pinEntry===PIN)unlockApp();
- else pinError();
+ if(pinEntry.length===CODE_LEN){
+ pinBusy=true;
+ const code=pinEntry;
+ setTimeout(async()=>{
+ try{
+ if(typeof firebase==='undefined'||!firebase.auth)throw new Error('auth-unavailable');
+ await firebase.auth().signInWithEmailAndPassword(AUTH_EMAIL,code);
+ unlockApp();
+ }catch(e){
+ pinError();
+ }finally{
+ pinBusy=false;
+ }
  },120);
  }
 }
