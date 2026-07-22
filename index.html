@@ -14,6 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <style>
 :root{
  --void:#0E1116; --panel:#151A21; --panel-hi:#1C232C; --panel-hover:#222A35;
@@ -1546,7 +1547,7 @@ const FB_CFG={
  messagingSenderId:"938390700435",
  appId:"1:938390700435:web:6d5f43d10b15b74abda866"
 };
-let _db=null, _docRef=null, _unsubscribe=null;
+let _db=null, _docRef=null, _unsubscribe=null, _authReady=null;
 function initFirebase(){
  try{
  if(typeof firebase==='undefined')return false;
@@ -1556,9 +1557,27 @@ function initFirebase(){
  return true;
  }catch(e){console.error('Firebase init:',e);return false;}
 }
+function ensureAuth(){
+ if(_authReady)return _authReady;
+ _authReady=new Promise(resolve=>{
+ try{
+ if(typeof firebase==='undefined'||!firebase.auth){resolve(false);return;}
+ const auth=firebase.auth();
+ let settled=false;
+ const done=v=>{if(!settled){settled=true;resolve(v);}};
+ auth.onAuthStateChanged(user=>{if(user)done(true);});
+ auth.signInAnonymously().catch(err=>{
+ console.error('Anonymous sign-in failed:',err);done(false);
+ });
+ setTimeout(()=>done(false),8000);
+ }catch(e){console.error('Auth init:',e);resolve(false);}
+ });
+ return _authReady;
+}
 const sharedStorage={
  async get(){
  if(!_docRef)return null;
+ if(!await ensureAuth())return null;
  try{
  const snap=await _docRef.get();
  return snap.exists?snap.data():null;
@@ -1566,6 +1585,7 @@ const sharedStorage={
  },
  async set(data){
  if(!_docRef)return;
+ if(!await ensureAuth())return;
  try{await _docRef.set(data);}
  catch(e){console.error('Firebase save:',e);}
  },
@@ -1691,9 +1711,11 @@ function normalize(t){
 async function load(){
  // Init Firebase
  const fbOk=initFirebase();
+ let authOk=false;
+ if(fbOk){authOk=await ensureAuth();}
  let data=null;
  // 1. Try Firebase (cross-device)
- if(fbOk){
+ if(fbOk&&authOk){
  try{data=await sharedStorage.get();}catch(e){}
  }
  // 2. Fall back to local snapshot (offline)
@@ -1711,13 +1733,15 @@ async function load(){
  S.staples=data.staples||[];
  staples=S.staples; // keep local ref in sync
  if(data.cats&&data.cats.length)S.cats=data.cats;
- }else{
+ }else if(!fbOk||authOk){
  S.tasks=seedTasks().map(normalize);S.bills=seedBills();S.notes=seedNotes();
  save(); // save seed data so Firebase has something
+ }else{
+ toast('Could not reach secure storage — not loading demo data');
  }
  renderAll();
  // Real-time listener — when another device saves, update this one instantly
- if(fbOk){
+ if(fbOk&&authOk){
  let firstCall=true;
  sharedStorage.listen(fbData=>{
  if(firstCall){firstCall=false;return;} // skip initial echo
