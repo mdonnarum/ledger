@@ -3005,7 +3005,7 @@ $('shopModal').onclick=e=>{if(e.target===$('shopModal'))$('shopModal').classList
 function renderAll(){
  fillCatSelect();fillNoteSelects();renderCatBar();renderCatMgr();renderStage();
  renderTasks();renderBillKPIs();renderBills();renderBillMonthly();renderDash();
- renderNotes();renderShop();renderKanban();
+ renderNotes();renderShop();renderKanban();renderWeek();
  renderClock();renderBell();updNotifBtn();
 }
 const CODE_LEN=6;
@@ -3805,7 +3805,7 @@ function initTabs(){
  const v=$('v-'+b.dataset.v);
  if(v)v.classList.add('on');
  if(b.dataset.v==='dash')renderDash();
- if(b.dataset.v==='week')
+ if(b.dataset.v==='week')renderWeek();
  if(b.dataset.v==='kanban')renderKanban();
  if(b.dataset.v==='notes'){fillNoteSelects();renderNotes();}
  if(b.dataset.v==='shop'){renderShop();}
@@ -4282,7 +4282,86 @@ function initPlanDrag(container){
   });
 }
 
+/* ================= WEEKLY REVIEW ================= */
+let wkOffset=0; // 0 = this week, -1 = last week, …
+function weekBounds(offset){
+  const now=today0();
+  const dow=(now.getDay()+6)%7; // Monday = 0
+  const start=new Date(now); start.setDate(now.getDate()-dow+offset*7); start.setHours(0,0,0,0);
+  const end=new Date(start); end.setDate(start.getDate()+6); end.setHours(23,59,59,999);
+  return {start,end};
+}
+function wkRow(t,rightHtml){
+  const c=catOf(t.cat);
+  return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-soft)">
+    <span style="width:8px;height:8px;border-radius:2px;background:${c.color};flex:none"></span>
+    <div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:450;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.title)}</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:2px">${esc(c.name)}</div></div>
+    ${rightHtml||''}
+  </div>`;
+}
+function weekSlices(){
+  const {start,end}=weekBounds(wkOffset);
+  const s=start.getTime(), e=end.getTime();
+  const shipped=S.tasks.filter(t=>t.done&&t.completed&&t.completed>=s&&t.completed<=e).sort((a,b)=>b.completed-a.completed);
+  const created=S.tasks.filter(t=>t.created&&t.created>=s&&t.created<=e);
+  const slipped=S.tasks.filter(t=>{if(t.done||!t.due)return false;const d=parseDue(t.due);if(!d)return false;const dm=d.getTime();return dm>=s&&dm<=e&&dayDiff(d)<0;});
+  const aheadEnd=e+7*DAY;
+  const ahead=S.tasks.filter(t=>{if(t.done||!t.due)return false;const d=parseDue(t.due);if(!d)return false;const dm=d.getTime();return dm>e&&dm<=aheadEnd;}).sort((a,b)=>parseDue(a.due)-parseDue(b.due));
+  return {start,end,shipped,created,slipped,ahead};
+}
+function renderWeek(){
+  const view=$('v-week'); if(!view||!view.classList.contains('on'))return;
+  const {start,end,shipped,created,slipped,ahead}=weekSlices();
+  $('wkR1').textContent=start.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' – '+end.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  $('wkR2').textContent=(wkOffset===0?'This week · ':wkOffset===-1?'Last week · ':'')+start.getFullYear();
+  $('wkNext').disabled=(wkOffset>=0);
 
+  const net=shipped.length-created.length;
+  const k=(cls,lab,num,sub)=>`<div class="kpi ${cls}"><div class="k-lab">${lab}</div><div class="k-num">${num}</div><div class="k-sub">${sub}</div></div>`;
+  $('wkScore').innerHTML=
+    k('good','Shipped',shipped.length,'completed this week')+
+    k('','Added',created.length,'new tasks created')+
+    k(slipped.length?'alert':'','Slipped',slipped.length,slipped.length?'went overdue':'nothing slipped')+
+    k('','Landing next',ahead.length,'due the week after');
+
+  $('wkNet').innerHTML=
+    `<div class="wk-net-num" style="color:${net>0?'var(--mint)':net<0?'var(--rose)':'var(--text)'}">${net>0?'+':''}${net}</div>
+     <div class="wk-net-txt"><div class="h">${net>0?'You closed more than you opened':net<0?'You opened more than you closed':'You broke even'}</div>
+     <div class="s">${shipped.length} shipped vs ${created.length} added.${slipped.length?` ${slipped.length} task${slipped.length>1?'s':''} slipped past due and ${slipped.length>1?'are':'is'} still open.`:' Nothing slipped past due.'}</div></div>`;
+
+  $('wkDone').innerHTML=shipped.length?shipped.map(t=>wkRow(t,`<span style="font-size:11px;color:var(--text-dim);font-family:var(--mono)">${new Date(t.completed).toLocaleDateString('en-US',{weekday:'short'})}</span>`)).join(''):`<div style="color:var(--text-dim);font-size:13px;padding:8px 0">Nothing completed in this week.</div>`;
+  $('wkDoneN').textContent=shipped.length;
+  $('wkSlip').innerHTML=slipped.length?slipped.map(t=>wkRow(t,`<span class="chip-due od" style="font-size:11px">${dueLabel(t)}</span>`)).join(''):`<div style="color:var(--text-dim);font-size:13px;padding:8px 0">Nothing slipped — nice.</div>`;
+  $('wkSlipN').textContent=slipped.length;
+  $('wkAhead').innerHTML=ahead.length?ahead.map(t=>wkRow(t,`<span class="chip-due" style="font-size:11px">${dueLabel(t)}</span>`)).join(''):`<div style="color:var(--text-dim);font-size:13px;padding:8px 0">Nothing due in the following week.</div>`;
+  $('wkAheadN').textContent=ahead.length;
+}
+$('wkPrev').onclick=()=>{wkOffset--;renderWeek();};
+$('wkNext').onclick=()=>{if(wkOffset<0){wkOffset++;renderWeek();}};
+
+async function writeWeekReview(){
+  const key=getAKey(),out=$('revOut'),btn=$('bRev');
+  if(!key){out.innerHTML='<div class="ins-err">No API key configured. Open ⚙ Settings.</div>';return;}
+  const {start,end,shipped,slipped,ahead}=weekSlices();
+  const list=arr=>arr.length?arr.map(t=>`  - "${t.title}" [${catOf(t.cat).name}]`).join('\n'):'  (none)';
+  const prompt=`You are a candid, supportive productivity coach writing a short weekly retrospective for someone's personal task board. Week of ${start.toLocaleDateString('en-US',{month:'long',day:'numeric'})}–${end.toLocaleDateString('en-US',{month:'short',day:'numeric'})}.\n\nSHIPPED (completed this week):\n${list(shipped)}\n\nSLIPPED (went overdue this week, still open):\n${list(slipped)}\n\nLANDING NEXT WEEK:\n${list(ahead)}\n\nWrite 3 short paragraphs, warm but honest: (1) acknowledge what they shipped and any theme in it, (2) address what slipped without guilt-tripping — is there a pattern or a fix?, (3) one focused, realistic priority for the week ahead. Reference real task titles. No headers, no bullet lists — just tight prose.`;
+  const orig=btn.textContent;btn.textContent='Writing…';btn.disabled=true;
+  out.innerHTML='<div style="text-align:center;padding:24px;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.06em">REFLECTING ON YOUR WEEK…</div>';
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:900,messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error.message);
+    const text=data.content?.filter(x=>x.type==='text').map(x=>x.text).join('')||'';
+    out.innerHTML=`<div class="panel"><div class="p-body ins-review-content" style="line-height:1.65;font-size:13.5px">${text.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>')}</div></div>`;
+  }catch(err){
+    out.innerHTML=`<div class="ins-err">Couldn't write review: ${esc(err.message||'unknown error')}</div>`;
+  }
+  btn.textContent=orig;btn.disabled=false;
+}
+$('bRev').onclick=writeWeekReview;
 
 /* ================= SHOPPING LIST ================= */
 const STAPLES_KEY='ledger:staples-v2';
