@@ -2304,8 +2304,22 @@ function taskHTML(t){
  </div>
  </div>`;
 }
+const COMPLETED_LOG_TITLE='Completed Tasks Log';
+function logCompletion(t){
+ S.notes=S.notes||[];
+ const line=`${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})} — ${t.title} (${catOf(t.cat).name})`;
+ let log=S.notes.find(n=>n.systemLog==='completed');
+ if(!log){
+ log={id:uid(),title:COMPLETED_LOG_TITLE,body:line,cat:'',taskId:'',pinned:false,systemLog:'completed',created:Date.now(),modified:Date.now()};
+ S.notes.unshift(log);
+ }else{
+ log.body=line+'\n'+log.body;
+ log.modified=Date.now();
+ }
+}
 function completeTask(t){
  t.done=true;t.completed=Date.now();touch(t);
+ logCompletion(t);
  setTimeout(updateStreak,200);
  if(t.repeat&&t.repeat!=='none'&&REPEAT[t.repeat].next){
  const base=t.due?parseDue(t.due):today0();
@@ -3289,7 +3303,7 @@ function applyOps(ops){
           if(op.due!==undefined)t.due=op.due;
           if(op.status!==undefined)t.status=op.status;
           if(op.notes!==undefined)t.notes=op.notes;
-          if(op.done===true){t.done=true;t.completed=Date.now();}
+          if(op.done===true){t.done=true;t.completed=Date.now();logCompletion(t);}
           if(op.done===false){t.done=false;t.completed=null;}
           touch(t);
           results.push(`✓ Updated: "${t.title}"`);
@@ -4020,13 +4034,26 @@ function buildBoardSnapshot(){
   return `  ${cat}: ${tasks.length} tasks${earliest?`, date range: ${earliest} to ${latest}`:', no due dates'}`;
  }).join('\n');
 
+ // Named completed tasks, most recent first
+ const doneLines=done.slice().sort((a,b)=>b.completed-a.completed).map(t=>
+  `  - "${t.title}" (${catOf(t.cat).name}) — completed ${new Date(t.completed).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`
+ ).join('\n');
+
+ // Notes — status updates, dependencies, and the completed-work log all live here
+ const notesLines=(S.notes||[]).slice().sort((a,b)=>b.modified-a.modified).slice(0,15).map(n=>
+  `  - "${n.title}"${n.pinned?' (pinned)':''}: ${n.body.slice(0,300)}`
+ ).join('\n');
+
  return `TODAY: ${iso(today0())}
 BOARD SUMMARY: ${open.length} open tasks (${od.length} overdue, ${todayT.length} due today, ${stalled.length} stalled)
 COMPLETED LAST 14 DAYS: ${done.length} tasks
-WEEK PRESSURE: ${weekTasks.length} tasks due in next 7 days
+${doneLines?doneLines+'\n':''}WEEK PRESSURE: ${weekTasks.length} tasks due in next 7 days
 
 TASKS BY CATEGORY (use this for project/theme inference):
 ${catSummary}
+
+NOTES (read for context — status updates, dependencies, and the completed-work log):
+${notesLines||'  none'}
 
 BILLS NEEDING ATTENTION: ${bills.length?'\n'+bills.map(b=>`  - ${b.name} ${money(b.amount)} ${billStatus(b)}`).join('\n'):'none'}
 
