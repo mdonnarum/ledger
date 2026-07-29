@@ -928,7 +928,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
       <button class="tab" data-v="week">Weekly Review</button>
       <button class="tab" data-v="ins">Insights</button>
     </div>
-    <button class="btn btn-sm" id="bNow" style="white-space:nowrap;color:var(--mint);border-color:rgba(77,217,176,.3)">✦ Now</button>
+    <button class="btn btn-sm" id="bNow" style="white-space:nowrap;color:var(--mint);border-color:rgba(77,217,176,.3)">✦ Focus</button>
     <button class="btn btn-sm" id="bTemplates" style="white-space:nowrap">📋 Templates</button>
     <button class="btn btn-sm" id="bWordExport" style="white-space:nowrap">📝 Export to Word</button>
   </div>
@@ -3882,8 +3882,10 @@ function openTaskEditor(id){
  $('taskEditClose').onclick=closeTaskEditor;
  wireTaskEditPanel($('taskEditBody'),()=>{
   const drawerOpen=$('drawer')&&$('drawer').classList.contains('on');
+  const focusOpen=$('nowOverlay')&&$('nowOverlay').classList.contains('on');
   closeTaskEditor();
   if(drawerOpen&&lastDrawerRender)lastDrawerRender();
+  if(focusOpen&&typeof renderNow==='function'){renderNow();nowBrief();}
  });
  setTimeout(()=>{const ti=$('taskEditBody').querySelector('.te-title');if(ti)ti.focus();},50);
 }
@@ -4021,7 +4023,7 @@ function nowSnooze(id,kind){
  t.snoozedUntil=snoozeTime(kind);
  t.snoozeCount=(t.snoozeCount||0)+1;
  touch(t);save();nowSnoozeOpen=null;renderNow();nowBrief();
- toast(`Snoozed — back on your Now screen ${kind==='weekend'?'this weekend':kind}`);
+ toast(`Snoozed — back on your Focus screen ${kind==='weekend'?'this weekend':kind}`);
 }
 function nowCard(t){
  const crit=t.pri==='critical',sc=(t.snoozeCount||0);
@@ -4064,7 +4066,7 @@ function renderNow(){
  const allDone=S.tasks.filter(t=>t.done).length,openCount=S.tasks.filter(t=>!t.done).length,total=S.tasks.length;
  const pct=total?Math.round(allDone/total*100):0;
  let html=`<div class="now-top"><div class="now-eyebrow">${dateStr}</div><button class="now-skip" id="nowSkip">Skip to app →</button></div>
-  <div class="now-h">Right now</div>
+  <div class="now-h">Focus</div>
   <div class="now-brief"><span class="spark">✦</span><span id="nowBriefTxt">Reading your board…</span></div>
   <div class="focus-progress" style="margin-bottom:20px">
    <div class="focus-stat"><div class="v" style="color:var(--mint)">${allDone}</div><div class="l">Done total</div></div>
@@ -4083,7 +4085,7 @@ function renderNow(){
  inner.innerHTML=html;
  $('nowSkip').onclick=hideNow;$('nowShowAll').onclick=hideNow;
  inner.querySelectorAll('[data-ndone]').forEach(el=>el.onclick=()=>{const t=S.tasks.find(x=>x.id===el.dataset.ndone);if(t){completeTask(t);touch(t);save();renderAll();renderNow();nowBrief();}});
- inner.querySelectorAll('[data-nopen]').forEach(el=>el.onclick=()=>{const id=el.dataset.nopen;hideNow();openTaskEditor(id);});
+ inner.querySelectorAll('[data-nopen]').forEach(el=>el.onclick=()=>openTaskEditor(el.dataset.nopen));
  inner.querySelectorAll('[data-nsnooze]').forEach(el=>el.onclick=()=>{nowSnoozeOpen=el.dataset.nsnooze;renderNow();});
  inner.querySelectorAll('[data-nsz]').forEach(el=>el.onclick=()=>{const p=el.dataset.nsz.split('|');nowSnooze(p[0],p[1]);});
  inner.querySelectorAll('[data-nszcancel]').forEach(el=>el.onclick=()=>{nowSnoozeOpen=null;renderNow();});
