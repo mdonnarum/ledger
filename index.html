@@ -865,6 +865,12 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 .kpi{cursor:pointer;transition:border-color .14s,transform .14s}
 .kpi:hover{border-color:var(--line)!important;transform:translateY(-1px)}
 .active-kpi{border-color:var(--mint)!important;box-shadow:0 0 0 2px rgba(77,217,176,.15)!important}
+/* clickable graph highlight → editable list below */
+.dash-active{outline:2px solid var(--mint)!important;outline-offset:2px;border-radius:6px}
+.donut-svg path.dash-active{outline:none!important;stroke:var(--mint);stroke-width:2.5}
+.hz-col.dash-active,.pmx-cell.dash-active,.age-row.dash-active,.leg.dash-active,.pbar-track.dash-active{box-shadow:0 0 0 2px rgba(77,217,176,.35)}
+#momentum.dash-active{box-shadow:0 0 0 2px rgba(77,217,176,.35);border-radius:8px}
+.donut-svg path,.leg,.pbar-track,.age-row,.pmx-cell,.hz-col{cursor:pointer}
 /* ---- TASK DRAG ---- */
 #taskZone .task.dragging{opacity:.35;cursor:grabbing}
 #taskZone .task.drag-over{border-top:2px solid var(--mint)!important}
@@ -1632,7 +1638,7 @@ const DEFCATS=[
 ];
 let S={tasks:[],bills:[],cats:DEFCATS.slice(),notes:[],staples:[]};
 let staged=[], uiStatus='open', uiSort='due', uiQuery='', uiCat='', uiStatusFilter='all';
-let hzFilter=null, openTasks=new Set(), openBills=new Set(), openSubs=new Set(), editing=null, billEditing=null;
+let hzFilter=null, openTasks=new Set(), openBills=new Set(), openSubs=new Set(), editing=null, billEditing=null, dashSel=null;
 const $=id=>document.getElementById(id);
 const uid=()=>Math.random().toString(36).slice(2,10);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2630,13 +2636,13 @@ function renderKPIs(){
  const bd=S.bills.filter(b=>!b.paused&&['overdue','soon'].includes(billStatus(b)));
  const rate=all.length?Math.round(done.length/all.length*100):0;
  const worst=od.length?Math.max(...od.map(t=>Math.abs(dayDiff(parseDue(t.due))))):0;
- const k=(cls,lab,num,sub)=>`<div class="kpi ${cls}"><div class="k-lab">${lab}</div><div class="k-num">${num}</div><div class="k-sub">${sub}</div></div>`;
+ const k=(cls,lab,num,sub,type)=>`<div class="kpi ${cls}"${type?` data-kpi="${type}"`:''}><div class="k-lab">${lab}</div><div class="k-num">${num}</div><div class="k-sub">${sub}</div></div>`;
  $('kpis').innerHTML=
- k('','Open',open.length,`${all.length} total`)+
- k(od.length?'alert':'','Overdue',od.length,worst?`worst: ${worst}d late`:'all clear')+
- k(st.length?'warn b':'','Stalled',st.length,st.length?'not moving':'all moving')+
- k(wk.length?'warn':'','Next 7 days',wk.length,'incl. today')+
- k(bd.length?'alert':'','Bills due',bd.length,bd.length?money(bd.reduce((a,b)=>a+Number(b.amount||0),0)):'none pending')+
+ k('','Open',open.length,`${all.length} total`,'open')+
+ k(od.length?'alert':'','Overdue',od.length,worst?`worst: ${worst}d late`:'all clear','overdue')+
+ k(st.length?'warn b':'','Stalled',st.length,st.length?'not moving':'all moving','stalled')+
+ k(wk.length?'warn':'','Next 7 days',wk.length,'incl. today','week')+
+ k(bd.length?'alert':'','Bills due',bd.length,bd.length?money(bd.reduce((a,b)=>a+Number(b.amount||0),0)):'none pending','bills')+
  k('good','Completion',rate+'%',`${done.length} done`);
 }
 function renderHorizon(){
@@ -2652,6 +2658,7 @@ function renderHorizon(){
  $('hzHint').textContent=hzFilter?'Filtering — click again to clear':'Click a column to filter';
  document.querySelectorAll('[data-hz]').forEach(el=>el.onclick=()=>{
  hzFilter=hzFilter===el.dataset.hz?null:el.dataset.hz;renderDash();
+ if(hzFilter)showDashDetail('bucket',hzFilter);else hideDashDetail();
  });
 }
 function polar(cx,cy,r,a){const rad=(a-90)*Math.PI/180;return[cx+r*Math.cos(rad),cy+r*Math.sin(rad)]}
@@ -2686,7 +2693,7 @@ function renderDonut(){
  <span class="pc">${Math.round(c.n/total*100)}%</span>
  </div>`).join('');
  document.querySelectorAll('[data-cat]').forEach(el=>{
- el.onclick=()=>drillCat(el.dataset.cat);
+ el.onclick=()=>toggleDashDetail('cat',el.dataset.cat);
  el.onmouseenter=()=>document.querySelectorAll('#donut path,.leg').forEach(x=>{
  if(x.dataset.cat!==el.dataset.cat)x.classList.add('dim')});
  el.onmouseleave=()=>document.querySelectorAll('#donut path,.leg').forEach(x=>x.classList.remove('dim'));
@@ -2703,7 +2710,7 @@ function renderPbars(){
  <span class="nm">${esc(r.name)}</span><span class="fr">${r.done}/${r.total} · ${r.pct}%</span></div>
  <div class="pbar-track" data-pcat="${r.id}"><div class="pbar-fill" style="width:${r.pct}%;background:${r.color}"></div></div>
  </div>`).join(''):`<div style="color:var(--text-dim);font-size:12.5px">No tasks yet.</div>`;
- document.querySelectorAll('[data-pcat]').forEach(x=>x.onclick=()=>drillCat(x.dataset.pcat));
+ document.querySelectorAll('[data-pcat]').forEach(x=>x.onclick=()=>toggleDashDetail('cat',x.dataset.pcat));
 }
 function renderAging(){
  const od=S.tasks.filter(t=>!t.done&&bucketOf(t)==='overdue')
@@ -2720,7 +2727,7 @@ function renderAging(){
  <div class="age-c">${esc(catOf(t.cat).name).toUpperCase()} · ${t.pri.toUpperCase()}${(t.pushes||0)?` · PUSHED ${t.pushes}×`:''}</div></div>
  <div class="age-spark"><i style="width:${Math.round(d/max*100)}%"></i></div>
  </div>`).join('');
- document.querySelectorAll('[data-drill]').forEach(x=>x.onclick=()=>drillTask(x.dataset.drill));
+ document.querySelectorAll('[data-drill]').forEach(x=>x.onclick=()=>toggleDashDetail('task',x.dataset.drill));
 }
 function renderMomentum(){
  const days=14,now=today0(),data=[];
@@ -2748,6 +2755,7 @@ function renderMomentum(){
  <span class="mom-stat" style="color:${trend>0?'var(--mint)':(trend<0?'var(--amber)':'var(--text-dim)')}"><b>${trend>0?'+':''}${trend}</b> vs prior week</span>
  <span class="mom-stat"><b>${(total/2).toFixed(1)}</b> / week avg</span>
  </div>`;
+ const mEl=$('momentum');if(mEl){mEl.style.cursor='pointer';mEl.onclick=()=>toggleDashDetail('momentum');}
 }
 function renderPmx(){
  const open=dashPool().filter(t=>!t.done);
@@ -2762,9 +2770,9 @@ function renderPmx(){
  <div class="b" style="width:${Math.round(n/max*100)}%;background:${n?r.c:'#232B34'}"></div>
  </div>`;
  }).join('');
- document.querySelectorAll('[data-pri]').forEach(el=>el.onclick=()=>drillPri(el.dataset.pri));
+ document.querySelectorAll('[data-pri]').forEach(el=>el.onclick=()=>toggleDashDetail('pri',el.dataset.pri));
 }
-function renderDash(){renderStreak();renderKPIs();renderHorizon();renderDonut();renderPbars();renderAging();renderMomentum();renderPmx();renderBillChart();setTimeout(wireKpiTiles,100);}
+function renderDash(){renderStreak();renderKPIs();renderHorizon();renderDonut();renderPbars();renderAging();renderMomentum();renderPmx();renderBillChart();wireKpiTiles();if(dashSel){renderDashDetail(dashSel.type,dashSel.arg);}markDashActive();}
 
 
 
@@ -5021,7 +5029,7 @@ $('bGenAll').onclick=async()=>{
 };
 
 /* ================= DASHBOARD TILE DETAIL ================= */
-function renderDashDetail(type){
+function renderDashDetail(type,arg){
   const detail=$('dashDetail');
   if(!detail)return;
   const open=S.tasks.filter(t=>!t.done);
@@ -5032,12 +5040,17 @@ function renderDashDetail(type){
     case'stalled': tasks=open.filter(isStalled); title=`Stalled tasks (${tasks.length})`; break;
     case'week': tasks=open.filter(t=>['today','tomorrow','week','soon'].includes(bucketOf(t))); title=`Due next 7 days (${tasks.length})`; break;
     case'bills': bills=S.bills.filter(b=>!b.paused&&['overdue','soon','today'].includes(billStatus(b))); title=`Bills needing attention (${bills.length})`; break;
+    case'cat': {const c=catOf(arg); tasks=S.tasks.filter(t=>t.cat===arg).slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)); title=`${esc(c.name)} — all tasks (${tasks.length})`; break;}
+    case'pri': {const lbl={critical:'Critical',high:'High',med:'Medium',low:'Low'}[arg]||arg; tasks=open.filter(t=>t.pri===arg); title=`${lbl} priority — open (${tasks.length})`; break;}
+    case'bucket': {const b=BUCKETS.find(x=>x.id===arg); tasks=open.filter(t=>bucketOf(t)===arg); title=`${b?b.label:arg} (${tasks.length})`; break;}
+    case'task': {const t=S.tasks.find(x=>x.id===arg); tasks=t?[t]:[]; title=t?`Task — ${esc(t.title.length>44?t.title.slice(0,44)+'…':t.title)}`:'Task'; break;}
+    case'momentum': {const from=today0().getTime()-13*DAY; tasks=S.tasks.filter(t=>t.done&&t.completed&&t.completed>=from).slice().sort((a,b)=>(b.completed||0)-(a.completed||0)); title=`Completed — last 14 days (${tasks.length})`; break;}
     default: detail.style.display='none'; return;
   }
   detail.style.display='block';
   let html=`<div class="panel"><div class="p-head"><div class="p-title">${title}</div><button class="btn btn-sm" id="dashDetailClose" style="color:var(--text-dim)">✕ Close</button></div>`;
   // Status filter for task lists
-  if(tasks.length||type==='open'||type==='overdue'||type==='stalled'||type==='week'){
+  if(tasks.length){
     html+=`<div style="padding:8px 16px;border-bottom:1px solid var(--line-soft);display:flex;gap:6px;flex-wrap:wrap">
       <span style="font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);line-height:28px">Status</span>
       <div class="seg" id="dashStatusFilter">
@@ -5125,14 +5138,14 @@ function renderDashDetail(type){
     const t=S.tasks.find(x=>x.id===el.dataset.tog);
     if(!t)return;
     if(t.done){t.done=false;t.completed=null;touch(t);}else completeTask(t);
-    save();renderAll();renderDashDetail(type);
+    save();renderAll();renderDashDetail(type,arg);
   });
   // Wire edit buttons
   detail.querySelectorAll('[data-tedit]').forEach(el=>el.onclick=e=>{
     e.stopPropagation();
     const id=el.dataset.tedit;
     editing=editing===id?null:id;
-    renderDashDetail(type);
+    renderDashDetail(type,arg);
   });
   // Wire save/cancel
   detail.querySelectorAll('[data-esave]').forEach(el=>el.onclick=()=>{
@@ -5144,15 +5157,47 @@ function renderDashDetail(type){
     t.pri=detail.querySelector(`[data-epri="${id}"]`).value;
     t.due=detail.querySelector(`[data-edue="${id}"]`).value;
     t.notes=detail.querySelector(`[data-enotes="${id}"]`).value.trim();
-    touch(t);editing=null;save();renderAll();renderDashDetail(type);toast('Saved');
+    touch(t);editing=null;save();renderAll();renderDashDetail(type,arg);toast('Saved');
   });
-  detail.querySelectorAll('[data-ecancel]').forEach(el=>el.onclick=()=>{editing=null;renderDashDetail(type);});
+  detail.querySelectorAll('[data-ecancel]').forEach(el=>el.onclick=()=>{editing=null;renderDashDetail(type,arg);});
 }
 
-// Store current dashboard detail type
-let dashDetailType=null;
+// Current dashboard detail selection: dashSel {type,arg} declared with top-level state
+let dashDetailType=null; // legacy alias
 
-// Patch renderKPIs to make tiles clickable
+function markDashActive(){
+  document.querySelectorAll('.dash-active').forEach(el=>el.classList.remove('dash-active'));
+  const kpisEl=$('kpis');
+  if(kpisEl)kpisEl.querySelectorAll('.kpi').forEach(k=>k.classList.remove('active-kpi'));
+  if(!dashSel)return;
+  const {type,arg}=dashSel;
+  const add=sel=>document.querySelectorAll(sel).forEach(el=>el.classList.add('dash-active'));
+  if(['open','overdue','stalled','week','bills'].includes(type)){
+    const t=kpisEl&&kpisEl.querySelector(`.kpi[data-kpi="${type}"]`);
+    if(t)t.classList.add('active-kpi');
+  }else if(type==='cat'){ add(`[data-cat="${arg}"]`); add(`[data-pcat="${arg}"]`);
+  }else if(type==='pri'){ add(`[data-pri="${arg}"]`);
+  }else if(type==='bucket'){ add(`[data-hz="${arg}"]`);
+  }else if(type==='task'){ add(`[data-drill="${arg}"]`);
+  }else if(type==='momentum'){ const m=$('momentum'); if(m)m.classList.add('dash-active'); }
+}
+
+function showDashDetail(type,arg){
+  dashSel={type,arg:arg||null};dashDetailType=type;
+  renderDashDetail(type,arg);
+  markDashActive();
+  const d=$('dashDetail');
+  if(d&&d.style.display!=='none')d.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function hideDashDetail(){
+  dashSel=null;dashDetailType=null;
+  const d=$('dashDetail');if(d)d.style.display='none';
+  markDashActive();
+}
+function toggleDashDetail(type,arg){
+  if(dashSel&&dashSel.type===type&&(dashSel.arg||'')===(arg||'')){hideDashDetail();return;}
+  showDashDetail(type,arg);
+}
 
 
 /* ================= TASK DRAG TO REORDER ================= */
@@ -5163,20 +5208,10 @@ let taskDragId=null,taskDragOverId=null;
 function wireKpiTiles(){
   const kpisEl=$('kpis');
   if(!kpisEl)return;
-  const typeMap={open:'open',overdue:'overdue',stalled:'stalled','next 7':'week','7 day':'week',bill:'bills'};
-  kpisEl.querySelectorAll('.kpi').forEach(tile=>{
+  kpisEl.querySelectorAll('.kpi[data-kpi]').forEach(tile=>{
     tile.style.cursor='pointer';
-    const text=tile.textContent.toLowerCase();
-    let type=null;
-    Object.entries(typeMap).forEach(([k,v])=>{if(text.includes(k))type=v;});
-    if(!type)return;
-    tile.onclick=()=>{
-      dashDetailType=dashDetailType===type?null:type;
-      kpisEl.querySelectorAll('.kpi').forEach(k=>k.classList.remove('active-kpi'));
-      const detail=$('dashDetail');
-      if(dashDetailType){tile.classList.add('active-kpi');renderDashDetail(dashDetailType);}
-      else if(detail)detail.style.display='none';
-    };
+    const type=tile.dataset.kpi;
+    tile.onclick=()=>toggleDashDetail(type,null);
   });
 }
 /* Wire task drag-to-reorder */
