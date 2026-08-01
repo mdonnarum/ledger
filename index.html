@@ -925,6 +925,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
     <div class="tabs" id="tabBar">
+      <button class="tab" data-v="focus" style="color:var(--mint)">✦ Focus</button>
       <button class="tab on" data-v="tasks">Tasks</button>
       <button class="tab" data-v="kanban">Kanban</button>
       <button class="tab" data-v="bills">Bills</button>
@@ -934,7 +935,6 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
       <button class="tab" data-v="week">Weekly Review</button>
       <button class="tab" data-v="ins">Insights</button>
     </div>
-    <button class="btn btn-sm" id="bNow" style="white-space:nowrap;color:var(--mint);border-color:rgba(77,217,176,.3)">✦ Focus</button>
     <button class="btn btn-sm" id="bTemplates" style="white-space:nowrap">📋 Templates</button>
     <button class="btn btn-sm" id="bWordExport" style="white-space:nowrap">📝 Export to Word</button>
   </div>
@@ -1189,6 +1189,11 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ===== FOCUS ===== -->
+  <div class="view" id="v-focus">
+    <div class="now-inner" id="focusInner"></div>
   </div>
 
   <!-- ===== DASHBOARD ===== -->
@@ -3105,7 +3110,7 @@ function pinUnlocked(){
 function unlockApp(){
  sessionStorage.setItem(PIN_SESSION,'1');
  $('pinScreen').classList.add('hidden');
- load().then(()=>{setTimeout(fireNotif,900);showNow();});
+ load().then(()=>{setTimeout(fireNotif,900);});
 }
 function updateDots(){
  for(let i=0;i<CODE_LEN;i++){
@@ -3161,7 +3166,7 @@ document.addEventListener('keydown',e=>{
 // Check if already unlocked this session
 if(pinUnlocked()){
  $('pinScreen').classList.add('hidden');
- load().then(()=>{setTimeout(fireNotif,900);showNow();});
+ load().then(()=>{setTimeout(fireNotif,900);});
 }
 // else: wait for PIN — load is called from unlockApp()
 
@@ -3774,7 +3779,6 @@ function initDraggableTabs(){
  });
 }
 
-$('bNow').onclick=showNow;
 /* Reusable inline task-edit panel — used by Focus mode (and available anywhere) */
 function taskEditPanelHTML(t){
  const catOpts=S.cats.map(cc=>`<option value="${cc.id}" ${t.cat===cc.id?'selected':''}>${esc(cc.name)}</option>`).join('');
@@ -3845,10 +3849,9 @@ function openTaskEditor(id){
  $('taskEditClose').onclick=closeTaskEditor;
  wireTaskEditPanel($('taskEditBody'),()=>{
   const drawerOpen=$('drawer')&&$('drawer').classList.contains('on');
-  const focusOpen=$('nowOverlay')&&$('nowOverlay').classList.contains('on');
   closeTaskEditor();
   if(drawerOpen&&lastDrawerRender)lastDrawerRender();
-  if(focusOpen&&typeof renderNow==='function'){renderNow();nowBrief();}
+  if(typeof refreshFocus==='function')refreshFocus();
  });
  setTimeout(()=>{const ti=$('taskEditBody').querySelector('.te-title');if(ti)ti.focus();},50);
 }
@@ -3985,7 +3988,7 @@ function nowSnooze(id,kind){
  const t=S.tasks.find(x=>x.id===id);if(!t)return;
  t.snoozedUntil=snoozeTime(kind);
  t.snoozeCount=(t.snoozeCount||0)+1;
- touch(t);save();nowSnoozeOpen=null;renderNow();nowBrief();
+ touch(t);save();nowSnoozeOpen=null;refreshFocus();
  toast(`Snoozed — back on your Focus screen ${kind==='weekend'?'this weekend':kind}`);
 }
 function nowCard(t){
@@ -4020,17 +4023,17 @@ function nowBillCard(b){
   <div class="now-acts">${b.payUrl?`<a class="now-btn snz" href="${esc(b.payUrl)}" target="_blank" rel="noopener">Pay ↗</a>`:''}<button class="now-btn done" data-nbpaid="${b.id}">✓ Paid</button></div>
  </div>`;
 }
-function renderNow(){
- ensureNowEl();
- const inner=$('nowInner');
+function paintNow(inner,overlay){
+ if(!inner)return;
+ const rerender=()=>paintNow(inner,overlay);
  const items=nowItems();
  const bills=S.bills.filter(b=>!b.paused&&['overdue','soon','today'].includes(billStatus(b)));
  const dateStr=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}).toUpperCase();
  const allDone=S.tasks.filter(t=>t.done).length,openCount=S.tasks.filter(t=>!t.done).length,total=S.tasks.length;
  const pct=total?Math.round(allDone/total*100):0;
- let html=`<div class="now-top"><div class="now-eyebrow">${dateStr}</div><button class="now-skip" id="nowSkip">Skip to app →</button></div>
+ let html=`<div class="now-top"><div class="now-eyebrow">${dateStr}</div>${overlay?`<button class="now-skip" id="nowSkip">Skip to app →</button>`:''}</div>
   <div class="now-h">Focus</div>
-  <div class="now-brief"><span class="spark">✦</span><span id="nowBriefTxt">Reading your board…</span></div>
+  <div class="now-brief"><span class="spark">✦</span><span class="now-brief-txt">Reading your board…</span></div>
   <div class="focus-progress" style="margin-bottom:20px">
    <div class="focus-stat"><div class="v" style="color:var(--mint)">${allDone}</div><div class="l">Done total</div></div>
    <div class="focus-stat"><div class="v">${openCount}</div><div class="l">Still open</div></div>
@@ -4044,19 +4047,27 @@ function renderNow(){
   if(items.length>shown.length)html+=`<div style="text-align:center;color:var(--text-dim);font-size:12px;margin:8px 0 2px">+${items.length-shown.length} more waiting in the app</div>`;
   if(bills.length){html+=`<div class="now-sec">Bills needing attention</div>`+bills.map(nowBillCard).join('');}
  }
- html+=`<div class="now-foot"><button class="now-showall" id="nowShowAll">Show everything →</button></div>`;
+ if(overlay)html+=`<div class="now-foot"><button class="now-showall" id="nowShowAll">Show everything →</button></div>`;
  inner.innerHTML=html;
- $('nowSkip').onclick=hideNow;$('nowShowAll').onclick=hideNow;
- inner.querySelectorAll('[data-ndone]').forEach(el=>el.onclick=()=>{const t=S.tasks.find(x=>x.id===el.dataset.ndone);if(t){completeTask(t);touch(t);save();renderAll();renderNow();nowBrief();}});
+ if(overlay){const sk=inner.querySelector('#nowSkip');if(sk)sk.onclick=hideNow;const sa=inner.querySelector('#nowShowAll');if(sa)sa.onclick=hideNow;}
+ inner.querySelectorAll('[data-ndone]').forEach(el=>el.onclick=()=>{const t=S.tasks.find(x=>x.id===el.dataset.ndone);if(t){completeTask(t);touch(t);save();renderAll();rerender();nowBrief(inner);}});
  inner.querySelectorAll('[data-nopen]').forEach(el=>el.onclick=()=>openTaskEditor(el.dataset.nopen));
- inner.querySelectorAll('[data-nsnooze]').forEach(el=>el.onclick=()=>{nowSnoozeOpen=el.dataset.nsnooze;renderNow();});
+ inner.querySelectorAll('[data-nsnooze]').forEach(el=>el.onclick=()=>{nowSnoozeOpen=el.dataset.nsnooze;rerender();});
  inner.querySelectorAll('[data-nsz]').forEach(el=>el.onclick=()=>{const p=el.dataset.nsz.split('|');nowSnooze(p[0],p[1]);});
- inner.querySelectorAll('[data-nszcancel]').forEach(el=>el.onclick=()=>{nowSnoozeOpen=null;renderNow();});
- inner.querySelectorAll('[data-ndrop]').forEach(el=>el.onclick=()=>{const id=el.dataset.ndrop;if(confirm('Drop this task for good?')){S.tasks=S.tasks.filter(x=>x.id!==id);save();renderAll();renderNow();nowBrief();toast('Dropped');}});
- inner.querySelectorAll('[data-nbpaid]').forEach(el=>el.onclick=()=>{const b=S.bills.find(x=>x.id===el.dataset.nbpaid);if(b){markPaid(b);renderNow();nowBrief();}});
+ inner.querySelectorAll('[data-nszcancel]').forEach(el=>el.onclick=()=>{nowSnoozeOpen=null;rerender();});
+ inner.querySelectorAll('[data-ndrop]').forEach(el=>el.onclick=()=>{const id=el.dataset.ndrop;if(confirm('Drop this task for good?')){S.tasks=S.tasks.filter(x=>x.id!==id);save();renderAll();rerender();nowBrief(inner);toast('Dropped');}});
+ inner.querySelectorAll('[data-nbpaid]').forEach(el=>el.onclick=()=>{const b=S.bills.find(x=>x.id===el.dataset.nbpaid);if(b){markPaid(b);rerender();nowBrief(inner);}});
+ nowBrief(inner);
 }
-async function nowBrief(){
- const el=$('nowBriefTxt');if(!el)return;
+function renderNow(){ensureNowEl();paintNow($('nowInner'),true);}
+function renderFocusTab(){paintNow($('focusInner'),false);}
+function refreshFocus(){
+ const ov=$('nowOverlay');if(ov&&ov.classList.contains('on'))paintNow($('nowInner'),true);
+ const fv=$('v-focus');if(fv&&fv.classList.contains('on'))paintNow($('focusInner'),false);
+}
+async function nowBrief(root){
+ const scope=(root&&root.querySelector)?root:document;
+ const el=scope.querySelector('.now-brief-txt');if(!el)return;
  const items=nowItems();
  if(!items.length){el.textContent="Nothing critical or due right now — enjoy the breathing room.";return;}
  const top=items[0];
@@ -4071,10 +4082,11 @@ async function nowBrief(){
   const data=await resp.json();
   if(data.error)return;
   const txt=data.content?.filter(x=>x.type==='text').map(x=>x.text).join('').trim();
-  if(txt&&$('nowBriefTxt'))$('nowBriefTxt').textContent=txt;
+  const el2=scope.querySelector('.now-brief-txt');
+  if(txt&&el2)el2.textContent=txt;
  }catch(e){}
 }
-function showNow(){ensureNowEl();nowSnoozeOpen=null;renderNow();$('nowOverlay').classList.add('on');nowBrief();}
+function showNow(){ensureNowEl();nowSnoozeOpen=null;renderNow();$('nowOverlay').classList.add('on');}
 function hideNow(){const e=$('nowOverlay');if(e)e.classList.remove('on');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){const n=$('nowOverlay');if(n&&n.classList.contains('on')&&!$('taskEditModal')?.style.display?.includes('flex'))hideNow();}});
 
@@ -4166,6 +4178,7 @@ function initTabs(){
  b.classList.add('on');
  const v=$('v-'+b.dataset.v);
  if(v)v.classList.add('on');
+ if(b.dataset.v==='focus')renderFocusTab();
  if(b.dataset.v==='dash')renderDash();
  if(b.dataset.v==='week')renderWeek();
  if(b.dataset.v==='kanban')renderKanban();
@@ -5089,26 +5102,6 @@ function renderDashDetail(type,arg){
           <button data-tedit="${t.id}" title="Edit">✎</button>
         </div>
       </div>`;
-      // Inline edit panel (hidden by default)
-      if(editing===t.id){
-        const catOpts=S.cats.map(c=>`<option value="${c.id}" ${t.cat===c.id?'selected':''}>${esc(c.name)}</option>`).join('');
-        html+=`<div class="t-edit">
-          <input class="te-title" data-etitle="${t.id}" value="${esc(t.title)}" maxlength="160">
-          <div class="te-row">
-            <div class="field"><label>Cat</label><select data-ecat="${t.id}">${catOpts}</select></div>
-            <div class="field"><label>Pri</label><select data-epri="${t.id}">
-              <option value="low" ${t.pri==='low'?'selected':''}>Low</option>
-              <option value="med" ${t.pri==='med'?'selected':''}>Med</option>
-              <option value="high" ${t.pri==='high'?'selected':''}>High</option>
- <option value="critical" ${t.pri==='critical'?'selected':''}>Critical</option>
-            </select></div>
-            <div class="field"><label>Due</label><input type="date" data-edue="${t.id}" value="${t.due||''}"></div>
-            <button class="btn btn-go" data-esave="${t.id}">Save</button>
-            <button class="btn" data-ecancel="${t.id}">Cancel</button>
-          </div>
-          <textarea class="te-notes" data-enotes="${t.id}" placeholder="Notes…" style="min-height:80px;resize:vertical">${esc(t.notes||'')}</textarea>
-        </div>`;
-      }
     });
   }
   if(!tasks.length&&!bills.length)html+=`<div style="padding:20px;text-align:center;color:var(--text-dim);font-family:var(--mono);font-size:11px">NOTHING HERE</div>`;
@@ -5140,26 +5133,11 @@ function renderDashDetail(type,arg){
     if(t.done){t.done=false;t.completed=null;touch(t);}else completeTask(t);
     save();renderAll();renderDashDetail(type,arg);
   });
-  // Wire edit buttons
+  // Wire edit — open the standard full task editor (title or ✎ button)
   detail.querySelectorAll('[data-tedit]').forEach(el=>el.onclick=e=>{
     e.stopPropagation();
-    const id=el.dataset.tedit;
-    editing=editing===id?null:id;
-    renderDashDetail(type,arg);
+    openTaskEditor(el.dataset.tedit);
   });
-  // Wire save/cancel
-  detail.querySelectorAll('[data-esave]').forEach(el=>el.onclick=()=>{
-    const id=el.dataset.esave,t=S.tasks.find(x=>x.id===id);if(!t)return;
-    const nt=detail.querySelector(`[data-etitle="${id}"]`).value.trim();
-    if(!nt){toast('Title cannot be empty');return;}
-    t.title=nt;
-    t.cat=detail.querySelector(`[data-ecat="${id}"]`).value;
-    t.pri=detail.querySelector(`[data-epri="${id}"]`).value;
-    t.due=detail.querySelector(`[data-edue="${id}"]`).value;
-    t.notes=detail.querySelector(`[data-enotes="${id}"]`).value.trim();
-    touch(t);editing=null;save();renderAll();renderDashDetail(type,arg);toast('Saved');
-  });
-  detail.querySelectorAll('[data-ecancel]').forEach(el=>el.onclick=()=>{editing=null;renderDashDetail(type,arg);});
 }
 
 // Current dashboard detail selection: dashSel {type,arg} declared with top-level state
