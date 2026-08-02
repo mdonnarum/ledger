@@ -2634,19 +2634,24 @@ function renderBills(){
  </div>
  </div>`;
  };
- const sum=arr=>arr.reduce((a,x)=>a+(Number(x.amount)||0),0);
+ // Group subtotal splits money-out (bills) from money-in (income) so the
+ // mixed lists still read clearly: "$X  · +$Y in".
+ const amtHtml=arr=>{
+  const o=arr.filter(b=>!b.income).reduce((a,x)=>a+(Number(x.amount)||0),0);
+  const i=arr.filter(b=>b.income).reduce((a,x)=>a+(Number(x.amount)||0),0);
+  if(!o&&!i)return '';
+  return `<span class="amt">${o||!i?money(o):''}${i?`<span style="color:var(--mint)">${o?' · ':''}+${money(i)} in</span>`:''}</span>`;
+ };
  const now=today0(),endOfPeriod=new Date(now.getFullYear(),now.getMonth()+1,0);
- const dueList=[],upList=[],pausedList=[],incomeList=[];
+ const dueList=[],upList=[],pausedList=[];
  sorted.forEach(b=>{
   if(b.paused){pausedList.push(b);return;}
-  if(b.income){incomeList.push(b);return;}
   const due=parseDue(b.due),st=billStatus(b);
   if(st==='overdue'||st==='soon'||(due&&due<=endOfPeriod))dueList.push(b);else upList.push(b);
  });
- let html=`<div class="bill-sec due"><span class="bill-sec-t">Due this period</span><span class="bill-sec-sub">overdue or due by month-end</span><span class="ct">${dueList.length}</span>${dueList.length?`<span class="amt">${money(sum(dueList))}</span>`:''}</div>`;
+ let html=`<div class="bill-sec due"><span class="bill-sec-t">Due this period</span><span class="bill-sec-sub">overdue or due by month-end</span><span class="ct">${dueList.length}</span>${amtHtml(dueList)}</div>`;
  html+=dueList.length?dueList.map(card).join(''):`<div class="empty" style="padding:14px 10px"><div class="small" style="color:var(--mint)">Nothing due this period — you're all caught up</div></div>`;
- if(upList.length)html+=`<div class="bill-sec up"><span class="bill-sec-t">Coming up</span><span class="bill-sec-sub">due next month onward</span><span class="ct">${upList.length}</span><span class="amt">${money(sum(upList))}</span></div>`+upList.map(card).join('');
- if(incomeList.length)html+=`<div class="bill-sec in"><span class="bill-sec-t">Incoming</span><span class="bill-sec-sub">money in — verify as received</span><span class="ct">${incomeList.length}</span><span class="amt">${money(sum(incomeList))}</span></div>`+incomeList.map(card).join('');
+ if(upList.length)html+=`<div class="bill-sec up"><span class="bill-sec-t">Coming up</span><span class="bill-sec-sub">due next month onward</span><span class="ct">${upList.length}</span>${amtHtml(upList)}</div>`+upList.map(card).join('');
  if(pausedList.length)html+=`<div class="bill-sec"><span class="bill-sec-t">Paused</span><span class="bill-sec-sub">excluded from reminders &amp; totals</span><span class="ct">${pausedList.length}</span></div>`+pausedList.map(card).join('');
  zone.innerHTML=html;
  const Q=s=>document.querySelectorAll(s);
