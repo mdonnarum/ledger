@@ -19,7 +19,7 @@
 :root{
  --void:#0E1116; --panel:#151A21; --panel-hi:#1C232C; --panel-hover:#222A35;
  --line:#28313C; --line-soft:#1F262F;
- --text:#E6EAEF; --text-mid:#9AA7B5; --text-dim:#66727F;
+ --text:#F2F5F9; --text-mid:#B4BFCB; --text-dim:#8B97A4;
  --mint:#4DD9B0; --mint-dim:#2A7F68; --amber:#F0A23C; --rose:#F2586A;
  --violet:#9B8CFF; --blue:#5BA8F5; --sky:#48C4E0; --lime:#B8D94D;
  --radius:10px;
@@ -223,6 +223,11 @@ input,select,textarea{font-family:inherit;color:inherit}
 .bill.due-od{border-left:2px solid var(--rose)}
 .bill.due-soon{border-left:2px solid var(--amber)}
 .bill.paused{opacity:.45}
+.bill-sec{display:flex;align-items:center;gap:9px;margin:22px 2px 10px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+.bill-sec:first-child{margin-top:6px}
+.bill-sec .ct{color:var(--text-mid);font-weight:600}
+.bill-sec .amt{margin-left:auto;color:var(--text-mid);font-weight:600;letter-spacing:.04em}
+.bill-sec.due{color:var(--amber)}
 .bill-main{display:flex;align-items:center;gap:13px;padding:13px}
 .bill-amt{font-family:var(--display);font-size:18px;font-weight:600;min-width:78px;text-align:right;letter-spacing:-0.01em}
 .bill-body{flex:1;min-width:0}
@@ -2581,7 +2586,7 @@ function renderBills(){
  if(a.paused!==b.paused)return a.paused?1:-1;
  return (parseDue(a.due)||0)-(parseDue(b.due)||0);
  });
- zone.innerHTML=sorted.map(b=>{
+ const card=b=>{
  const st=billStatus(b),cls=st==='overdue'?'due-od':(st==='soon'?'due-soon':'');
  const lblCls=st==='overdue'?'od':(st==='soon'?'now':'');
  const h=b.history||[];
@@ -2634,7 +2639,20 @@ function renderBills(){
  ${h.length?h.map(x=>`<div>✓ ${parseDue(x.date)?parseDue(x.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—'} · ${money(x.amount)}</div>`).join(''):'<div>No payments logged yet</div>'}
  </div>
  </div>`;
- }).join('');
+ };
+ const sum=arr=>arr.reduce((a,x)=>a+(Number(x.amount)||0),0);
+ const now=today0(),endOfPeriod=new Date(now.getFullYear(),now.getMonth()+1,0);
+ const dueList=[],upList=[],pausedList=[];
+ sorted.forEach(b=>{
+  if(b.paused){pausedList.push(b);return;}
+  const due=parseDue(b.due),st=billStatus(b);
+  if(st==='overdue'||st==='soon'||(due&&due<=endOfPeriod))dueList.push(b);else upList.push(b);
+ });
+ let html=`<div class="bill-sec due"><span>Due this period</span><span class="ct">${dueList.length}</span>${dueList.length?`<span class="amt">${money(sum(dueList))}</span>`:''}</div>`;
+ html+=dueList.length?dueList.map(card).join(''):`<div class="empty" style="padding:14px 10px"><div class="small" style="color:var(--mint)">Nothing due this period — you're all caught up</div></div>`;
+ if(upList.length)html+=`<div class="bill-sec"><span>Coming up</span><span class="ct">${upList.length}</span><span class="amt">${money(sum(upList))}</span></div>`+upList.map(card).join('');
+ if(pausedList.length)html+=`<div class="bill-sec"><span>Paused</span><span class="ct">${pausedList.length}</span></div>`+pausedList.map(card).join('');
+ zone.innerHTML=html;
  const Q=s=>document.querySelectorAll(s);
  Q('[data-paid]').forEach(el=>el.onclick=()=>markPaid(S.bills.find(b=>b.id===el.dataset.paid)));
  Q('[data-bunpay]').forEach(el=>el.onclick=()=>undoPay(S.bills.find(b=>b.id===el.dataset.bunpay)));
