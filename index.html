@@ -224,11 +224,13 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
 .bill.due-od{border-left:2px solid var(--rose)}
 .bill.due-soon{border-left:2px solid var(--amber)}
 .bill.paused{opacity:.45}
-.bill-sec{display:flex;align-items:center;gap:9px;margin:22px 2px 10px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
-.bill-sec:first-child{margin-top:6px}
-.bill-sec .ct{color:var(--text-mid);font-weight:600}
-.bill-sec .amt{margin-left:auto;color:var(--text-mid);font-weight:600;letter-spacing:.04em}
-.bill-sec.due{color:var(--amber)}
+.bill-sec{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:36px 2px 14px;padding-top:20px;border-top:2px solid var(--line);font-family:var(--display);font-size:17px;font-weight:600;color:var(--text)}
+.bill-sec:first-child{margin-top:8px;padding-top:0;border-top:none}
+.bill-sec .bill-sec-t{letter-spacing:-.01em}
+.bill-sec.due .bill-sec-t{color:var(--amber)}
+.bill-sec .bill-sec-sub{font-family:var(--body);font-size:12px;font-weight:400;color:var(--text-dim)}
+.bill-sec .ct{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text-mid);background:var(--panel-hi);border:1px solid var(--line-soft);border-radius:20px;padding:2px 9px}
+.bill-sec .amt{margin-left:auto;font-family:var(--display);font-size:15px;font-weight:600;color:var(--text-mid);letter-spacing:.01em}
 .bill-main{display:flex;align-items:center;gap:13px;padding:13px}
 .bill-amt{font-family:var(--display);font-size:18px;font-weight:600;min-width:78px;text-align:right;letter-spacing:-0.01em}
 .bill-body{flex:1;min-width:0}
@@ -2649,10 +2651,10 @@ function renderBills(){
   const due=parseDue(b.due),st=billStatus(b);
   if(st==='overdue'||st==='soon'||(due&&due<=endOfPeriod))dueList.push(b);else upList.push(b);
  });
- let html=`<div class="bill-sec due"><span>Due this period</span><span class="ct">${dueList.length}</span>${dueList.length?`<span class="amt">${money(sum(dueList))}</span>`:''}</div>`;
+ let html=`<div class="bill-sec due"><span class="bill-sec-t">Due this period</span><span class="bill-sec-sub">overdue or due by month-end</span><span class="ct">${dueList.length}</span>${dueList.length?`<span class="amt">${money(sum(dueList))}</span>`:''}</div>`;
  html+=dueList.length?dueList.map(card).join(''):`<div class="empty" style="padding:14px 10px"><div class="small" style="color:var(--mint)">Nothing due this period — you're all caught up</div></div>`;
- if(upList.length)html+=`<div class="bill-sec"><span>Coming up</span><span class="ct">${upList.length}</span><span class="amt">${money(sum(upList))}</span></div>`+upList.map(card).join('');
- if(pausedList.length)html+=`<div class="bill-sec"><span>Paused</span><span class="ct">${pausedList.length}</span></div>`+pausedList.map(card).join('');
+ if(upList.length)html+=`<div class="bill-sec"><span class="bill-sec-t">Coming up</span><span class="bill-sec-sub">due next month onward</span><span class="ct">${upList.length}</span><span class="amt">${money(sum(upList))}</span></div>`+upList.map(card).join('');
+ if(pausedList.length)html+=`<div class="bill-sec"><span class="bill-sec-t">Paused</span><span class="bill-sec-sub">excluded from reminders &amp; totals</span><span class="ct">${pausedList.length}</span></div>`+pausedList.map(card).join('');
  zone.innerHTML=html;
  const Q=s=>document.querySelectorAll(s);
  Q('[data-paid]').forEach(el=>el.onclick=()=>markPaid(S.bills.find(b=>b.id===el.dataset.paid)));
