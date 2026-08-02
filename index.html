@@ -30,6 +30,7 @@ html,body{background:var(--void);color:var(--text);font-family:var(--body);-webk
 body{min-height:100vh;font-size:14px}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 input,select,textarea{font-family:inherit;color:inherit}
+input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
 ::selection{background:var(--mint-dim);color:#fff}
 :focus-visible{outline:2px solid var(--mint);outline-offset:2px;border-radius:4px}
 .app{max-width:1180px;margin:0 auto;padding:0 20px 100px}
@@ -2813,13 +2814,13 @@ function renderMomentum(){
  <div class="mom-wrap">
  <svg class="mom-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
  <defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1">
- <stop offset="0%" stop-color="#4DD9B0" stop-opacity="0.28"/>
- <stop offset="100%" stop-color="#4DD9B0" stop-opacity="0"/></linearGradient></defs>
+ <stop offset="0%" stop-color="var(--mint)" stop-opacity="0.28"/>
+ <stop offset="100%" stop-color="var(--mint)" stop-opacity="0"/></linearGradient></defs>
  <path d="${area}" fill="url(#mg)"/>
- <path d="${line}" fill="none" stroke="#4DD9B0" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+ <path d="${line}" fill="none" stroke="var(--mint)" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
  <line id="momCross" class="mom-cross" x1="0" y1="0" x2="0" y2="${H}"/>
- ${pts.map((q,i)=>data[i].n?`<circle cx="${q[0].toFixed(2)}" cy="${q[1].toFixed(2)}" r="1.4" fill="#4DD9B0" vector-effect="non-scaling-stroke"/>`:'').join('')}
- <circle id="momActive" cx="0" cy="0" r="2.6" fill="#4DD9B0" stroke="#0E1116" stroke-width="1" vector-effect="non-scaling-stroke" style="opacity:0"/>
+ ${pts.map((q,i)=>data[i].n?`<circle cx="${q[0].toFixed(2)}" cy="${q[1].toFixed(2)}" r="1.4" fill="var(--mint)" vector-effect="non-scaling-stroke"/>`:'').join('')}
+ <circle id="momActive" cx="0" cy="0" r="2.6" fill="var(--mint)" stroke="var(--void)" stroke-width="1" vector-effect="non-scaling-stroke" style="opacity:0"/>
  </svg>
  <div class="mom-hit"></div>
  <div class="mom-tip" id="momTip"></div>
