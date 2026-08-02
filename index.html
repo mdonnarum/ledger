@@ -444,6 +444,15 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
  .bill-hist{padding-left:13px}
  .t-drawer,.t-edit{padding-left:16px}
 }
+@media(max-width:640px){
+ /* Stop the action buttons from crushing the bill description on phones:
+    let them wrap onto their own row below the amount + description. */
+ .bill-main{flex-wrap:wrap;align-items:flex-start;gap:10px}
+ .bill-amt{min-width:0;text-align:left}
+ .bill-body{flex:1 1 60%}
+ .bill-acts{flex-basis:100%;flex-wrap:wrap;justify-content:flex-start;margin-top:2px}
+ .bill-m{gap:6px 10px}
+}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .note-composer{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:22px}
 .note-title-in{width:100%;background:transparent;border:none;font-size:17px;font-weight:500;padding:4px 0 12px;border-bottom:1px solid var(--line-soft);outline:none;color:var(--text)}
