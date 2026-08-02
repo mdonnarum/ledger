@@ -327,6 +327,14 @@ input,select,textarea{font-family:inherit;color:inherit}
 .pmx-cell .l{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-top:7px}
 .pmx-cell .b{height:3px;border-radius:2px;margin-top:9px}
 .mom-svg{width:100%;height:96px;display:block}
+.mom-wrap{position:relative}
+.mom-hit{position:absolute;left:0;right:0;top:0;height:96px}
+.mom-cross{stroke:var(--text-dim);stroke-width:1;vector-effect:non-scaling-stroke;opacity:0;transition:opacity .1s}
+.mom-cross.on{opacity:.5}
+.mom-tip{position:absolute;top:-4px;transform:translateX(-50%);background:var(--panel-hi);border:1px solid var(--line);border-radius:7px;padding:5px 9px;font-family:var(--mono);font-size:10.5px;color:var(--text);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.mom-tip.on{opacity:1}
+.mom-tip b{color:var(--mint);font-weight:600}
+.mom-xaxis{display:flex;justify-content:space-between;margin-top:5px;font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim)}
 .mom-foot{display:flex;justify-content:space-between;margin-top:8px;gap:8px;flex-wrap:wrap}
 .mom-stat{font-family:var(--mono);font-size:10px;color:var(--text-dim)}
 .mom-stat b{color:var(--text);font-weight:600;font-size:12px}
@@ -2748,7 +2756,7 @@ function renderMomentum(){
  const days=14,now=today0(),data=[];
  for(let i=days-1;i>=0;i--){
  const d0=new Date(now.getTime()-i*DAY),d1=new Date(d0.getTime()+DAY);
- data.push({n:S.tasks.filter(t=>t.done&&t.completed&&t.completed>=d0.getTime()&&t.completed<d1.getTime()).length});
+ data.push({n:S.tasks.filter(t=>t.done&&t.completed&&t.completed>=d0.getTime()&&t.completed<d1.getTime()).length,date:d0});
  }
  const max=Math.max(1,...data.map(x=>x.n)),W=100,H=54,p=2;
  const pts=data.map((x,i)=>[p+(i/(days-1))*(W-p*2),H-p-(x.n/max)*(H-p*2)]);
@@ -2756,21 +2764,46 @@ function renderMomentum(){
  const area=`${line}L${pts[pts.length-1][0].toFixed(2)} ${H}L${pts[0][0].toFixed(2)} ${H}Z`;
  const total=data.reduce((a,b)=>a+b.n,0);
  const trend=data.slice(7).reduce((a,b)=>a+b.n,0)-data.slice(0,7).reduce((a,b)=>a+b.n,0);
+ const fmt=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
  $('momentum').innerHTML=`
+ <div class="mom-wrap">
  <svg class="mom-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
  <defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1">
  <stop offset="0%" stop-color="#4DD9B0" stop-opacity="0.28"/>
  <stop offset="100%" stop-color="#4DD9B0" stop-opacity="0"/></linearGradient></defs>
  <path d="${area}" fill="url(#mg)"/>
  <path d="${line}" fill="none" stroke="#4DD9B0" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+ <line id="momCross" class="mom-cross" x1="0" y1="0" x2="0" y2="${H}"/>
  ${pts.map((q,i)=>data[i].n?`<circle cx="${q[0].toFixed(2)}" cy="${q[1].toFixed(2)}" r="1.4" fill="#4DD9B0" vector-effect="non-scaling-stroke"/>`:'').join('')}
+ <circle id="momActive" cx="0" cy="0" r="2.6" fill="#4DD9B0" stroke="#0E1116" stroke-width="1" vector-effect="non-scaling-stroke" style="opacity:0"/>
  </svg>
+ <div class="mom-hit"></div>
+ <div class="mom-tip" id="momTip"></div>
+ </div>
+ <div class="mom-xaxis"><span>${fmt(data[0].date)}</span><span>${fmt(data[7].date)}</span><span>Today</span></div>
  <div class="mom-foot">
  <span class="mom-stat"><b>${total}</b> completed / 14d</span>
  <span class="mom-stat" style="color:${trend>0?'var(--mint)':(trend<0?'var(--amber)':'var(--text-dim)')}"><b>${trend>0?'+':''}${trend}</b> vs prior week</span>
  <span class="mom-stat"><b>${(total/2).toFixed(1)}</b> / week avg</span>
  </div>`;
- const mEl=$('momentum');if(mEl){mEl.style.cursor='pointer';mEl.onclick=()=>toggleDashDetail('momentum');}
+ const mEl=$('momentum');
+ if(mEl){
+  mEl.style.cursor='pointer';
+  mEl.onclick=()=>toggleDashDetail('momentum');
+  const tip=mEl.querySelector('#momTip'),cross=mEl.querySelector('#momCross'),act=mEl.querySelector('#momActive'),hit=mEl.querySelector('.mom-hit');
+  if(hit){
+   hit.onmousemove=e=>{
+    const r=hit.getBoundingClientRect();if(!r.width)return;
+    let i=Math.round((e.clientX-r.left)/r.width*(days-1));
+    i=Math.max(0,Math.min(days-1,i));
+    const d=data[i];
+    if(cross){cross.setAttribute('x1',pts[i][0].toFixed(2));cross.setAttribute('x2',pts[i][0].toFixed(2));cross.classList.add('on');}
+    if(act){if(d.n){act.setAttribute('cx',pts[i][0].toFixed(2));act.setAttribute('cy',pts[i][1].toFixed(2));act.style.opacity='1';}else{act.style.opacity='0';}}
+    if(tip){tip.innerHTML=`${fmt(d.date)} · <b>${d.n}</b> done`;tip.style.left=Math.min(88,Math.max(12,(i/(days-1))*100))+'%';tip.classList.add('on');}
+   };
+   hit.onmouseleave=()=>{if(cross)cross.classList.remove('on');if(act)act.style.opacity='0';if(tip)tip.classList.remove('on');};
+  }
+ }
 }
 function renderPmx(){
  const open=dashPool().filter(t=>!t.done);
