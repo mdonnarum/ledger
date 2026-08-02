@@ -1757,6 +1757,28 @@ function markPaid(b){
  save();renderAll();
  toast(`${b.name} paid — next due ${parseDue(b.due).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`);
 }
+// Reverse the most recent markPaid: drop the payment and restore the exact
+// due date it was paid against, leaving the recurrence cycle intact.
+function undoPay(b){
+ if(!b)return;
+ const h=b.history||[];
+ if(!h.length){toast('No payment recorded to undo');return;}
+ const last=h[0];
+ let restore=last.date;
+ if(!restore){
+  // Fallback for older entries with no stored due date: step back one cycle.
+  const cur=parseDue(b.due)||today0();
+  const back={monthly:d=>addMonths(d,-1),quarterly:d=>addMonths(d,-3),annual:d=>addMonths(d,-12),weekly:d=>new Date(d.getTime()-7*DAY),biweekly:d=>new Date(d.getTime()-14*DAY)}[b.cadence];
+  restore=iso(back?back(cur):cur);
+ }
+ const when=parseDue(restore);
+ const amtTxt=money(last.amount!=null?last.amount:b.amount);
+ if(!confirm(`Undo the last payment for "${b.name}"?\n\nRemoves the ${amtTxt} payment from history and moves the due date back to ${when?when.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):restore}. The recurring cycle stays intact.`))return;
+ b.history=h.slice(1);
+ b.due=restore;
+ save();renderAll();
+ toast(`Payment undone — "${b.name}" is due ${when?when.toLocaleDateString('en-US',{month:'short',day:'numeric'}):restore} again`);
+}
 
 function normalize(t){
  t.subtasks=(t.subtasks||[]).map(s=>({id:s.id||uid(),title:s.title,done:!!s.done,notes:s.notes||''}));
@@ -2580,6 +2602,7 @@ function renderBills(){
  <div class="bill-acts">
  ${b.payUrl?`<a class="btn btn-sm" href="${esc(b.payUrl)}" target="_blank" rel="noopener" style="color:var(--blue);border-color:rgba(91,168,245,.3);text-decoration:none" title="Open the biller's site or app">Pay ↗</a>`:''}
  ${!b.paused?`<button class="btn btn-sm" data-paid="${b.id}" style="color:var(--mint);border-color:rgba(77,217,176,.3)">✓ Paid</button>`:''}
+ ${h.length?`<button class="btn btn-sm" data-bunpay="${b.id}" title="Undo the last payment (keeps the recurring cycle)" style="color:var(--amber);border-color:rgba(240,162,60,.3)">↩ Undo pay</button>`:''}
  <button class="btn btn-sm" data-bics="${b.id}" title="Calendar">📅</button>
  <button class="btn btn-sm" data-bedit="${b.id}" title="Edit">✎</button>
  <button class="btn btn-sm" data-bopen="${b.id}"><span class="caret">›</span></button>
@@ -2614,6 +2637,7 @@ function renderBills(){
  }).join('');
  const Q=s=>document.querySelectorAll(s);
  Q('[data-paid]').forEach(el=>el.onclick=()=>markPaid(S.bills.find(b=>b.id===el.dataset.paid)));
+ Q('[data-bunpay]').forEach(el=>el.onclick=()=>undoPay(S.bills.find(b=>b.id===el.dataset.bunpay)));
  Q('[data-bics]').forEach(el=>el.onclick=()=>openIcs([S.bills.find(b=>b.id===el.dataset.bics)]));
  Q('[data-bopen]').forEach(el=>el.onclick=()=>{
  const id=el.dataset.bopen;
