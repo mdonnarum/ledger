@@ -229,6 +229,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
 .bill-sec .bill-sec-t{letter-spacing:-.01em}
 .bill-sec.due .bill-sec-t{color:var(--amber)}
 .bill-sec.up .bill-sec-t{color:var(--mint)}
+.bill-sec.in .bill-sec-t{color:var(--blue)}
 .bill-sec .bill-sec-sub{font-family:var(--body);font-size:12px;font-weight:400;color:var(--text-dim)}
 .bill-sec .ct{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text-mid);background:var(--panel-hi);border:1px solid var(--line-soft);border-radius:20px;padding:2px 9px}
 .bill-sec .amt{margin-left:auto;font-family:var(--display);font-size:15px;font-weight:600;color:var(--text-mid);letter-spacing:.01em}
@@ -1077,6 +1078,10 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
       <input class="comp-title" id="fName" placeholder="Bill name — e.g. Electric, Mortgage, Car insurance" maxlength="60">
       <div class="comp-row">
         <div class="field"><label>$</label><input type="number" id="fAmt" placeholder="0.00" step="0.01" min="0"></div>
+        <div class="field"><label>Kind</label><select id="fFlow">
+          <option value="out" selected>Bill (pay)</option>
+          <option value="in">Income (receive)</option>
+        </select></div>
         <div class="field"><label>Type</label><select id="fType">
           <option value="recurring" selected>Recurring</option>
           <option value="oneoff">One-time</option>
@@ -1733,7 +1738,8 @@ function markPaid(b){
  b.history=b.history.slice(0,24);
  b.due=iso(CAD[b.cadence].next(parseDue(b.due)));
  save();renderAll();
- toast(`${b.name} paid — next due ${parseDue(b.due).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`);
+ const nd=parseDue(b.due).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+ toast(b.income?`${b.name} received — next expected ${nd}`:`${b.name} paid — next due ${nd}`);
 }
 // Reverse the most recent markPaid: drop the payment and restore the exact
 // due date it was paid against, leaving the recurrence cycle intact.
@@ -1750,12 +1756,15 @@ function undoPay(b){
   restore=iso(back?back(cur):cur);
  }
  const when=parseDue(restore);
+ const whenTxt=when?when.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):restore;
  const amtTxt=money(last.amount!=null?last.amount:b.amount);
- if(!confirm(`Undo the last payment for "${b.name}"?\n\nRemoves the ${amtTxt} payment from history and moves the due date back to ${when?when.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):restore}. The recurring cycle stays intact.`))return;
+ const noun=b.income?'receipt':'payment';
+ if(!confirm(`Undo the last ${noun} for "${b.name}"?\n\nRemoves the ${amtTxt} ${noun} from history and moves the ${b.income?'expected':'due'} date back to ${whenTxt}. The recurring cycle stays intact.`))return;
  b.history=h.slice(1);
  b.due=restore;
  save();renderAll();
- toast(`Payment undone — "${b.name}" is due ${when?when.toLocaleDateString('en-US',{month:'short',day:'numeric'}):restore} again`);
+ const shortWhen=when?when.toLocaleDateString('en-US',{month:'short',day:'numeric'}):restore;
+ toast(b.income?`Receipt undone — "${b.name}" expected ${shortWhen} again`:`Payment undone — "${b.name}" is due ${shortWhen} again`);
 }
 
 function normalize(t){
@@ -1857,7 +1866,7 @@ function seedNotes(){
 
 function buildAlerts(){
  const A=[];
- S.bills.filter(b=>!b.paused).forEach(b=>{
+ S.bills.filter(b=>!b.paused&&!b.income).forEach(b=>{
  const st=billStatus(b),d=dayDiff(parseDue(b.due));
  if(st==='overdue')A.push({sev:'crit',ico:'$',sec:'Bills',t:`${b.name} — ${money(b.amount)} past due`,d:`${Math.abs(d)} days late${b.autopay?' · autopay':''}`,sort:0});
  else if(st==='soon')A.push({sev:'warn',ico:'$',sec:'Bills',t:`${b.name} — ${money(b.amount)}`,d:d===0?'Due today':`Due in ${d} day${d===1?'':'s'}${b.autopay?' · autopay':''}`,sort:1});
@@ -2525,19 +2534,30 @@ function addBill(){
  if(!name){$('fName').focus();return}
  const due=$('fDue').value;
  if(!due){toast('Set the next due date');$('fDue').focus();return}
+ const income=$('fFlow').value==='in';
  S.bills.push({id:uid(),name,amount:Number($('fAmt').value)||0,
+ income,
  type:$('fType').value||'recurring',
  cadence:$('fCad').value,due,
  lead:Number($('fLead').value),autopay:$('fAuto').value==='yes',
  payUrl:normPayUrl($('fPayUrl').value),
  notes:$('fNotes').value.trim(),paused:false,history:[]});
  $('fName').value='';$('fAmt').value='';$('fDue').value='';$('fNotes').value='';$('fPayUrl').value='';
- save();renderAll();toast('Bill added — export to calendar for phone alerts');
+ save();renderAll();toast(income?'Income added':'Bill added — export to calendar for phone alerts');
 }
 $('fAdd').onclick=addBill;
 $('fName').onkeydown=e=>{if(e.key==='Enter')addBill()};
+// Adapt the composer wording to Bill vs Income
+function syncBillComposer(){
+ const income=$('fFlow').value==='in';
+ $('fName').placeholder=income?'Income name — e.g. Rent from tenant, Split rent':'Bill name — e.g. Electric, Mortgage, Car insurance';
+ $('fAdd').textContent=income?'Add income':'Add bill';
+ const auto=$('fAuto').closest('.field'); if(auto)auto.style.display=income?'none':'';
+}
+$('fFlow').onchange=syncBillComposer;
+syncBillComposer();
 function renderBillKPIs(){
- const active=S.bills.filter(b=>!b.paused);
+ const active=S.bills.filter(b=>!b.paused&&!b.income);
  const monthly=active.reduce((a,b)=>a+monthlyEquiv(b),0);
  const od=active.filter(b=>billStatus(b)==='overdue');
  const soon=active.filter(b=>billStatus(b)==='soon');
@@ -2563,9 +2583,10 @@ function renderBills(){
  const st=billStatus(b),cls=st==='overdue'?'due-od':(st==='soon'?'due-soon':'');
  const lblCls=st==='overdue'?'od':(st==='soon'?'now':'');
  const h=b.history||[];
+ const inc=!!b.income;
  return `<div class="bill ${cls} ${b.paused?'paused':''} ${openBills.has(b.id)?'open':''}">
  <div class="bill-main">
- <div class="bill-amt" style="color:${st==='overdue'?'var(--rose)':(st==='soon'?'var(--amber)':'var(--text)')}">${money(b.amount)}</div>
+ <div class="bill-amt" style="color:${inc?'var(--mint)':(st==='overdue'?'var(--rose)':(st==='soon'?'var(--amber)':'var(--text)'))}">${money(b.amount)}</div>
  <div class="bill-body">
  <div class="bill-n" data-bedit="${b.id}" style="cursor:pointer" title="Click to edit">${esc(b.name)}
  ${b.autopay?`<span class="badge auto">Autopay</span>`:''}
@@ -2574,13 +2595,13 @@ function renderBills(){
  <span class="cadence">${CAD[b.cadence].label}</span>
  <span class="chip-due ${lblCls}">${billLabel(b)}</span>
  <span class="cadence">remind ${b.lead}d before</span>
- ${h.length?`<span class="cadence">· ${h.length} paid</span>`:''}
+ ${h.length?`<span class="cadence">· ${h.length} ${inc?'received':'paid'}</span>`:''}
  </div>
  </div>
  <div class="bill-acts">
  ${b.payUrl?`<a class="btn btn-sm" href="${esc(b.payUrl)}" target="_blank" rel="noopener" style="color:var(--blue);border-color:rgba(91,168,245,.3);text-decoration:none" title="Open the biller's site or app">Pay ↗</a>`:''}
- ${!b.paused?`<button class="btn btn-sm" data-paid="${b.id}" style="color:var(--mint);border-color:rgba(77,217,176,.3)">✓ Paid</button>`:''}
- ${h.length?`<button class="btn btn-sm" data-bunpay="${b.id}" title="Undo the last payment (keeps the recurring cycle)" style="color:var(--amber);border-color:rgba(240,162,60,.3)">↩ Undo pay</button>`:''}
+ ${!b.paused?`<button class="btn btn-sm" data-paid="${b.id}" style="color:var(--mint);border-color:rgba(77,217,176,.3)">${inc?'✓ Received':'✓ Paid'}</button>`:''}
+ ${h.length?`<button class="btn btn-sm" data-bunpay="${b.id}" title="${inc?'Undo the last receipt (keeps the cycle)':'Undo the last payment (keeps the recurring cycle)'}" style="color:var(--amber);border-color:rgba(240,162,60,.3)">${inc?'↩ Undo':'↩ Undo pay'}</button>`:''}
  <button class="btn btn-sm" data-bics="${b.id}" title="Calendar">📅</button>
  <button class="btn btn-sm" data-bedit="${b.id}" title="Edit">✎</button>
  <button class="btn btn-sm" data-bopen="${b.id}"><span class="caret">›</span></button>
@@ -2615,15 +2636,17 @@ function renderBills(){
  };
  const sum=arr=>arr.reduce((a,x)=>a+(Number(x.amount)||0),0);
  const now=today0(),endOfPeriod=new Date(now.getFullYear(),now.getMonth()+1,0);
- const dueList=[],upList=[],pausedList=[];
+ const dueList=[],upList=[],pausedList=[],incomeList=[];
  sorted.forEach(b=>{
   if(b.paused){pausedList.push(b);return;}
+  if(b.income){incomeList.push(b);return;}
   const due=parseDue(b.due),st=billStatus(b);
   if(st==='overdue'||st==='soon'||(due&&due<=endOfPeriod))dueList.push(b);else upList.push(b);
  });
  let html=`<div class="bill-sec due"><span class="bill-sec-t">Due this period</span><span class="bill-sec-sub">overdue or due by month-end</span><span class="ct">${dueList.length}</span>${dueList.length?`<span class="amt">${money(sum(dueList))}</span>`:''}</div>`;
  html+=dueList.length?dueList.map(card).join(''):`<div class="empty" style="padding:14px 10px"><div class="small" style="color:var(--mint)">Nothing due this period — you're all caught up</div></div>`;
  if(upList.length)html+=`<div class="bill-sec up"><span class="bill-sec-t">Coming up</span><span class="bill-sec-sub">due next month onward</span><span class="ct">${upList.length}</span><span class="amt">${money(sum(upList))}</span></div>`+upList.map(card).join('');
+ if(incomeList.length)html+=`<div class="bill-sec in"><span class="bill-sec-t">Incoming</span><span class="bill-sec-sub">money in — verify as received</span><span class="ct">${incomeList.length}</span><span class="amt">${money(sum(incomeList))}</span></div>`+incomeList.map(card).join('');
  if(pausedList.length)html+=`<div class="bill-sec"><span class="bill-sec-t">Paused</span><span class="bill-sec-sub">excluded from reminders &amp; totals</span><span class="ct">${pausedList.length}</span></div>`+pausedList.map(card).join('');
  zone.innerHTML=html;
  const Q=s=>document.querySelectorAll(s);
@@ -2673,7 +2696,7 @@ function renderKPIs(){
  const od=open.filter(t=>bucketOf(t)==='overdue');
  const wk=open.filter(t=>['today','tomorrow','week'].includes(bucketOf(t)));
  const st=open.filter(isStalled);
- const bd=S.bills.filter(b=>!b.paused&&['overdue','soon'].includes(billStatus(b)));
+ const bd=S.bills.filter(b=>!b.paused&&!b.income&&['overdue','soon'].includes(billStatus(b)));
  const rate=all.length?Math.round(done.length/all.length*100):0;
  const worst=od.length?Math.max(...od.map(t=>Math.abs(dayDiff(parseDue(t.due))))):0;
  const k=(cls,lab,num,sub,type)=>`<div class="kpi ${cls}"${type?` data-kpi="${type}"`:''}><div class="k-lab">${lab}</div><div class="k-num">${num}</div><div class="k-sub">${sub}</div></div>`;
@@ -2924,7 +2947,7 @@ function renderClock(){
  const open=S.tasks.filter(t=>!t.done);
  const od=open.filter(t=>bucketOf(t)==='overdue').length;
  const st=open.filter(isStalled).length;
- const bd=S.bills.filter(b=>!b.paused&&billStatus(b)==='overdue').length;
+ const bd=S.bills.filter(b=>!b.paused&&!b.income&&billStatus(b)==='overdue').length;
  const el=$('cStat');
  if(bd){el.textContent=`${bd} BILL${bd===1?'':'S'} PAST DUE`;el.style.color='#F2586A'}
  else if(od){el.textContent=`${od} OVERDUE · ${st} STALLED`;el.style.color='#F2586A'}
@@ -3518,7 +3541,7 @@ OPEN TASKS (${open.length} total):
 ${taskList||'(no open tasks)'}
 
 BILLS NEEDING ATTENTION:
-${S.bills.filter(b=>!b.paused&&['overdue','soon','today'].includes(billStatus(b))).map(b=>`- ${b.name} ${money(b.amount)} ${billStatus(b)}`).join('\n')||'none'}
+${S.bills.filter(b=>!b.paused&&!b.income&&['overdue','soon','today'].includes(billStatus(b))).map(b=>`- ${b.name} ${money(b.amount)} ${billStatus(b)}`).join('\n')||'none'}
 
 YOU CAN:
 1. ANSWER any question about the board
@@ -3849,7 +3872,7 @@ function renderFocus(){
  <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">${pct}%</span>
  </div>`;
  // Bills due today / overdue
- const urgentBills=S.bills.filter(b=>!b.paused&&['overdue','soon','today'].includes(billStatus(b)));
+ const urgentBills=S.bills.filter(b=>!b.paused&&!b.income&&['overdue','soon','today'].includes(billStatus(b)));
  if(urgentBills.length){
  $('focusBills').innerHTML=`
  <div class="focus-section-h" style="color:var(--rose)">Bills needing attention</div>
@@ -4002,7 +4025,7 @@ function paintNow(inner,overlay){
  if(!inner)return;
  const rerender=()=>paintNow(inner,overlay);
  const items=nowItems();
- const bills=S.bills.filter(b=>!b.paused&&['overdue','soon','today'].includes(billStatus(b)));
+ const bills=S.bills.filter(b=>!b.paused&&!b.income&&['overdue','soon','today'].includes(billStatus(b)));
  const dateStr=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}).toUpperCase();
  const allDone=S.tasks.filter(t=>t.done).length,openCount=S.tasks.filter(t=>!t.done).length,total=S.tasks.length;
  const pct=total?Math.round(allDone/total*100):0;
@@ -4307,6 +4330,7 @@ function renderBillChart(){
     const mEnd=new Date(d.getFullYear(),d.getMonth()+1,0,23,59,59);
     let total=0;
     S.bills.forEach(b=>{
+      if(b.income)return;
       (b.history||[]).forEach(h=>{
         const pd=new Date(h.paid);
         if(pd>=mStart&&pd<=mEnd)total+=Number(h.amount||0);
@@ -4349,7 +4373,7 @@ function buildBoardSnapshot(){
  const od=open.filter(t=>bucketOf(t)==='overdue');
  const todayT=open.filter(t=>bucketOf(t)==='today');
  const stalled=open.filter(isStalled);
- const bills=S.bills.filter(b=>!b.paused&&['overdue','soon','today'].includes(billStatus(b)));
+ const bills=S.bills.filter(b=>!b.paused&&!b.income&&['overdue','soon','today'].includes(billStatus(b)));
  const weekTasks=open.filter(t=>['today','tomorrow','week'].includes(bucketOf(t)));
 
  // Group tasks by category for project inference
@@ -4614,7 +4638,7 @@ async function runPlanner(mode,outEl,btn){
   const origText=btn.textContent;
   if(btn.textContent!==undefined)btn.textContent='Thinking…';
   if(btn.disabled!==undefined)btn.disabled=true;
-  const bills=S.bills.filter(b=>!b.paused&&['overdue','soon','today'].includes(billStatus(b)));
+  const bills=S.bills.filter(b=>!b.paused&&!b.income&&['overdue','soon','today'].includes(billStatus(b)));
   const snapshot=open.map(t=>`- [${catOf(t.cat).name}/${t.pri}] ${t.title}${t.due?' due '+t.due:''}${isStalled(t)?' STALLED':''}${bucketOf(t)==='overdue'?' OVERDUE':''}`).join('\n');
   const todayStr=iso(today0());
   const prompt=mode==='day'
@@ -4923,7 +4947,7 @@ h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
     });
   });
   // Bills section
-  const bills=S.bills.filter(b=>!b.paused);
+  const bills=S.bills.filter(b=>!b.paused&&!b.income);
   if(bills.length){
     body+=`<h2>Active Bills</h2>`;
     bills.forEach(b=>{body+=`<div class="task"><div>${esc(b.name)} <span style="font-weight:600">$${Number(b.amount).toFixed(2)}</span> <span style="color:#8A9099;font-size:11px">· ${b.cadence} · due ${b.due||'—'}</span></div></div>`;});
@@ -5030,7 +5054,7 @@ function renderDashDetail(type,arg){
     case'overdue': tasks=open.filter(t=>bucketOf(t)==='overdue'); title=`Overdue (${tasks.length})`; break;
     case'stalled': tasks=open.filter(isStalled); title=`Stalled tasks (${tasks.length})`; break;
     case'week': tasks=open.filter(t=>['today','tomorrow','week','soon'].includes(bucketOf(t))); title=`Due next 7 days (${tasks.length})`; break;
-    case'bills': bills=S.bills.filter(b=>!b.paused&&['overdue','soon','today'].includes(billStatus(b))); title=`Bills needing attention (${bills.length})`; break;
+    case'bills': bills=S.bills.filter(b=>!b.paused&&!b.income&&['overdue','soon','today'].includes(billStatus(b))); title=`Bills needing attention (${bills.length})`; break;
     case'cat': {const c=catOf(arg); tasks=S.tasks.filter(t=>t.cat===arg).slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)); title=`${esc(c.name)} — all tasks (${tasks.length})`; break;}
     case'pri': {const lbl={critical:'Critical',high:'High',med:'Medium',low:'Low'}[arg]||arg; tasks=open.filter(t=>t.pri===arg); title=`${lbl} priority — open (${tasks.length})`; break;}
     case'bucket': {const b=BUCKETS.find(x=>x.id===arg); tasks=open.filter(t=>bucketOf(t)===arg); title=`${b?b.label:arg} (${tasks.length})`; break;}
