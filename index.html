@@ -313,13 +313,15 @@ input,select,textarea{font-family:inherit;color:inherit}
 .pbar-track:hover .pbar-fill{filter:brightness(1.2)}
 .age-row{display:flex;align-items:center;gap:11px;padding:9px 8px;border-radius:7px;cursor:pointer;transition:.14s}
 .age-row:hover{background:var(--panel-hi)}
-.age-days{font-family:var(--display);font-size:19px;font-weight:600;color:var(--rose);min-width:38px;text-align:right;line-height:1}
+.age-num{min-width:40px;text-align:right;flex:none}
+.age-days{font-family:var(--display);font-size:19px;font-weight:600;color:var(--rose);line-height:1}
 .age-unit{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase}
 .age-body{flex:1;min-width:0}
 .age-t{font-size:13px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .age-c{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:3px}
-.age-spark{width:52px;height:5px;background:var(--panel-hi);border-radius:3px;overflow:hidden;flex-shrink:0}
-.age-spark i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--rose));border-radius:3px}
+.age-bar{height:6px;background:var(--panel-hi);border-radius:3px;overflow:hidden;margin-top:8px}
+.age-bar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--amber),var(--rose));transition:width .5s ease}
+.age-row:hover .age-bar i{filter:brightness(1.12)}
 .pmx{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
 .pmx-cell{background:var(--panel-hi);border:1px solid var(--line-soft);border-radius:8px;padding:12px;cursor:pointer;transition:.15s}
 .pmx-cell:hover{border-color:var(--line);background:var(--panel-hover)}
@@ -2745,10 +2747,10 @@ function renderAging(){
  const max=od[0].d;
  $('aging').innerHTML=od.map(({t,d})=>`
  <div class="age-row" data-drill="${t.id}">
- <div style="text-align:right"><div class="age-days">${d}</div><div class="age-unit">days</div></div>
+ <div class="age-num"><div class="age-days">${d}</div><div class="age-unit">days</div></div>
  <div class="age-body"><div class="age-t">${esc(t.title)}</div>
- <div class="age-c">${esc(catOf(t.cat).name).toUpperCase()} · ${t.pri.toUpperCase()}${(t.pushes||0)?` · PUSHED ${t.pushes}×`:''}</div></div>
- <div class="age-spark"><i style="width:${Math.round(d/max*100)}%"></i></div>
+ <div class="age-c">${esc(catOf(t.cat).name).toUpperCase()} · ${t.pri.toUpperCase()}${(t.pushes||0)?` · PUSHED ${t.pushes}×`:''}</div>
+ <div class="age-bar"><i style="width:${Math.max(4,Math.round(d/max*100))}%"></i></div></div>
  </div>`).join('');
  document.querySelectorAll('[data-drill]').forEach(x=>x.onclick=()=>toggleDashDetail('task',x.dataset.drill));
 }
