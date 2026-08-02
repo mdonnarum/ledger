@@ -228,6 +228,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
 .bill-sec:first-child{margin-top:8px;padding-top:0;border-top:none}
 .bill-sec .bill-sec-t{letter-spacing:-.01em}
 .bill-sec.due .bill-sec-t{color:var(--amber)}
+.bill-sec.up .bill-sec-t{color:var(--mint)}
 .bill-sec .bill-sec-sub{font-family:var(--body);font-size:12px;font-weight:400;color:var(--text-dim)}
 .bill-sec .ct{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text-mid);background:var(--panel-hi);border:1px solid var(--line-soft);border-radius:20px;padding:2px 9px}
 .bill-sec .amt{margin-left:auto;font-family:var(--display);font-size:15px;font-weight:600;color:var(--text-mid);letter-spacing:.01em}
@@ -2653,7 +2654,7 @@ function renderBills(){
  });
  let html=`<div class="bill-sec due"><span class="bill-sec-t">Due this period</span><span class="bill-sec-sub">overdue or due by month-end</span><span class="ct">${dueList.length}</span>${dueList.length?`<span class="amt">${money(sum(dueList))}</span>`:''}</div>`;
  html+=dueList.length?dueList.map(card).join(''):`<div class="empty" style="padding:14px 10px"><div class="small" style="color:var(--mint)">Nothing due this period — you're all caught up</div></div>`;
- if(upList.length)html+=`<div class="bill-sec"><span class="bill-sec-t">Coming up</span><span class="bill-sec-sub">due next month onward</span><span class="ct">${upList.length}</span><span class="amt">${money(sum(upList))}</span></div>`+upList.map(card).join('');
+ if(upList.length)html+=`<div class="bill-sec up"><span class="bill-sec-t">Coming up</span><span class="bill-sec-sub">due next month onward</span><span class="ct">${upList.length}</span><span class="amt">${money(sum(upList))}</span></div>`+upList.map(card).join('');
  if(pausedList.length)html+=`<div class="bill-sec"><span class="bill-sec-t">Paused</span><span class="bill-sec-sub">excluded from reminders &amp; totals</span><span class="ct">${pausedList.length}</span></div>`+pausedList.map(card).join('');
  zone.innerHTML=html;
  const Q=s=>document.querySelectorAll(s);
