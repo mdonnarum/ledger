@@ -3430,8 +3430,23 @@ function findNote(match){
 
 function applyOps(ops){
   const results=[];
+  // Confirmation guard: ask once before the assistant deletes whole items.
+  const DESTRUCTIVE=new Set(['delete','delete_bill','delete_note','delete_category']);
+  const dels=ops.filter(o=>DESTRUCTIVE.has(o.op));
+  let skipDeletes=false;
+  if(dels.length){
+    const names=dels.map(o=>{
+      if(o.op==='delete'){const t=findTask(o.task);return `task “${t?t.title:o.task}”`;}
+      if(o.op==='delete_bill'){const b=findBill(o.bill||o.name);return `bill “${b?b.name:(o.bill||o.name)}”`;}
+      if(o.op==='delete_note'){const n=findNote(o.note||o.match||o.title);return `note “${n?n.title:(o.note||o.title)}”`;}
+      if(o.op==='delete_category'){const c=findCatObj(o.category||o.name||o.match);return `category “${c?c.name:(o.category||o.name)}” (its tasks move to another category)`;}
+      return o.op;
+    });
+    skipDeletes=!confirm(`The assistant wants to delete ${dels.length} item${dels.length>1?'s':''}:\n\n• ${names.join('\n• ')}\n\n${dels.length>1?'Delete them?':'Delete it?'}  Anything else it suggested is still applied either way.`);
+  }
   for(const op of ops){
     try{
+      if(skipDeletes&&DESTRUCTIVE.has(op.op)){results.push(`↩ Kept — you cancelled that deletion`);continue;}
       switch(op.op){
 
         case 'add_task':{
