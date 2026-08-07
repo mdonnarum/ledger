@@ -950,7 +950,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
       <button class="tab" data-v="ins">Insights</button>
     </div>
     <button class="btn btn-sm" id="bTemplates" style="white-space:nowrap">📋 Templates</button>
-    <button class="btn btn-sm" id="bWordExport" style="white-space:nowrap">📝 Export to Word</button>
+    <button class="btn btn-sm" id="bWordExport" style="white-space:nowrap">📄 Export / Print</button>
   </div>
 
 
@@ -4969,37 +4969,71 @@ $('shopEditModal').onclick=e=>{if(e.target===$('shopEditModal')){$('shopEditModa
 /* ================= WORD EXPORT ================= */
 $('bWordExport').onclick=()=>{
   const open=S.tasks.filter(t=>!t.done);
-  const byCat=S.cats.map(c=>({c,tasks:open.filter(t=>t.cat===c.id)})).filter(x=>x.tasks.length);
-  const now=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  let body=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Ledger Export</title><style>
-body{font-family:Calibri,sans-serif;color:#1a1f24;margin:40px}
-h1{font-size:28px;font-weight:700;margin-bottom:4px}
-.sub{font-size:12px;color:#8A9099;margin-bottom:28px}
-h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#4A5568;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}
-.task{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #f5f5f5}
-.pri{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;margin-right:6px;text-transform:uppercase}
-.high{background:#fff0f0;color:#c53030}.med{background:#fffbeb;color:#b7791f}.low{background:#f7f7f7;color:#718096}
-.sub-item{padding:4px 0 4px 20px;font-size:12px;color:#555;border-bottom:1px solid #fafafa}
-</style></head><body>`;
-  body+=`<h1>Ledger — Open Tasks</h1><div class="sub">${now} · ${open.length} open tasks</div>`;
-  byCat.forEach(({c,tasks})=>{
-    body+=`<h2>${c.name}</h2>`;
-    tasks.forEach(t=>{
-      body+=`<div class="task"><div><span class="pri ${t.pri}">${t.pri}</span>${esc(t.title)}${t.due?` <span style="color:#8A9099;font-size:11px">· due ${t.due}</span>`:''}</div></div>`;
-      (t.subtasks||[]).filter(s=>!s.done).forEach(s=>{body+=`<div class="sub-item">☐ ${esc(s.title)}</div>`;});
-    });
-  });
-  // Bills section
-  const bills=S.bills.filter(b=>!b.paused&&!b.income);
-  if(bills.length){
-    body+=`<h2>Active Bills</h2>`;
-    bills.forEach(b=>{body+=`<div class="task"><div>${esc(b.name)} <span style="font-weight:600">$${Number(b.amount).toFixed(2)}</span> <span style="color:#8A9099;font-size:11px">· ${b.cadence} · due ${b.due||'—'}</span></div></div>`;});
+  const pr={critical:0,high:1,med:2,low:3};
+  const byCat=S.cats.map(c=>({c,tasks:open.filter(t=>t.cat===c.id).sort((a,b)=>(pr[a.pri]??2)-(pr[b.pri]??2)||((parseDue(a.due)||8.64e15)-(parseDue(b.due)||8.64e15)))})).filter(x=>x.tasks.length);
+  const now=today0(),endOfPeriod=new Date(now.getFullYear(),now.getMonth()+1,0);
+  const active=S.bills.filter(b=>!b.paused);
+  const isDue=b=>{const s=billStatus(b),d=parseDue(b.due);return s==='overdue'||s==='soon'||(d&&d<=endOfPeriod);};
+  const dueBills=active.filter(b=>!b.income&&isDue(b));
+  const upBills=active.filter(b=>!b.income&&!isDue(b));
+  const incBills=active.filter(b=>b.income);
+  const odCount=open.filter(t=>bucketOf(t)==='overdue').length;
+  const dateStr=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const priPill=p=>`<span class="pri ${p}">${p}</span>`;
+  const dueChip=t=>{const dl=dueLabel(t);if(!dl)return '';return `<span class="due${bucketOf(t)==='overdue'?' od':''}">${dl}</span>`;};
+  const taskRow=t=>{
+    const sp=(t.subtasks||[]).filter(s=>!s.done);
+    return `<div class="row"><div class="rowmain">${priPill(t.pri)}<span class="ttl">${esc(t.title)}</span>${dueChip(t)}</div>`+
+      (sp.length?`<div class="subs">`+sp.map(s=>`<div class="sub">☐ ${esc(s.title)}</div>`).join('')+`</div>`:'')+`</div>`;
+  };
+  const billRow=b=>`<div class="row bill"><span class="ttl">${esc(b.name)}${b.autopay?' <span class="tag">autopay</span>':''}</span><span class="meta">${billLabel(b)}</span><span class="amt${b.income?' in':''}">${money(b.amount)}</span></div>`;
+  let s=`<h1>Ledger</h1><div class="sub">${dateStr}</div>`;
+  s+=`<div class="stats"><div class="stat"><b>${open.length}</b>open tasks</div><div class="stat"><b class="${odCount?'red':''}">${odCount}</b>overdue</div><div class="stat"><b>${dueBills.length}</b>bills due</div></div>`;
+  s+=`<h2>Open tasks</h2>`;
+  s+= byCat.length ? byCat.map(({c,tasks})=>`<h3><span class="dot" style="background:${c.color}"></span>${esc(c.name)} <span class="cnt">${tasks.length}</span></h3>`+tasks.map(taskRow).join('')).join('') : `<div class="empty">No open tasks — you're all clear.</div>`;
+  if(dueBills.length)s+=`<h2>Bills — due this period</h2>`+dueBills.map(billRow).join('');
+  if(upBills.length)s+=`<h2>Bills — coming up</h2>`+upBills.map(billRow).join('');
+  if(incBills.length)s+=`<h2>Incoming</h2>`+incBills.map(billRow).join('');
+  const html=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ledger — ${iso(today0())}</title><style>
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1f2933;margin:0;background:#f4f5f7;line-height:1.5;-webkit-text-size-adjust:100%}
+.bar{position:sticky;top:0;display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#111827;color:#fff;padding:12px 18px;z-index:2}
+.bar button{background:#4DD9B0;color:#08120F;border:none;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer}
+.bar span{color:#9aa7b5;font-size:12px}
+.page{max-width:720px;margin:22px auto;background:#fff;padding:32px 34px;border-radius:12px;box-shadow:0 1px 5px rgba(0,0,0,.08)}
+h1{font-size:26px;margin:0 0 2px}
+.sub{color:#6b7280;font-size:13px;margin-bottom:18px}
+.stats{display:flex;gap:26px;padding:14px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;margin-bottom:20px}
+.stat{font-size:12px;color:#6b7280}.stat b{font-size:22px;color:#111827;display:block;font-weight:700}.stat b.red{color:#e02424}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:#6b7280;margin:26px 0 8px;border-bottom:2px solid #eef0f2;padding-bottom:6px}
+h3{font-size:14px;margin:16px 0 4px;display:flex;align-items:center;gap:8px}
+.dot{width:9px;height:9px;border-radius:3px;display:inline-block;flex:none}
+.cnt{color:#9aa7b5;font-weight:400;font-size:12px}
+.row{padding:8px 0;border-bottom:1px solid #f3f4f6}
+.rowmain{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ttl{font-size:14.5px;color:#1f2933;flex:1;min-width:0}
+.pri{font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 7px;border-radius:4px;letter-spacing:.04em;flex:none}
+.pri.critical{background:#fde8ec;color:#c81e4b}.pri.high{background:#fdecec;color:#d63030}.pri.med{background:#fff6e6;color:#b7791f}.pri.low{background:#eef1f4;color:#6b7280}
+.due{font-size:12px;color:#6b7280;white-space:nowrap}.due.od{color:#e02424;font-weight:600}
+.subs{margin:5px 0 2px 6px}.sub{font-size:12.5px;color:#4b5563;padding:2px 0}
+.bill{display:flex;align-items:center;gap:10px}
+.bill .meta{font-size:12px;color:#6b7280;margin-left:auto;white-space:nowrap}
+.amt{font-weight:700;font-size:15px;min-width:78px;text-align:right;flex:none}.amt.in{color:#0f9d6b}
+.tag{font-size:9px;background:#eef1f4;color:#6b7280;padding:1px 5px;border-radius:3px;text-transform:uppercase;font-weight:600}
+.empty{color:#6b7280;padding:10px 0}
+@media print{.bar{display:none}body{background:#fff}.page{box-shadow:none;margin:0;max-width:100%;padding:0}}
+</style></head><body>
+<div class="bar"><button onclick="window.print()">🖨 Print / Save as PDF</button><span>Use your browser's print dialog, then choose “Save as PDF”.</span></div>
+<div class="page">${s}</div>
+</body></html>`;
+  const w=window.open('','_blank');
+  if(w&&w.document){w.document.open();w.document.write(html);w.document.close();toast('Report ready — tap Print to save a PDF');}
+  else{
+    const blob=new Blob([html],{type:'text/html'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`Ledger-${iso(today0())}.html`;a.click();
+    URL.revokeObjectURL(url);toast('Report downloaded — open it in your browser');
   }
-  body+=`</body></html>`;
-  const blob=new Blob([body],{type:'application/msword'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`Ledger-${iso(today0())}.doc`;a.click();
-  URL.revokeObjectURL(url);toast('Word doc downloaded');
 };
 
 /* ================= INSIGHTS CHAT (Board Review) ================= */
