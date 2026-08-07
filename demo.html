@@ -3409,6 +3409,24 @@ function findCat(name){
   const q=name.toLowerCase();
   return (S.cats.find(c=>c.name.toLowerCase()===q)||S.cats.find(c=>c.name.toLowerCase().includes(q)))?.id||'personal';
 }
+function findCatObj(name){
+  if(!name)return null;
+  const q=String(name).toLowerCase().trim();
+  return S.cats.find(c=>c.name.toLowerCase()===q)||S.cats.find(c=>c.name.toLowerCase().includes(q))||S.cats.find(c=>c.id===q)||null;
+}
+function findBill(match){
+  if(!match)return null;
+  const q=String(match).toLowerCase().trim();
+  return S.bills.find(b=>b.name.toLowerCase()===q)||S.bills.find(b=>b.name.toLowerCase().includes(q));
+}
+function findNote(match){
+  if(!match)return null;
+  const q=String(match).toLowerCase().trim();
+  const N=S.notes||[];
+  return N.find(n=>(n.title||'').toLowerCase()===q)
+      || N.find(n=>(n.title||'').toLowerCase().includes(q))
+      || N.find(n=>(n.body||'').toLowerCase().includes(q));
+}
 
 function applyOps(ops){
   const results=[];
@@ -3535,6 +3553,125 @@ function applyOps(ops){
           break;
         }
 
+        case 'add_bill':{
+          const bill={id:uid(),name:op.name||op.title||'New bill',amount:Number(op.amount)||0,
+            income:!!op.income,type:op.type||'recurring',
+            cadence:CAD[op.cadence]?op.cadence:'monthly',due:op.due||iso(today0()),
+            lead:op.lead!=null?Number(op.lead):3,autopay:!!op.autopay,
+            payUrl:op.payUrl?normPayUrl(op.payUrl):'',notes:op.notes||'',
+            paused:!!op.paused,history:[]};
+          S.bills.push(bill);
+          results.push(`✓ Added ${bill.income?'income':'bill'}: "${bill.name}" ${money(bill.amount)}`);
+          break;
+        }
+        case 'update_bill':{
+          const b=findBill(op.bill||op.name);
+          if(!b){results.push(`✗ Bill not found: "${op.bill||op.name}"`);break;}
+          if(op.name!==undefined&&op.bill!==undefined)b.name=op.name; // rename only when a separate match was given
+          else if(op.newName!==undefined)b.name=op.newName;
+          if(op.amount!==undefined)b.amount=Number(op.amount)||0;
+          if(op.cadence!==undefined&&CAD[op.cadence])b.cadence=op.cadence;
+          if(op.due!==undefined)b.due=op.due;
+          if(op.lead!==undefined)b.lead=Number(op.lead);
+          if(op.autopay!==undefined)b.autopay=!!op.autopay;
+          if(op.income!==undefined)b.income=!!op.income;
+          if(op.paused!==undefined)b.paused=!!op.paused;
+          if(op.notes!==undefined)b.notes=op.notes;
+          if(op.payUrl!==undefined)b.payUrl=normPayUrl(op.payUrl);
+          results.push(`✓ Updated ${b.income?'income':'bill'}: "${b.name}"`);
+          break;
+        }
+        case 'delete_bill':{
+          const b=findBill(op.bill||op.name);
+          if(!b){results.push(`✗ Bill not found: "${op.bill||op.name}"`);break;}
+          const nm=b.name;S.bills=S.bills.filter(x=>x.id!==b.id);
+          results.push(`✓ Deleted: "${nm}"`);
+          break;
+        }
+        case 'pay_bill':case 'receive_bill':{
+          const b=findBill(op.bill||op.name);
+          if(!b){results.push(`✗ Bill not found: "${op.bill||op.name}"`);break;}
+          b.history=b.history||[];
+          b.history.unshift({date:b.due,paid:Date.now(),amount:b.amount});
+          b.history=b.history.slice(0,24);
+          b.due=iso(CAD[b.cadence].next(parseDue(b.due)));
+          results.push(`✓ Marked ${b.income?'received':'paid'}: "${b.name}" — next ${b.income?'expected':'due'} ${b.due}`);
+          break;
+        }
+        case 'undo_pay':{
+          const b=findBill(op.bill||op.name);
+          if(!b){results.push(`✗ Bill not found: "${op.bill||op.name}"`);break;}
+          const h=b.history||[];
+          if(!h.length){results.push(`✗ No payment to undo on "${b.name}"`);break;}
+          if(h[0].date)b.due=h[0].date;
+          b.history=h.slice(1);
+          results.push(`✓ Undid last ${b.income?'receipt':'payment'} on "${b.name}"`);
+          break;
+        }
+        case 'pause_bill':{
+          const b=findBill(op.bill||op.name);
+          if(!b){results.push(`✗ Bill not found: "${op.bill||op.name}"`);break;}
+          b.paused=op.paused!==false;
+          results.push(`✓ ${b.paused?'Paused':'Resumed'}: "${b.name}"`);
+          break;
+        }
+
+        case 'add_note':{
+          S.notes=S.notes||[];
+          const n={id:uid(),title:op.title||'Untitled',body:op.body||op.notes||'',cat:findCat(op.cat),taskId:'',pinned:!!op.pinned,created:Date.now(),modified:Date.now()};
+          S.notes.unshift(n);
+          results.push(`✓ Added note: "${n.title}"`);
+          break;
+        }
+        case 'update_note':{
+          const n=findNote(op.note||op.match||op.title);
+          if(!n){results.push(`✗ Note not found: "${op.note||op.title}"`);break;}
+          if(op.newTitle!==undefined)n.title=op.newTitle;
+          else if(op.title!==undefined&&(op.note||op.match))n.title=op.title;
+          if(op.body!==undefined)n.body=op.body;
+          if(op.cat!==undefined)n.cat=findCat(op.cat);
+          if(op.pinned!==undefined)n.pinned=!!op.pinned;
+          n.modified=Date.now();
+          results.push(`✓ Updated note: "${n.title}"`);
+          break;
+        }
+        case 'delete_note':{
+          const n=findNote(op.note||op.match||op.title);
+          if(!n){results.push(`✗ Note not found: "${op.note||op.title}"`);break;}
+          const t=n.title;S.notes=(S.notes||[]).filter(x=>x.id!==n.id);
+          results.push(`✓ Deleted note: "${t}"`);
+          break;
+        }
+
+        case 'add_category':{
+          const name=op.name||op.title;
+          if(!name){results.push('✗ Category needs a name');break;}
+          let id=name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')||uid();
+          if(S.cats.some(c=>c.id===id)){results.push(`✗ Category already exists: "${name}"`);break;}
+          const color=op.color||PALETTE[S.cats.length%PALETTE.length];
+          S.cats.push({id,name,color});
+          results.push(`✓ Added category: "${name}"`);
+          break;
+        }
+        case 'update_category':{
+          const c=findCatObj(op.category||op.name||op.match);
+          if(!c){results.push(`✗ Category not found: "${op.category||op.name}"`);break;}
+          if(op.newName!==undefined)c.name=op.newName;
+          if(op.color!==undefined)c.color=op.color;
+          results.push(`✓ Updated category: "${c.name}"`);
+          break;
+        }
+        case 'delete_category':{
+          const c=findCatObj(op.category||op.name||op.match);
+          if(!c){results.push(`✗ Category not found: "${op.category||op.name}"`);break;}
+          if(S.cats.length<=1){results.push(`✗ Can't delete the only category`);break;}
+          const fallback=S.cats.find(x=>x.id!==c.id).id;
+          let moved=0;S.tasks.forEach(t=>{if(t.cat===c.id){t.cat=fallback;moved++;}});
+          S.cats=S.cats.filter(x=>x.id!==c.id);
+          results.push(`✓ Deleted category: "${c.name}"${moved?` (${moved} task${moved>1?'s':''} moved to ${catOf(fallback).name})`:''}`);
+          break;
+        }
+
         default:
           results.push(`✗ Unknown op: ${op.op}`);
       }
@@ -3583,8 +3720,11 @@ ${pressing}
 OPEN TASKS (${open.length} total):
 ${taskList||'(no open tasks)'}
 
-BILLS NEEDING ATTENTION:
-${S.bills.filter(b=>!b.paused&&!b.income&&['overdue','soon','today'].includes(billStatus(b))).map(b=>`- ${b.name} ${money(b.amount)} ${billStatus(b)}`).join('\n')||'none'}
+ALL BILLS & INCOME (${S.bills.length}) — items marked INCOME are money received (rent, split rent); the rest are bills you pay:
+${S.bills.map(b=>`- "${b.name}" ${b.income?'INCOME':'bill'} ${money(b.amount)} cadence=${b.cadence} due=${b.due||'—'} status=${billStatus(b)}${b.autopay?' autopay':''}${b.paused?' PAUSED':''}${(b.history||[]).length?' paid×'+b.history.length:''}${b.notes?' notes="'+b.notes+'"':''}`).join('\n')||'(none)'}
+
+NOTES (${(S.notes||[]).length}):
+${(S.notes||[]).map(n=>`- "${n.title||'Untitled'}"${n.pinned?' PINNED':''} cat=${catOf(n.cat).name}${n.body?' — '+n.body.slice(0,140).replace(/\n/g,' '):''}`).join('\n')||'(none)'}
 
 YOU CAN:
 1. ANSWER any question about the board
@@ -3611,8 +3751,26 @@ AVAILABLE OPERATIONS:
 - notes_to_subtasks: {op:"notes_to_subtasks",task:"match title",clear_notes:true} ← converts notes into checklist items
 - split: {op:"split",task:"match title",into:[{title,cat,pri,due}],delete_original:true}
 
+BILLS & INCOME (a "bill" is money you pay; set income:true for money received like rent or split rent):
+- add_bill: {op:"add_bill",name,amount,cadence:"monthly|weekly|biweekly|quarterly|annual",due:"YYYY-MM-DD",autopay:true/false,income:true/false,notes,paused:true/false}
+- update_bill: {op:"update_bill",bill:"match name",newName,amount,cadence,due,lead,autopay,income,paused,notes}
+- delete_bill: {op:"delete_bill",bill:"match name"}
+- pay_bill: {op:"pay_bill",bill:"match name"} ← logs a payment (or receipt for income) and advances the due date
+- undo_pay: {op:"undo_pay",bill:"match name"} ← reverses the most recent payment/receipt
+- pause_bill: {op:"pause_bill",bill:"match name",paused:true/false}
+
+NOTES:
+- add_note: {op:"add_note",title,body,cat,pinned:true/false}
+- update_note: {op:"update_note",note:"match title",newTitle,body,cat,pinned}
+- delete_note: {op:"delete_note",note:"match title"}
+
+CATEGORIES:
+- add_category: {op:"add_category",name,color:"#hex"}
+- update_category: {op:"update_category",category:"match name",newName,color:"#hex"}
+- delete_category: {op:"delete_category",category:"match name"} ← its tasks move to another category
+
 RULES:
-- Match tasks by partial title — be fuzzy, pick the closest match
+- Match tasks by partial title, bills by name, notes by title, categories by name — be fuzzy, pick the closest match
 - You can chain multiple ops in one OPS block
 - Always give a brief natural response THEN the OPS block
 - For notes_to_subtasks: read the task's notes field and convert each line/item into a checklist item
