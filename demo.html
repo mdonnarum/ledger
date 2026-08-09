@@ -2526,6 +2526,15 @@ function normPayUrl(u){
  if(!/^[a-z][\w+.-]*:/i.test(u))u='https://'+u; // add https:// if no scheme given
  return u;
 }
+// When Ledger runs as an installed/Home-Screen app (standalone), iOS ignores
+// target="_blank" — taps on links do nothing. Force pay links to open so a
+// single tap always works; normal browser tabs keep their new-tab behavior.
+document.addEventListener('click',e=>{
+ const a=e.target&&e.target.closest&&e.target.closest('a.pay-link');
+ if(!a||!a.href)return;
+ const standalone=window.navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
+ if(standalone){e.preventDefault();const w=window.open(a.href,'_blank');if(!w)window.location.href=a.href;}
+});
 function addBill(){
  const name=$('fName').value.trim();
  if(!name){$('fName').focus();return}
@@ -2596,7 +2605,7 @@ function renderBills(){
  </div>
  </div>
  <div class="bill-acts">
- ${b.payUrl?`<a class="btn btn-sm" href="${esc(normPayUrl(b.payUrl))}" target="_blank" rel="noopener" style="color:var(--blue);border-color:rgba(91,168,245,.3);text-decoration:none" title="Open the biller's site or app">Pay ↗</a>`:''}
+ ${b.payUrl?`<a class="btn btn-sm pay-link" href="${esc(normPayUrl(b.payUrl))}" target="_blank" rel="noopener" style="color:var(--blue);border-color:rgba(91,168,245,.3);text-decoration:none" title="Open the biller's site or app">Pay ↗</a>`:''}
  ${!b.paused?`<button class="btn btn-sm" data-paid="${b.id}" style="color:var(--mint);border-color:rgba(77,217,176,.3)">${inc?'✓ Received':'✓ Paid'}</button>`:''}
  ${h.length?`<button class="btn btn-sm" data-bunpay="${b.id}" title="${inc?'Undo the last receipt (keeps the cycle)':'Undo the last payment (keeps the recurring cycle)'}" style="color:var(--amber);border-color:rgba(240,162,60,.3)">${inc?'↩ Undo':'↩ Undo pay'}</button>`:''}
  <button class="btn btn-sm" data-bics="${b.id}" title="Calendar">📅</button>
@@ -2625,7 +2634,7 @@ function renderBills(){
  </div>`:''}
  <div class="bill-hist">
  ${b.notes?`<div style="color:var(--text-mid);margin-bottom:8px;font-family:var(--body);font-size:12.5px">${esc(b.notes)}</div>`:''}
- ${b.payUrl?`<div style="margin-bottom:8px;font-size:12.5px">Pay at: <a href="${esc(normPayUrl(b.payUrl))}" target="_blank" rel="noopener" style="color:var(--blue)">${esc(b.payUrl)}</a></div>`:''}
+ ${b.payUrl?`<div style="margin-bottom:8px;font-size:12.5px">Pay at: <a class="pay-link" href="${esc(normPayUrl(b.payUrl))}" target="_blank" rel="noopener" style="color:var(--blue)">${esc(normPayUrl(b.payUrl))}</a></div>`:''}
  <div style="letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:5px">Payment history</div>
  ${h.length?h.map(x=>`<div>✓ ${parseDue(x.date)?parseDue(x.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—'} · ${money(x.amount)}</div>`).join(''):'<div>No payments logged yet</div>'}
  </div>
@@ -4234,7 +4243,7 @@ function nowBillCard(b){
  return `<div class="now-card ${billStatus(b)==='overdue'?'crit':''}">
   <div class="now-card-top"><div class="now-card-t">${esc(b.name)} — ${money(b.amount)}</div></div>
   <div class="now-why">${billLabel(b)}</div>
-  <div class="now-acts">${b.payUrl?`<a class="now-btn snz" href="${esc(normPayUrl(b.payUrl))}" target="_blank" rel="noopener">Pay ↗</a>`:''}<button class="now-btn done" data-nbpaid="${b.id}">✓ Paid</button></div>
+  <div class="now-acts">${b.payUrl?`<a class="now-btn snz pay-link" href="${esc(normPayUrl(b.payUrl))}" target="_blank" rel="noopener">Pay ↗</a>`:''}<button class="now-btn done" data-nbpaid="${b.id}">✓ Paid</button></div>
  </div>`;
 }
 function paintNow(inner,overlay){
