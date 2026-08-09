@@ -2529,6 +2529,20 @@ function normPayUrl(u){
  if(!/^[a-z][\w+.-]*:/i.test(u))u='https://'+u; // add https:// if no scheme given
  return u;
 }
+// Turn any URLs inside free text (notes) into tappable links, safely escaping
+// the rest. Trailing sentence punctuation is trimmed off the link.
+function linkify(text){
+ if(!text)return '';
+ const parts=String(text).split(/(https?:\/\/[^\s]+|www\.[^\s]+)/gi);
+ return parts.map((seg,i)=>{
+  if(i%2===1){
+   let url=seg, tail='';
+   const m=url.match(/[.,;:!?)\]]+$/); if(m){tail=url.slice(-m[0].length);url=url.slice(0,-m[0].length);}
+   return `<a class="pay-link" href="${esc(normPayUrl(url))}" target="_blank" rel="noopener" style="color:var(--blue);word-break:break-all">${esc(url)}</a>`+esc(tail);
+  }
+  return esc(seg);
+ }).join('').replace(/\n/g,'<br>');
+}
 // When Ledger runs as an installed/Home-Screen app (standalone), iOS ignores
 // target="_blank" — taps on links do nothing. Force pay links to open so a
 // single tap always works; normal browser tabs keep their new-tab behavior.
@@ -2636,7 +2650,7 @@ function renderBills(){
  </div>
  </div>`:''}
  <div class="bill-hist">
- ${b.notes?`<div style="color:var(--text-mid);margin-bottom:8px;font-family:var(--body);font-size:12.5px">${esc(b.notes)}</div>`:''}
+ ${b.notes?`<div style="color:var(--text-mid);margin-bottom:8px;font-family:var(--body);font-size:12.5px">${linkify(b.notes)}</div>`:''}
  ${b.payUrl?`<div style="margin-bottom:8px;font-size:12.5px">Pay at: <a class="pay-link" href="${esc(normPayUrl(b.payUrl))}" target="_blank" rel="noopener" style="color:var(--blue)">${esc(normPayUrl(b.payUrl))}</a></div>`:''}
  <div style="letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:5px">Payment history</div>
  ${h.length?h.map(x=>`<div>✓ ${parseDue(x.date)?parseDue(x.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—'} · ${money(x.amount)}</div>`).join(''):'<div>No payments logged yet</div>'}
@@ -2930,7 +2944,7 @@ function drillTask(id){
  <div class="dw-stat"><div class="v">${idleDays(t)}d</div><div class="l">Untouched</div></div>
  <div class="dw-stat"><div class="v" style="color:${c.color}">${esc(c.name)}</div><div class="l">Category</div></div>`;
  $('dwList').innerHTML=`
- ${t.notes?`<div class="dw-item"><div class="dw-eyebrow">Notes</div><div style="font-size:13px;color:var(--text-mid);line-height:1.55;white-space:pre-wrap">${esc(t.notes)}</div></div>`:''}
+ ${t.notes?`<div class="dw-item"><div class="dw-eyebrow">Notes</div><div style="font-size:13px;color:var(--text-mid);line-height:1.55;white-space:pre-wrap">${linkify(t.notes)}</div></div>`:''}
  ${sp?`<div class="dw-item"><div class="dw-eyebrow">Checklist — ${sp.done}/${sp.total}</div>
  ${t.subtasks.map(s=>`<div style="padding:6px 0;border-bottom:1px solid var(--line-soft)">
  <div style="display:flex;gap:8px;align-items:flex-start">
@@ -3022,7 +3036,7 @@ function renderNotes(){
  <div class="note-ico">${n.pinned?'📌':'📝'}</div>
  <div class="note-body-wrap">
  <div class="note-h">${esc(n.title)}</div>
- ${!isOpen&&!isEdit?`<div class="note-preview">${esc(n.body)}</div>`:''}
+ ${!isOpen&&!isEdit?`<div class="note-preview">${linkify(n.body)}</div>`:''}
  <div class="note-meta">
  <span class="note-tag" style="border-color:${c.color};color:${c.color}">${esc(c.name)}</span>
  ${linkedTask?`<span class="note-task-link ${linkedTask.done?'done':''}">↗ ${esc(linkedTask.title.slice(0,40))}</span>`:''}
