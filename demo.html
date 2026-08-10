@@ -2632,6 +2632,7 @@ function renderBills(){
  ${billEditing===b.id?`<div class="bill-edit" style="padding:12px 14px;border-top:1px solid var(--line-soft);background:var(--panel-hi)">
  <input class="te-title" data-betitle="${b.id}" value="${esc(b.name)}" maxlength="60" style="margin-bottom:9px">
  <div class="te-row">
+ <div class="field"><label>Kind</label><select data-bincome="${b.id}"><option value="out" ${!b.income?'selected':''}>Bill (pay)</option><option value="in" ${b.income?'selected':''}>Income (receive)</option></select></div>
  <div class="field"><label>$</label><input type="number" data-bamt="${b.id}" value="${b.amount||0}" step="0.01" min="0"></div>
  <div class="field"><label>Every</label><select data-bcad="${b.id}">${['monthly','weekly','biweekly','quarterly','annual'].map(k=>`<option value="${k}" ${b.cadence===k?'selected':''}>${CAD[k].label}</option>`).join('')}</select></div>
  <div class="field"><label>Next due</label><input type="date" data-bdue="${b.id}" value="${b.due||''}"></div>
@@ -2705,9 +2706,10 @@ function renderBills(){
  b.due=document.querySelector(`[data-bdue="${id}"]`).value;
  b.lead=Number(document.querySelector(`[data-blead="${id}"]`).value);
  b.autopay=document.querySelector(`[data-bauto="${id}"]`).value==='yes';
+ b.income=document.querySelector(`[data-bincome="${id}"]`).value==='in';
  b.payUrl=normPayUrl(document.querySelector(`[data-bpay="${id}"]`).value);
  b.notes=document.querySelector(`[data-bnotes="${id}"]`).value.trim();
- billEditing=null;save();renderAll();toast('Bill updated');
+ billEditing=null;save();renderAll();toast(b.income?'Income updated':'Bill updated');
  });
 }
 
