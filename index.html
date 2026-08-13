@@ -926,7 +926,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v37</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v38</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -954,6 +954,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
     </div>
     <button class="btn btn-sm" id="bTemplates" style="white-space:nowrap">📋 Templates</button>
     <button class="btn btn-sm" id="bWordExport" style="white-space:nowrap">📄 Export / Print</button>
+    <button class="btn btn-sm" id="bIcsAll" style="white-space:nowrap">📅 All to calendar</button>
   </div>
 
 
@@ -1978,6 +1979,43 @@ function openIcs(bills){
 $('icsClose').onclick=()=>$('icsModal').classList.remove('on');
 $('icsModal').onclick=e=>{if(e.target===$('icsModal'))$('icsModal').classList.remove('on')};
 $('bIcs').onclick=()=>openIcs(S.bills);
+// Combined export: every active bill/income (recurring) + every open task with a due date, in one .ics
+function buildICSAll(){
+ const now=new Date();
+ const stamp=`${icsDate(now)}T${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+ const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Ledger//All//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+ S.bills.filter(b=>!b.paused&&b.due).forEach(b=>{
+  const d=parseDue(b.due);if(!d)return;const end=new Date(d.getTime()+DAY),lead=b.lead??3;
+  const title=`${b.income?'💰 ':''}${b.name}${b.income?' expected':' due'} — ${money(b.amount)}`;
+  const desc=[`${b.income?'Income':'Bill'}: ${money(b.amount)}`,`Recurs: ${CAD[b.cadence].label}`,b.autopay?'Autopay: yes':'',b.notes?`Notes: ${b.notes}`:''].filter(Boolean).join('\\n');
+  L.push('BEGIN:VEVENT',`UID:${b.id}@ledger`,`DTSTAMP:${stamp}Z`,
+   `DTSTART;VALUE=DATE:${icsDate(d)}`,`DTEND;VALUE=DATE:${icsDate(end)}`,`RRULE:${CAD[b.cadence].rrule}`,
+   `SUMMARY:${title.replace(/,/g,'\\,')}`,`DESCRIPTION:${desc.replace(/,/g,'\\,')}`,
+   'BEGIN:VALARM',`TRIGGER:-P${lead}D`,'ACTION:DISPLAY',`DESCRIPTION:${title.replace(/,/g,'\\,')}`,'END:VALARM','END:VEVENT');
+ });
+ S.tasks.filter(t=>!t.done&&t.due).forEach(t=>{
+  const d=parseDue(t.due);if(!d)return;const end=new Date(d.getTime()+DAY);
+  const openSubs=(t.subtasks||[]).filter(s=>!s.done);
+  const title=`✓ ${t.title}`;
+  const desc=[`Category: ${catOf(t.cat).name}`,`Priority: ${t.pri}`,t.notes?`Notes: ${t.notes}`:'',openSubs.length?'Checklist:\\n'+openSubs.map(s=>'• '+s.title).join('\\n'):''].filter(Boolean).join('\\n');
+  L.push('BEGIN:VEVENT',`UID:task-${t.id}@ledger`,`DTSTAMP:${stamp}Z`,
+   `DTSTART;VALUE=DATE:${icsDate(d)}`,`DTEND;VALUE=DATE:${icsDate(end)}`,
+   `SUMMARY:${title.replace(/,/g,'\\,')}`,`DESCRIPTION:${desc.replace(/,/g,'\\,')}`,
+   'BEGIN:VALARM','TRIGGER:-P1D','ACTION:DISPLAY',`DESCRIPTION:${title.replace(/,/g,'\\,')}`,'END:VALARM','END:VEVENT');
+ });
+ L.push('END:VCALENDAR');
+ return L.join('\r\n');
+}
+function openIcsAll(){
+ const bn=S.bills.filter(b=>!b.paused&&b.due).length, tn=S.tasks.filter(t=>!t.done&&t.due).length;
+ if(!bn&&!tn){toast('Nothing with a due date to export');return;}
+ const ics=buildICSAll();
+ $('icsText').value=ics;
+ $('icsModal').classList.add('on');
+ $('icsDl').onclick=()=>{dl(ics,'ledger-all.ics','text/calendar;charset=utf-8')?toast(`Downloaded ${tn} task${tn===1?'':'s'} + ${bn} bill${bn===1?'':'s'} — open it to import`):toast('Download blocked — use Copy text');};
+ $('icsCopy').onclick=async()=>{try{await navigator.clipboard.writeText(ics);toast('Copied — save as ledger.ics')}catch(e){$('icsText').select();toast('Select all and copy')}};
+}
+$('bIcsAll').onclick=openIcsAll;
 
 function describeData(d){
  if(!d)return null;
