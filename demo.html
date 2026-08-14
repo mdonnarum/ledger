@@ -923,7 +923,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app"><div id="demoBanner" style="background:linear-gradient(90deg,var(--mint),var(--sky));color:#08120F;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.05em;text-align:center;padding:7px 12px;border-radius:0 0 10px 10px;margin-bottom:2px">✦ DEMO — sample data · your changes stay in this browser, nothing is saved online</div>
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v40</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v41</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -1930,21 +1930,23 @@ function fireNotif(){
 
 const pad=n=>String(n).padStart(2,'0');
 const icsDate=d=>`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+// RFC 5545 text escaping: backslash, semicolon, comma, and newlines.
+const icsEsc=s=>String(s==null?'':s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
 function buildICS(bills){
  const now=new Date();
  const stamp=`${icsDate(now)}T${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Ledger//Bills//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
  bills.filter(b=>!b.paused&&b.due).forEach(b=>{
  const d=parseDue(b.due),end=new Date(d.getTime()+DAY),lead=b.lead??3;
- const title=`${b.name} due — ${money(b.amount)}`;
- const desc=[`Amount: ${money(b.amount)}`,`Recurs: ${CAD[b.cadence].label}`,
- b.autopay?'Autopay: yes':'Autopay: no',b.notes?`Notes: ${b.notes}`:''].filter(Boolean).join('\\n');
+ const title=`${b.income?'💰 ':''}${b.name}${b.income?' expected':' due'} — ${money(b.amount)}`;
+ const desc=[`${b.income?'Income':'Bill'}: ${money(b.amount)}`,`Recurs: ${CAD[b.cadence].label}`,
+ b.autopay?'Autopay: yes':'Autopay: no',b.notes?`Notes: ${b.notes}`:''].filter(Boolean).join('\n');
  L.push('BEGIN:VEVENT',`UID:${b.id}@ledger`,`DTSTAMP:${stamp}Z`,
- `DTSTART;VALUE=DATE:${icsDate(d)}`,`DTEND;VALUE=DATE:${icsDate(end)}`,
- `RRULE:${CAD[b.cadence].rrule}`,
- `SUMMARY:${title.replace(/,/g,'\\,')}`,`DESCRIPTION:${desc.replace(/,/g,'\\,')}`,
+ `DTSTART;VALUE=DATE:${icsDate(d)}`,`DTEND;VALUE=DATE:${icsDate(end)}`);
+ if(b.type!=='oneoff')L.push(`RRULE:${CAD[b.cadence].rrule}`);
+ L.push(`SUMMARY:${icsEsc(title)}`,`DESCRIPTION:${icsEsc(desc)}`,
  'BEGIN:VALARM',`TRIGGER:-P${lead}D`,'ACTION:DISPLAY',
- `DESCRIPTION:${title.replace(/,/g,'\\,')}`,'END:VALARM','END:VEVENT');
+ `DESCRIPTION:${icsEsc(title)}`,'END:VALARM','END:VEVENT');
  });
  L.push('END:VCALENDAR');
  return L.join('\r\n');
@@ -1984,21 +1986,22 @@ function buildICSAll(){
  S.bills.filter(b=>!b.paused&&b.due).forEach(b=>{
   const d=parseDue(b.due);if(!d)return;const end=new Date(d.getTime()+DAY),lead=b.lead??3;
   const title=`${b.income?'💰 ':''}${b.name}${b.income?' expected':' due'} — ${money(b.amount)}`;
-  const desc=[`${b.income?'Income':'Bill'}: ${money(b.amount)}`,`Recurs: ${CAD[b.cadence].label}`,b.autopay?'Autopay: yes':'',b.notes?`Notes: ${b.notes}`:''].filter(Boolean).join('\\n');
+  const desc=[`${b.income?'Income':'Bill'}: ${money(b.amount)}`,`Recurs: ${CAD[b.cadence].label}`,b.autopay?'Autopay: yes':'',b.notes?`Notes: ${b.notes}`:''].filter(Boolean).join('\n');
   L.push('BEGIN:VEVENT',`UID:${b.id}@ledger`,`DTSTAMP:${stamp}Z`,
-   `DTSTART;VALUE=DATE:${icsDate(d)}`,`DTEND;VALUE=DATE:${icsDate(end)}`,`RRULE:${CAD[b.cadence].rrule}`,
-   `SUMMARY:${title.replace(/,/g,'\\,')}`,`DESCRIPTION:${desc.replace(/,/g,'\\,')}`,
-   'BEGIN:VALARM',`TRIGGER:-P${lead}D`,'ACTION:DISPLAY',`DESCRIPTION:${title.replace(/,/g,'\\,')}`,'END:VALARM','END:VEVENT');
+   `DTSTART;VALUE=DATE:${icsDate(d)}`,`DTEND;VALUE=DATE:${icsDate(end)}`);
+  if(b.type!=='oneoff')L.push(`RRULE:${CAD[b.cadence].rrule}`);
+  L.push(`SUMMARY:${icsEsc(title)}`,`DESCRIPTION:${icsEsc(desc)}`,
+   'BEGIN:VALARM',`TRIGGER:-P${lead}D`,'ACTION:DISPLAY',`DESCRIPTION:${icsEsc(title)}`,'END:VALARM','END:VEVENT');
  });
  S.tasks.filter(t=>!t.done&&t.due).forEach(t=>{
   const d=parseDue(t.due);if(!d)return;const end=new Date(d.getTime()+DAY);
   const openSubs=(t.subtasks||[]).filter(s=>!s.done);
   const title=`✓ ${t.title}`;
-  const desc=[`Category: ${catOf(t.cat).name}`,`Priority: ${t.pri}`,t.notes?`Notes: ${t.notes}`:'',openSubs.length?'Checklist:\\n'+openSubs.map(s=>'• '+s.title).join('\\n'):''].filter(Boolean).join('\\n');
+  const desc=[`Category: ${catOf(t.cat).name}`,`Priority: ${t.pri}`,t.notes?`Notes: ${t.notes}`:'',openSubs.length?'Checklist:\n'+openSubs.map(s=>'• '+s.title).join('\n'):''].filter(Boolean).join('\n');
   L.push('BEGIN:VEVENT',`UID:task-${t.id}@ledger`,`DTSTAMP:${stamp}Z`,
    `DTSTART;VALUE=DATE:${icsDate(d)}`,`DTEND;VALUE=DATE:${icsDate(end)}`,
-   `SUMMARY:${title.replace(/,/g,'\\,')}`,`DESCRIPTION:${desc.replace(/,/g,'\\,')}`,
-   'BEGIN:VALARM','TRIGGER:-P1D','ACTION:DISPLAY',`DESCRIPTION:${title.replace(/,/g,'\\,')}`,'END:VALARM','END:VEVENT');
+   `SUMMARY:${icsEsc(title)}`,`DESCRIPTION:${icsEsc(desc)}`,
+   'BEGIN:VALARM','TRIGGER:-P1D','ACTION:DISPLAY',`DESCRIPTION:${icsEsc(title)}`,'END:VALARM','END:VEVENT');
  });
  L.push('END:VCALENDAR');
  return L.join('\r\n');
@@ -3682,7 +3685,13 @@ function applyOps(ops){
           if(!b){results.push(`✗ Bill not found: "${op.bill||op.name}"`);break;}
           const h=b.history||[];
           if(!h.length){results.push(`✗ No payment to undo on "${b.name}"`);break;}
-          if(h[0].date)b.due=h[0].date;
+          let restore=h[0].date;
+          if(!restore){
+            const cur=parseDue(b.due)||today0();
+            const back={monthly:d=>addMonths(d,-1),quarterly:d=>addMonths(d,-3),annual:d=>addMonths(d,-12),weekly:d=>new Date(d.getTime()-7*DAY),biweekly:d=>new Date(d.getTime()-14*DAY)}[b.cadence];
+            restore=iso(back?back(cur):cur);
+          }
+          b.due=restore;
           b.history=h.slice(1);
           results.push(`✓ Undid last ${b.income?'receipt':'payment'} on "${b.name}"`);
           break;
@@ -4135,83 +4144,6 @@ function openTaskEditor(id){
 }
 function closeTaskEditor(){editing=null;const m=$('taskEditModal');if(m)m.style.display='none';}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=$('taskEditModal');if(m&&m.style.display==='flex')closeTaskEditor();}});
-function renderFocus(){
- const d=new Date();
- $('focusDate').textContent=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}).toUpperCase();
- const open=S.tasks.filter(t=>!t.done);
- const todayTasks=open.filter(t=>['overdue','today'].includes(bucketOf(t)));
- const allDone=S.tasks.filter(t=>t.done).length;
- const total=S.tasks.length;
- const pct=total?Math.round(allDone/total*100):0;
- $('focusProgress').innerHTML=`
- <div class="focus-stat"><div class="v" style="color:var(--mint)">${allDone}</div><div class="l">Done total</div></div>
- <div class="focus-stat"><div class="v">${open.length}</div><div class="l">Still open</div></div>
- <div class="focus-stat"><div class="v" style="color:${todayTasks.length?'var(--amber)':'var(--mint)'}">${todayTasks.length}</div><div class="l">Need today</div></div>
- <div class="focus-bar">
- <div class="focus-bar-track"><div class="focus-bar-fill" style="width:${pct}%"></div></div>
- <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">${pct}%</span>
- </div>`;
- // Bills due today / overdue
- const urgentBills=S.bills.filter(b=>!b.paused&&!b.income&&['overdue','soon','today'].includes(billStatus(b)));
- if(urgentBills.length){
- $('focusBills').innerHTML=`
- <div class="focus-section-h" style="color:var(--rose)">Bills needing attention</div>
- ${urgentBills.map(b=>`
- <div class="focus-bill ${billStatus(b)==='overdue'?'od':''}">
- <div class="focus-bill-name">${esc(b.name)}${b.autopay?` <span class="badge auto" style="font-size:8px">AUTO</span>`:''}</div>
- <div style="text-align:right">
- <div class="focus-bill-amt" style="color:${billStatus(b)==='overdue'?'var(--rose)':'var(--amber)'}">${money(b.amount)}</div>
- <div style="font-family:var(--mono);font-size:9.5px;color:var(--text-dim)">${billLabel(b)}</div>
- </div>
- </div>`).join('')}`;
- }else{
- $('focusBills').innerHTML='';
- }
- // Today's tasks + overdue
- const sorted=todayTasks.slice().sort((a,b)=>{
- const po={critical:0,high:1,med:2,low:3};
- return (po[a.pri]??2)-(po[b.pri]??2);
- });
- if(!sorted.length){
- $('focusTasks').innerHTML=`
- <div class="focus-section-h" style="color:var(--mint)">Today's tasks</div>
- <div class="focus-empty">NOTHING DUE TODAY — YOU'RE CLEAR</div>`;
- }else{
- $('focusTasks').innerHTML=`
- <div class="focus-section-h" style="color:var(--amber)">Due today & overdue (${sorted.length})</div>
- ${sorted.map(t=>{
- const c=catOf(t.cat),sp=subProg(t),dl=dueLabel(t),b=bucketOf(t);
- return `<div class="focus-task ${t.done?'done':''}" data-ftog="${t.id}">
- <div class="tick ${t.done?'on':''}" data-tog="${t.id}">
- <svg viewBox="0 0 24 24"><rect class="bx" x="2.5" y="2.5" width="19" height="19" rx="5"/><path class="ck" d="M6.5 12.5l3.6 3.6 7.4-8.2"/></svg>
- </div>
- <div style="flex:1;min-width:0">
- <div class="focus-task-t" data-fedit="${t.id}" style="cursor:pointer" title="Click to edit">${esc(t.title)}</div>
- <div class="focus-task-meta">
- <span class="chip-cat"><span class="swatch" style="background:${c.color}"></span>${esc(c.name)}</span>
- <span class="chip-due ${b==='overdue'?'od':'now'}">${dl}</span>
- <span class="pri ${t.pri}">${t.pri}</span>
- ${sp?`<span class="sub-pill"><span class="mini-bar"><i style="width:${sp.pct}%"></i></span>${sp.done}/${sp.total}</span>`:''}
- </div>
- </div>
- <button data-fedit="${t.id}" title="Edit" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:2px 4px;flex:none;align-self:flex-start">✎</button>
- </div>
- ${editing===t.id?taskEditPanelHTML(t):''}`;
- }).join('')}`;
- // wire ticks in focus mode
- $('focusTasks').querySelectorAll('[data-tog]').forEach(el=>el.onclick=e=>{
- e.stopPropagation();
- const t=S.tasks.find(x=>x.id===el.dataset.tog);
- if(t){if(t.done){t.done=false;t.completed=null}else completeTask(t);touch(t);save();renderAll();renderFocus();}
- });
- // wire edit toggle + the inline edit panel
- $('focusTasks').querySelectorAll('[data-fedit]').forEach(el=>el.onclick=e=>{
- e.stopPropagation();
- const id=el.dataset.fedit;editing=editing===id?null:id;renderFocus();
- });
- wireTaskEditPanel($('focusTasks'),renderFocus);
- }
-}
 
 /* ================= "NOW" LAUNCH SCREEN =================
    Opens straight to the vital few. Adaptive: shows what genuinely needs
@@ -5587,14 +5519,14 @@ $('calIcs').onclick=()=>{
     `UID:${uid}`,
     `DTSTART;VALUE=DATE:${d}`,
     `DTEND;VALUE=DATE:${dEnd}`,
-    `SUMMARY:${t.title}`,
-    desc?`DESCRIPTION:${desc.replace(/\n/g,'\\n').replace(/,/g,'\\,')}` :'',
+    `SUMMARY:${icsEsc(t.title)}`,
+    desc?`DESCRIPTION:${icsEsc(desc)}` :'',
     `CATEGORIES:${catOf(t.cat).name.toUpperCase()}`,
     `PRIORITY:${t.pri==='critical'?1:t.pri==='high'?2:t.pri==='med'?5:9}`,
     'BEGIN:VALARM',
     'TRIGGER:-P1DT15H', // 1 day before at 9am = -33h from midnight = -P1DT15H
     'ACTION:DISPLAY',
-    `DESCRIPTION:Reminder: ${t.title}`,
+    `DESCRIPTION:Reminder: ${icsEsc(t.title)}`,
     'END:VALARM',
     'END:VEVENT',
     'END:VCALENDAR'
