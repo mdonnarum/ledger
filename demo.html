@@ -923,7 +923,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app"><div id="demoBanner" style="background:linear-gradient(90deg,var(--mint),var(--sky));color:#08120F;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.05em;text-align:center;padding:7px 12px;border-radius:0 0 10px 10px;margin-bottom:2px">✦ DEMO — sample data · your changes stay in this browser, nothing is saved online</div>
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v41</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v42</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -1481,7 +1481,14 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
         <li>Your calendar imports every bill as a recurring event with a reminder</li>
         <li>Done — your phone handles it from here</li>
       </ol>
-      <p style="font-size:11.5px;color:var(--text-dim);margin-top:14px;line-height:1.6">If the download is blocked, copy the text below into a file named <b>bills.ics</b> and open that instead.</p>
+      <div style="margin-top:14px;padding:11px 13px;background:var(--panel-hi);border:1px solid var(--line-soft);border-radius:9px;font-size:12px;color:var(--text-mid);line-height:1.6">
+        <b style="color:var(--text)">📅 Google Calendar — clean setup &amp; reset</b>
+        <div style="margin-top:6px">Import <i>adds and updates</i> events but never deletes. To keep it tidy and resettable, give Ledger its own calendar:</div>
+        <div style="margin-top:6px">1. On <b>calendar.google.com</b> → <b>Other calendars → + → Create new calendar</b> → name it “Ledger”.</div>
+        <div>2. <b>Settings → Import &amp; Export → Import</b> → choose this file → set <b>Import to calendar = Ledger</b>.</div>
+        <div style="margin-top:6px;color:var(--text-dim)">To clean up later: delete the whole “Ledger” calendar, then re-import a fresh file — that clears old or duplicate events in one step without touching your real appointments. (Re-import whenever you make changes; Google won’t auto-refresh a file import.)</div>
+      </div>
+      <p style="font-size:11.5px;color:var(--text-dim);margin-top:12px;line-height:1.6">If the download is blocked, copy the text below into a file named <b>ledger.ics</b> and open that instead.</p>
       <textarea class="ics-box" id="icsText" readonly></textarea>
     </div>
     <div class="mfoot">
