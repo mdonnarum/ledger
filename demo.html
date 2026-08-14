@@ -923,7 +923,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app"><div id="demoBanner" style="background:linear-gradient(90deg,var(--mint),var(--sky));color:#08120F;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.05em;text-align:center;padding:7px 12px;border-radius:0 0 10px 10px;margin-bottom:2px">✦ DEMO — sample data · your changes stay in this browser, nothing is saved online</div>
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v39</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v40</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -5576,7 +5576,7 @@ $('calIcs').onclick=()=>{
   const notes=t.notes?`DESCRIPTION:${t.notes.replace(/\n/g,'\\n')}\n`:'';
   const subCount=(t.subtasks||[]).filter(s=>!s.done).length;
   const desc=(t.notes||'')+(subCount?`\n\nOpen checklist items (${subCount}):\n`+(t.subtasks||[]).filter(s=>!s.done).map(s=>'• '+s.title).join('\n'):'');
-  const uid=`ledger-${t.id}@mdonnarum.github.io`;
+  const uid=`task-${t.id}@ledger`;
   const ics=[
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
