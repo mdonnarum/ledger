@@ -926,7 +926,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v38</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v39</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -3075,8 +3075,8 @@ function renderNotes(){
  <div class="note-top">
  <div class="note-ico">${n.pinned?'📌':'📝'}</div>
  <div class="note-body-wrap">
- <div class="note-h">${esc(n.title)}</div>
- ${!isOpen&&!isEdit?`<div class="note-preview">${linkify(n.body)}</div>`:''}
+ <div class="note-h" data-nexp="${n.id}" style="cursor:pointer" title="Tap to open">${esc(n.title)}</div>
+ ${!isOpen&&!isEdit?`<div class="note-preview" data-nexp="${n.id}" style="cursor:pointer">${linkify(n.body)}</div>`:''}
  <div class="note-meta">
  <span class="note-tag" style="border-color:${c.color};color:${c.color}">${esc(c.name)}</span>
  ${linkedTask?`<span class="note-task-link ${linkedTask.done?'done':''}">↗ ${esc(linkedTask.title.slice(0,40))}</span>`:''}
@@ -3105,7 +3105,8 @@ function renderNotes(){
  zone.querySelectorAll('[data-npin]').forEach(el=>el.onclick=()=>{
  const n=S.notes.find(x=>x.id===el.dataset.npin);n.pinned=!n.pinned;save();renderNotes();
  });
- zone.querySelectorAll('[data-nexp]').forEach(el=>el.onclick=()=>{
+ zone.querySelectorAll('[data-nexp]').forEach(el=>el.onclick=(e)=>{
+ if(e.target.closest&&e.target.closest('a'))return; // let links inside a note work
  const id=el.dataset.nexp;editingNote=null;
  openNotes.has(id)?openNotes.delete(id):openNotes.add(id);renderNotes();
  });
