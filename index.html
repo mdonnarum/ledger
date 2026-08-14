@@ -202,6 +202,17 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
 .sub-note textarea:focus{border-color:var(--sky)}
 .sub-note .nlab{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:5px}
 .sub-note-preview{font-size:11.5px;color:var(--text-dim);margin:-2px 0 4px 24px;padding-left:10px;border-left:1px solid var(--line-soft);line-height:1.5;white-space:pre-wrap;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+/* nested checklist (piece > steps) */
+.sub-col{width:20px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-dim);border-radius:5px;transition:.14s;margin-top:1px}
+.sub-col:hover{background:var(--panel-hi);color:var(--text)}
+.sub-col-spacer{width:20px;flex-shrink:0}
+.sub-pill.sm{font-size:9.5px;margin-left:2px}
+.sub-pill.sm .mini-bar{width:24px}
+.sub-kids{margin:2px 0 4px;border-left:1px solid var(--line-soft);padding-left:6px}
+.sub.sub-step{padding:4px 0}
+.sub-step-new{margin-top:6px;margin-bottom:2px}
+.sub-step-new input{height:28px;font-size:12px}
+.sub-step-new button{font-size:11px;padding:0 10px}
 .sub-new{display:flex;gap:7px;margin-top:9px}
 .sub-new input{flex:1;background:var(--panel-hi);border:1px solid var(--line-soft);border-radius:6px;height:30px;padding:0 9px;font-size:12.5px;outline:none}
 .sub-new input:focus{border-color:var(--mint)}
@@ -926,7 +937,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v42</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v43</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -1654,7 +1665,7 @@ const DEFCATS=[
 ];
 let S={tasks:[],bills:[],cats:DEFCATS.slice(),notes:[],staples:[]};
 let staged=[], uiStatus='open', uiSort='due', uiQuery='', uiCat='', uiStatusFilter='all';
-let hzFilter=null, openTasks=new Set(), openBills=new Set(), openSubs=new Set(), editing=null, billEditing=null, dashSel=null;
+let hzFilter=null, openTasks=new Set(), openBills=new Set(), openSubs=new Set(), editing=null, billEditing=null, dashSel=null, subExpanded=new Set();
 const $=id=>document.getElementById(id);
 const uid=()=>Math.random().toString(36).slice(2,10);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1689,11 +1700,34 @@ function dueLabel(t){
 const ageDays=t=>Math.floor((Date.now()-(t.created||Date.now()))/DAY);
 const idleDays=t=>Math.floor((Date.now()-(t.touched||t.created||Date.now()))/DAY);
 function catOf(id){return S.cats.find(c=>c.id===id)||{id:'',name:'Uncategorized',color:'#5A6673'}}
-function subProg(t){
- if(!t.subtasks||!t.subtasks.length)return null;
- const d=t.subtasks.filter(s=>s.done).length;
- return {done:d,total:t.subtasks.length,pct:Math.round(d/t.subtasks.length*100)};
+// ---- Nested checklist (2 levels: task > piece > step) ----
+// Progress rolls up over the leaf items (a step, or a piece with no steps).
+function subLeaves(subs){
+ let out=[];
+ (subs||[]).forEach(s=>{
+  if(s.subtasks&&s.subtasks.length)out=out.concat(subLeaves(s.subtasks));
+  else out.push(s);
+ });
+ return out;
 }
+function subProg(t){
+ const leaves=subLeaves(t.subtasks);
+ if(!leaves.length)return null;
+ const d=leaves.filter(s=>s.done).length;
+ return {done:d,total:leaves.length,pct:Math.round(d/leaves.length*100)};
+}
+// Resolve a checklist key "<taskId>|<pieceId>" or "<taskId>|<pieceId>|<stepId>"
+function subLocate(key){
+ const p=String(key).split('|');
+ const t=S.tasks.find(x=>x.id===p[0]); if(!t)return {};
+ const piece=(t.subtasks||[]).find(s=>s.id===p[1]);
+ if(p.length<3)return {t,item:piece,parent:t,list:t.subtasks};
+ const step=piece&&(piece.subtasks||[]).find(s=>s.id===p[2]);
+ return {t,item:step,parent:piece,list:piece?piece.subtasks:null};
+}
+function setSubDone(item,done){ item.done=done; (item.subtasks||[]).forEach(c=>setSubDone(c,done)); }
+// After any toggle, a piece is "done" iff all its steps are done.
+function normalizePieces(t){ (t.subtasks||[]).forEach(p=>{ if(p.subtasks&&p.subtasks.length)p.done=p.subtasks.every(s=>s.done); }); }
 function isStalled(t){
  if(t.done)return false;
  const sp=subProg(t),noProgress=!sp||sp.done===0;
@@ -2309,13 +2343,23 @@ function renderTasks(){
  document.querySelectorAll('#taskZone .task[data-swipe]').forEach(el=>initSwipe(el,el.dataset.swipe));
  wireCalButtons();
 }
-function subHTML(t,s){
- const k=`${t.id}|${s.id}`, open=openSubs.has(k), has=!!(s.notes||'').trim();
- return `<div class="sub ${s.done?'done':''} ${open?'open':''}">
+function subHTML(t,s,parentKey){
+ const k=parentKey?`${parentKey}|${s.id}`:`${t.id}|${s.id}`;
+ const isTop=!parentKey;
+ const kids=s.subtasks||[];
+ const isPiece=kids.length>0;
+ const expanded=subExpanded.has(k);
+ const open=openSubs.has(k), has=!!(s.notes||'').trim();
+ const pdone=kids.filter(x=>x.done).length;
+ // Top-level items get a toggle: ▸/▾ to show steps, or ＋ to break a plain item into steps.
+ const colBtn=isTop?`<button class="sub-col" data-subcol="${k}" title="${expanded?'Collapse':(isPiece?'Show steps':'Break into steps')}">${expanded?'▾':(isPiece?'▸':'＋')}</button>`:`<span class="sub-col-spacer"></span>`;
+ let html=`<div class="sub ${s.done?'done':''} ${open?'open':''}${isTop?'':' sub-step'}">
+ ${colBtn}
  <div class="tick ${s.done?'on':''}" data-sub="${k}">
  <svg viewBox="0 0 24 24"><rect class="bx" x="2.5" y="2.5" width="19" height="19" rx="5"/><path class="ck" d="M6.5 12.5l3.6 3.6 7.4-8.2"/></svg>
  </div>
  <span class="sub-txt" data-subx="${k}">${esc(s.title)}</span>
+ ${isPiece?`<span class="sub-pill sm"><span class="mini-bar"><i style="width:${Math.round(pdone/kids.length*100)}%"></i></span>${pdone}/${kids.length}</span>`:''}
  <div class="sub-tools">
  <button class="note ${has?'hasnote':''}" data-subn="${k}" title="Notes">✎</button>
  <button class="x" data-subdel="${k}" title="Remove">×</button>
@@ -2326,6 +2370,11 @@ function subHTML(t,s){
  <textarea data-subnote="${k}" placeholder="Status, who you called, what you're waiting on…">${esc(s.notes||'')}</textarea>
  </div>
  ${(has&&!open)?`<div class="sub-note-preview">${esc(s.notes)}</div>`:''}`;
+ if(isTop&&expanded){
+  html+=`<div class="sub-kids">`+kids.map(step=>subHTML(t,step,k)).join('')+
+   `<div class="sub-new sub-step-new"><input placeholder="Add a step…" data-substepin="${k}" maxlength="140"><button data-substepadd="${k}">Add step</button></div></div>`;
+ }
+ return html;
 }
 function taskHTML(t){
  const c=catOf(t.cat),sp=subProg(t),b=bucketOf(t),dl2=dueLabel(t),st=isStalled(t);
@@ -2405,11 +2454,17 @@ function taskHTML(t){
  <div style="margin-top:10px">
  <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">Checklist</div>
  <div data-chklist="${t.id}">
- ${(t.subtasks||[]).map(s=>{const k=`${t.id}|${s.id}`;return`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-soft)">
- <div class="tick ${s.done?'on':''}" data-sub="${k}" style="flex-shrink:0;cursor:pointer"><svg viewBox="0 0 24 24"><rect class="bx" x="2.5" y="2.5" width="19" height="19" rx="5"/><path class="ck" d="M6.5 12.5l3.6 3.6 7.4-8.2"/></svg></div>
- <span style="flex:1;font-size:13px;${s.done?'text-decoration:line-through;color:var(--text-dim)':''}">${esc(s.title)}</span>
- <button data-subdel="${k}" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;line-height:1">×</button>
- </div>`}).join('')}
+ ${(t.subtasks||[]).map(s=>{
+   const k=`${t.id}|${s.id}`,kids=s.subtasks||[];
+   const row=(item,key,indent)=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-soft);${indent?'margin-left:22px':''}">
+     <div class="tick ${item.done?'on':''}" data-sub="${key}" style="flex-shrink:0;cursor:pointer"><svg viewBox="0 0 24 24"><rect class="bx" x="2.5" y="2.5" width="19" height="19" rx="5"/><path class="ck" d="M6.5 12.5l3.6 3.6 7.4-8.2"/></svg></div>
+     <span style="flex:1;font-size:13px;${item.done?'text-decoration:line-through;color:var(--text-dim)':''}">${esc(item.title)}</span>
+     ${(item.subtasks&&item.subtasks.length)?`<span class="sub-pill sm">${item.subtasks.filter(x=>x.done).length}/${item.subtasks.length}</span>`:''}
+     <button data-subdel="${key}" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;line-height:1">×</button>
+   </div>`;
+   return row(s,k,false)+kids.map(step=>row(step,`${k}|${step.id}`,true)).join('')+
+     `<div class="sub-new sub-step-new" style="margin-left:22px;margin-top:4px"><input placeholder="Add a step under this…" data-substepin="${k}" maxlength="140"><button data-substepadd="${k}">+ step</button></div>`;
+ }).join('')}
  </div>
  <div class="sub-new" style="margin-top:8px">
  <input placeholder="Add checklist item…" data-esubin="${t.id}" maxlength="140" id="esubin-${t.id}" onkeydown="if(event.key==='Enter')addSubEdit('${t.id}')">
@@ -2497,15 +2552,19 @@ function wireTasks(){
  touch(t);editing=null;save();renderAll();toast('Saved');
  });
  /* subtasks */
- const findSub=k=>{
- const [tid,sid]=k.split('|');
- const t=S.tasks.find(x=>x.id===tid);
- return [t,t?t.subtasks.find(x=>x.id===sid):null];
- };
+ const findSub=k=>{const {t,item}=subLocate(k);return [t,item];};
  Q('[data-sub]').forEach(el=>el.onclick=()=>{
- const [t,s]=findSub(el.dataset.sub);
- s.done=!s.done;touch(t);save();renderAll();
+ const {t,item}=subLocate(el.dataset.sub);if(!t||!item)return;
+ setSubDone(item,!item.done);   // cascade down to any steps
+ normalizePieces(t);            // and bubble up: a piece is done iff all its steps are
+ touch(t);save();renderAll();
  });
+ Q('[data-subcol]').forEach(el=>el.onclick=()=>{
+ const k=el.dataset.subcol;
+ subExpanded.has(k)?subExpanded.delete(k):subExpanded.add(k);renderTasks();
+ });
+ Q('[data-substepadd]').forEach(el=>el.onclick=()=>addStep(el.dataset.substepadd));
+ Q('[data-substepin]').forEach(el=>el.onkeydown=e=>{if(e.key==='Enter')addStep(el.dataset.substepin)});
  Q('[data-subx]').forEach(el=>el.onclick=()=>{
  const k=el.dataset.subx;
  openSubs.has(k)?openSubs.delete(k):openSubs.add(k);renderTasks();
@@ -2518,12 +2577,14 @@ function wireTasks(){
  if(ta&&openSubs.has(k))ta.focus();
  });
  Q('[data-subnote]').forEach(el=>el.oninput=()=>{
- const [t,s]=findSub(el.dataset.subnote);
- s.notes=el.value;touch(t);save();   /* no re-render — keeps focus */
+ const {t,item}=subLocate(el.dataset.subnote);if(!t||!item)return;
+ item.notes=el.value;touch(t);save();   /* no re-render — keeps focus */
  });
  Q('[data-subdel]').forEach(el=>el.onclick=()=>{
- const k=el.dataset.subdel,[t,s]=findSub(k);
- t.subtasks=t.subtasks.filter(x=>x.id!==s.id);openSubs.delete(k);touch(t);save();renderAll();
+ const k=el.dataset.subdel,{t,item,list}=subLocate(k);
+ if(!t||!item||!list)return;
+ const i=list.indexOf(item);if(i>-1)list.splice(i,1);
+ openSubs.delete(k);subExpanded.delete(k);normalizePieces(t);touch(t);save();renderAll();
  });
  Q('[data-subadd]').forEach(el=>el.onclick=()=>addSub(el.dataset.subadd));
  Q('[data-subin]').forEach(el=>el.onkeydown=e=>{if(e.key==='Enter')addSub(el.dataset.subin)});
@@ -2540,6 +2601,18 @@ function addSub(tid){
  t.subtasks.push({id:uid(),title:v,done:false,notes:''});
  touch(t);inp.value='';save();renderAll();
  const ni=document.querySelector(`[data-subin="${tid}"]`);if(ni)ni.focus();
+}
+// Add a step under a piece (2nd level). Breaks a plain item into a piece on first step.
+function addStep(pieceKey){
+ const {t,item:piece}=subLocate(pieceKey);if(!t||!piece)return;
+ const inp=document.querySelector(`[data-substepin="${pieceKey}"]`);if(!inp)return;
+ const v=inp.value.trim();if(!v)return;
+ piece.subtasks=piece.subtasks||[];
+ piece.subtasks.push({id:uid(),title:v,done:false,notes:''});
+ subExpanded.add(pieceKey);
+ normalizePieces(t);
+ touch(t);inp.value='';save();renderAll();
+ setTimeout(()=>{const ni=document.querySelector(`[data-substepin="${pieceKey}"]`);if(ni)ni.focus();},30);
 }
 function addSubEdit(tid){
  const inp=document.getElementById('esubin-'+tid);
