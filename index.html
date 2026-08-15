@@ -945,7 +945,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v44</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v45</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -1106,10 +1106,15 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
           <option value="recurring" selected>Recurring</option>
           <option value="oneoff">One-time</option>
         </select></div>
-        <div class="field"><label>Every</label><select id="fCad">
+        <div class="field" id="fCadWrap"><label>Every</label><select id="fCad">
           <option value="monthly" selected>Month</option><option value="weekly">Week</option>
           <option value="biweekly">2 weeks</option><option value="quarterly">Quarter</option><option value="annual">Year</option>
+          <option value="custom">Custom…</option>
         </select></div>
+        <div class="field" id="fCustomWrap" style="display:none"><label>Repeat every</label><div style="display:flex;gap:6px">
+          <input type="number" id="fInterval" min="1" step="1" value="1" style="width:56px;background:var(--panel-hi);border:1px solid var(--line);border-radius:7px;height:34px;padding:0 8px;font-size:13px;color:var(--text);outline:none">
+          <select id="fUnit"><option value="day">days</option><option value="week">weeks</option><option value="month" selected>months</option><option value="year">years</option></select>
+        </div></div>
         <div class="field"><label>Next due</label><input type="date" id="fDue"></div>
         <div class="field"><label>Remind</label><select id="fLead">
           <option value="0">On the day</option><option value="1">1 day before</option>
@@ -1772,6 +1777,19 @@ const CAD={
  quarterly:{label:'Quarterly',rrule:'FREQ=MONTHLY;INTERVAL=3',next:d=>addMonths(d,3)},
  annual:{label:'Annually',rrule:'FREQ=YEARLY',next:d=>addMonths(d,12)}
 };
+// Cadence helpers — work for the presets above AND a custom "every N days/weeks/months/years".
+// A custom bill has cadence:'custom' with b.interval (number) and b.unit ('day'|'week'|'month'|'year').
+function addUnit(d,n,unit){
+ const x=new Date(d);
+ if(unit==='day'){x.setDate(x.getDate()+n);return x;}
+ if(unit==='week'){x.setDate(x.getDate()+n*7);return x;}
+ if(unit==='year')return addMonths(d,n*12);
+ return addMonths(d,n);
+}
+function cadNext(b){const d=parseDue(b.due)||today0();if(b.cadence==='custom')return addUnit(d,Math.max(1,b.interval||1),b.unit||'month');return CAD[b.cadence]?CAD[b.cadence].next(d):addMonths(d,1);}
+function cadPrev(b){const d=parseDue(b.due)||today0();if(b.cadence==='custom')return addUnit(d,-Math.max(1,b.interval||1),b.unit||'month');const bk={monthly:x=>addMonths(x,-1),weekly:x=>new Date(x.getTime()-7*DAY),biweekly:x=>new Date(x.getTime()-14*DAY),quarterly:x=>addMonths(x,-3),annual:x=>addMonths(x,-12)}[b.cadence];return bk?bk(d):d;}
+function cadLabel(b){if(b.type==='oneoff')return 'One-time';if(b.cadence==='custom'){const n=Math.max(1,b.interval||1),u=b.unit||'month';return n===1?('Every '+u):('Every '+n+' '+u+'s');}return CAD[b.cadence]?CAD[b.cadence].label:b.cadence;}
+function cadRRule(b){if(b.cadence==='custom'){const n=Math.max(1,b.interval||1);const F={day:'DAILY',week:'WEEKLY',month:'MONTHLY',year:'YEARLY'}[b.unit||'month']||'MONTHLY';return 'FREQ='+F+(n>1?';INTERVAL='+n:'');}return CAD[b.cadence]?CAD[b.cadence].rrule:'FREQ=MONTHLY';}
 function billStatus(b){
  if(b.paused)return 'paused';
  const d=dayDiff(parseDue(b.due));
@@ -1790,13 +1808,20 @@ function billLabel(b){
 }
 function monthlyEquiv(b){
  const a=Number(b.amount)||0;
+ if(b.type==='oneoff')return 0; // one-time bills aren't part of the recurring monthly burn
+ if(b.cadence==='custom'){const n=Math.max(1,b.interval||1),u=b.unit||'month';const per={day:30.44,week:52.18/12,month:1,year:1/12}[u]||1;return a*per/n;}
  return {monthly:a,weekly:a*52/12,biweekly:a*26/12,quarterly:a/3,annual:a/12}[b.cadence]||a;
 }
 function markPaid(b){
  b.history=b.history||[];
  b.history.unshift({date:b.due,paid:Date.now(),amount:b.amount});
  b.history=b.history.slice(0,24);
- b.due=iso(CAD[b.cadence].next(parseDue(b.due)));
+ if(b.type==='oneoff'){ // one-time: paid once and done — stop it showing as due
+  b.paused=true;save();renderAll();
+  toast(b.income?`${b.name} received — one-time, marked done`:`${b.name} paid — one-time, marked done`);
+  return;
+ }
+ b.due=iso(cadNext(b));
  save();renderAll();
  const nd=parseDue(b.due).toLocaleDateString('en-US',{month:'short',day:'numeric'});
  toast(b.income?`${b.name} received — next expected ${nd}`:`${b.name} paid — next due ${nd}`);
@@ -1811,9 +1836,7 @@ function undoPay(b){
  let restore=last.date;
  if(!restore){
   // Fallback for older entries with no stored due date: step back one cycle.
-  const cur=parseDue(b.due)||today0();
-  const back={monthly:d=>addMonths(d,-1),quarterly:d=>addMonths(d,-3),annual:d=>addMonths(d,-12),weekly:d=>new Date(d.getTime()-7*DAY),biweekly:d=>new Date(d.getTime()-14*DAY)}[b.cadence];
-  restore=iso(back?back(cur):cur);
+  restore=iso(cadPrev(b));
  }
  const when=parseDue(restore);
  const whenTxt=when?when.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):restore;
@@ -1822,6 +1845,7 @@ function undoPay(b){
  if(!confirm(`Undo the last ${noun} for "${b.name}"?\n\nRemoves the ${amtTxt} ${noun} from history and moves the ${b.income?'expected':'due'} date back to ${whenTxt}. The recurring cycle stays intact.`))return;
  b.history=h.slice(1);
  b.due=restore;
+ if(b.type==='oneoff')b.paused=false;
  save();renderAll();
  const shortWhen=when?when.toLocaleDateString('en-US',{month:'short',day:'numeric'}):restore;
  toast(b.income?`Receipt undone — "${b.name}" expected ${shortWhen} again`:`Payment undone — "${b.name}" is due ${shortWhen} again`);
@@ -2001,11 +2025,11 @@ function buildICS(bills){
  bills.filter(b=>!b.paused&&b.due).forEach(b=>{
  const d=parseDue(b.due),end=new Date(d.getTime()+DAY),lead=b.lead??3;
  const title=`${b.income?'💰 ':''}${b.name}${b.income?' expected':' due'} — ${money(b.amount)}`;
- const desc=[`${b.income?'Income':'Bill'}: ${money(b.amount)}`,`Recurs: ${CAD[b.cadence].label}`,
+ const desc=[`${b.income?'Income':'Bill'}: ${money(b.amount)}`,`Recurs: ${cadLabel(b)}`,
  b.autopay?'Autopay: yes':'Autopay: no',b.notes?`Notes: ${b.notes}`:''].filter(Boolean).join('\n');
  L.push('BEGIN:VEVENT',`UID:${b.id}@ledger`,`DTSTAMP:${stamp}Z`,
  `DTSTART;VALUE=DATE:${icsDate(d)}`,`DTEND;VALUE=DATE:${icsDate(end)}`);
- if(b.type!=='oneoff')L.push(`RRULE:${CAD[b.cadence].rrule}`);
+ if(b.type!=='oneoff')L.push(`RRULE:${cadRRule(b)}`);
  L.push(`SUMMARY:${icsEsc(title)}`,`DESCRIPTION:${icsEsc(desc)}`,
  'BEGIN:VALARM',`TRIGGER:-P${lead}D`,'ACTION:DISPLAY',
  `DESCRIPTION:${icsEsc(title)}`,'END:VALARM','END:VEVENT');
@@ -2048,10 +2072,10 @@ function buildICSAll(){
  S.bills.filter(b=>!b.paused&&b.due).forEach(b=>{
   const d=parseDue(b.due);if(!d)return;const end=new Date(d.getTime()+DAY),lead=b.lead??3;
   const title=`${b.income?'💰 ':''}${b.name}${b.income?' expected':' due'} — ${money(b.amount)}`;
-  const desc=[`${b.income?'Income':'Bill'}: ${money(b.amount)}`,`Recurs: ${CAD[b.cadence].label}`,b.autopay?'Autopay: yes':'',b.notes?`Notes: ${b.notes}`:''].filter(Boolean).join('\n');
+  const desc=[`${b.income?'Income':'Bill'}: ${money(b.amount)}`,`Recurs: ${cadLabel(b)}`,b.autopay?'Autopay: yes':'',b.notes?`Notes: ${b.notes}`:''].filter(Boolean).join('\n');
   L.push('BEGIN:VEVENT',`UID:${b.id}@ledger`,`DTSTAMP:${stamp}Z`,
    `DTSTART;VALUE=DATE:${icsDate(d)}`,`DTEND;VALUE=DATE:${icsDate(end)}`);
-  if(b.type!=='oneoff')L.push(`RRULE:${CAD[b.cadence].rrule}`);
+  if(b.type!=='oneoff')L.push(`RRULE:${cadRRule(b)}`);
   L.push(`SUMMARY:${icsEsc(title)}`,`DESCRIPTION:${icsEsc(desc)}`,
    'BEGIN:VALARM',`TRIGGER:-P${lead}D`,'ACTION:DISPLAY',`DESCRIPTION:${icsEsc(title)}`,'END:VALARM','END:VEVENT');
  });
@@ -2697,10 +2721,14 @@ function addBill(){
  const due=$('fDue').value;
  if(!due){toast('Set the next due date');$('fDue').focus();return}
  const income=$('fFlow').value==='in';
+ const type=$('fType').value||'recurring';
+ const cadence=$('fCad').value;
  S.bills.push({id:uid(),name,amount:Number($('fAmt').value)||0,
  income,
- type:$('fType').value||'recurring',
- cadence:$('fCad').value,due,
+ type,
+ cadence,due,
+ interval:cadence==='custom'?Math.max(1,Number($('fInterval').value)||1):undefined,
+ unit:cadence==='custom'?($('fUnit').value||'month'):undefined,
  lead:Number($('fLead').value),autopay:$('fAuto').value==='yes',
  payUrl:normPayUrl($('fPayUrl').value),
  notes:$('fNotes').value.trim(),paused:false,history:[]});
@@ -2718,6 +2746,16 @@ function syncBillComposer(){
 }
 $('fFlow').onchange=syncBillComposer;
 syncBillComposer();
+// Show/hide cadence controls: recurring shows Every (+ Custom interval), one-time hides both
+function syncCadUI(){
+ const oneoff=$('fType').value==='oneoff';
+ const custom=$('fCad').value==='custom';
+ $('fCadWrap').style.display=oneoff?'none':'';
+ $('fCustomWrap').style.display=(!oneoff&&custom)?'':'none';
+}
+$('fType').onchange=syncCadUI;
+$('fCad').onchange=syncCadUI;
+syncCadUI();
 function renderBillKPIs(){
  const active=S.bills.filter(b=>!b.paused&&!b.income);
  const monthly=active.reduce((a,b)=>a+monthlyEquiv(b),0);
@@ -2754,7 +2792,7 @@ function renderBills(){
  ${b.autopay?`<span class="badge auto">Autopay</span>`:''}
  ${b.paused?`<span class="badge push">Paused</span>`:''}</div>
  <div class="bill-m">
- <span class="cadence">${CAD[b.cadence].label}</span>
+ <span class="cadence">${cadLabel(b)}</span>
  <span class="chip-due ${lblCls}">${billLabel(b)}</span>
  <span class="cadence">remind ${b.lead}d before</span>
  ${h.length?`<span class="cadence">· ${h.length} ${inc?'received':'paid'}</span>`:''}
@@ -2776,7 +2814,12 @@ function renderBills(){
  <div class="te-row">
  <div class="field"><label>Kind</label><select data-bincome="${b.id}"><option value="out" ${!b.income?'selected':''}>Bill (pay)</option><option value="in" ${b.income?'selected':''}>Income (receive)</option></select></div>
  <div class="field"><label>$</label><input type="number" data-bamt="${b.id}" value="${b.amount||0}" step="0.01" min="0"></div>
- <div class="field"><label>Every</label><select data-bcad="${b.id}">${['monthly','weekly','biweekly','quarterly','annual'].map(k=>`<option value="${k}" ${b.cadence===k?'selected':''}>${CAD[k].label}</option>`).join('')}</select></div>
+ <div class="field"><label>Type</label><select data-btype="${b.id}"><option value="recurring" ${b.type!=='oneoff'?'selected':''}>Recurring</option><option value="oneoff" ${b.type==='oneoff'?'selected':''}>One-time</option></select></div>
+ <div class="field" data-bcadwrap="${b.id}" style="${b.type==='oneoff'?'display:none':''}"><label>Every</label><select data-bcad="${b.id}">${['monthly','weekly','biweekly','quarterly','annual'].map(k=>`<option value="${k}" ${b.cadence===k?'selected':''}>${CAD[k].label}</option>`).join('')}<option value="custom" ${b.cadence==='custom'?'selected':''}>Custom…</option></select></div>
+ <div class="field" data-bcustomwrap="${b.id}" style="${(b.type!=='oneoff'&&b.cadence==='custom')?'':'display:none'}"><label>Repeat every</label><div style="display:flex;gap:6px">
+  <input type="number" data-binterval="${b.id}" min="1" step="1" value="${Math.max(1,b.interval||1)}" style="width:52px;background:var(--panel);border:1px solid var(--line);border-radius:7px;height:34px;padding:0 8px;font-size:13px;color:var(--text);outline:none">
+  <select data-bunit="${b.id}">${['day','week','month','year'].map(u=>`<option value="${u}" ${(b.unit||'month')===u?'selected':''}>${u}s</option>`).join('')}</select>
+ </div></div>
  <div class="field"><label>Next due</label><input type="date" data-bdue="${b.id}" value="${b.due||''}"></div>
  <div class="field"><label>Remind</label><select data-blead="${b.id}">${[0,1,3,5,7].map(n=>`<option value="${n}" ${(b.lead??3)===n?'selected':''}>${n===0?'On the day':n+'d before'}</option>`).join('')}</select></div>
  <div class="field"><label>Autopay</label><select data-bauto="${b.id}"><option value="no" ${!b.autopay?'selected':''}>No</option><option value="yes" ${b.autopay?'selected':''}>Yes</option></select></div>
@@ -2844,7 +2887,11 @@ function renderBills(){
  if(!nm){toast('Bill name cannot be empty');return;}
  b.name=nm;
  b.amount=Number(document.querySelector(`[data-bamt="${id}"]`).value)||0;
+ b.type=document.querySelector(`[data-btype="${id}"]`).value||'recurring';
  b.cadence=document.querySelector(`[data-bcad="${id}"]`).value;
+ if(b.type==='oneoff'){b.interval=undefined;b.unit=undefined;}
+ else if(b.cadence==='custom'){b.interval=Math.max(1,Number(document.querySelector(`[data-binterval="${id}"]`).value)||1);b.unit=document.querySelector(`[data-bunit="${id}"]`).value||'month';}
+ else{b.interval=undefined;b.unit=undefined;}
  b.due=document.querySelector(`[data-bdue="${id}"]`).value;
  b.lead=Number(document.querySelector(`[data-blead="${id}"]`).value);
  b.autopay=document.querySelector(`[data-bauto="${id}"]`).value==='yes';
@@ -2853,6 +2900,17 @@ function renderBills(){
  b.notes=document.querySelector(`[data-bnotes="${id}"]`).value.trim();
  billEditing=null;save();renderAll();toast(b.income?'Income updated':'Bill updated');
  });
+ // Live show/hide of the cadence controls inside an open edit panel
+ const syncEditCad=id=>{
+  const type=document.querySelector(`[data-btype="${id}"]`),cad=document.querySelector(`[data-bcad="${id}"]`);
+  const cadWrap=document.querySelector(`[data-bcadwrap="${id}"]`),cusWrap=document.querySelector(`[data-bcustomwrap="${id}"]`);
+  if(!type)return;
+  const oneoff=type.value==='oneoff',custom=cad&&cad.value==='custom';
+  if(cadWrap)cadWrap.style.display=oneoff?'none':'';
+  if(cusWrap)cusWrap.style.display=(!oneoff&&custom)?'':'none';
+ };
+ Q('[data-btype]').forEach(el=>el.onchange=()=>syncEditCad(el.dataset.btype));
+ Q('[data-bcad]').forEach(el=>el.onchange=()=>syncEditCad(el.dataset.bcad));
 }
 
 function dashPool(){
@@ -3696,9 +3754,12 @@ function applyOps(ops){
         }
 
         case 'add_bill':{
+          const isCustom=op.cadence==='custom';
           const bill={id:uid(),name:op.name||op.title||'New bill',amount:Number(op.amount)||0,
-            income:!!op.income,type:op.type||'recurring',
-            cadence:CAD[op.cadence]?op.cadence:'monthly',due:op.due||iso(today0()),
+            income:!!op.income,type:op.type==='oneoff'?'oneoff':'recurring',
+            cadence:(CAD[op.cadence]||isCustom)?op.cadence:'monthly',due:op.due||iso(today0()),
+            interval:isCustom?Math.max(1,Number(op.interval)||1):undefined,
+            unit:isCustom?(['day','week','month','year'].includes(op.unit)?op.unit:'month'):undefined,
             lead:op.lead!=null?Number(op.lead):3,autopay:!!op.autopay,
             payUrl:op.payUrl?normPayUrl(op.payUrl):'',notes:op.notes||'',
             paused:!!op.paused,history:[]};
@@ -3712,7 +3773,13 @@ function applyOps(ops){
           if(op.name!==undefined&&op.bill!==undefined)b.name=op.name; // rename only when a separate match was given
           else if(op.newName!==undefined)b.name=op.newName;
           if(op.amount!==undefined)b.amount=Number(op.amount)||0;
-          if(op.cadence!==undefined&&CAD[op.cadence])b.cadence=op.cadence;
+          if(op.type!==undefined)b.type=op.type==='oneoff'?'oneoff':'recurring';
+          if(op.cadence!==undefined&&(CAD[op.cadence]||op.cadence==='custom'))b.cadence=op.cadence;
+          if(b.type==='oneoff'){b.interval=undefined;b.unit=undefined;}
+          else if(b.cadence==='custom'){
+            if(op.interval!==undefined)b.interval=Math.max(1,Number(op.interval)||1);else b.interval=Math.max(1,b.interval||1);
+            if(op.unit!==undefined&&['day','week','month','year'].includes(op.unit))b.unit=op.unit;else b.unit=b.unit||'month';
+          }else{b.interval=undefined;b.unit=undefined;}
           if(op.due!==undefined)b.due=op.due;
           if(op.lead!==undefined)b.lead=Number(op.lead);
           if(op.autopay!==undefined)b.autopay=!!op.autopay;
@@ -3736,7 +3803,8 @@ function applyOps(ops){
           b.history=b.history||[];
           b.history.unshift({date:b.due,paid:Date.now(),amount:b.amount});
           b.history=b.history.slice(0,24);
-          b.due=iso(CAD[b.cadence].next(parseDue(b.due)));
+          if(b.type==='oneoff'){b.paused=true;results.push(`✓ Marked ${b.income?'received':'paid'}: "${b.name}" (one-time — done)`);break;}
+          b.due=iso(cadNext(b));
           results.push(`✓ Marked ${b.income?'received':'paid'}: "${b.name}" — next ${b.income?'expected':'due'} ${b.due}`);
           break;
         }
@@ -3745,13 +3813,9 @@ function applyOps(ops){
           if(!b){results.push(`✗ Bill not found: "${op.bill||op.name}"`);break;}
           const h=b.history||[];
           if(!h.length){results.push(`✗ No payment to undo on "${b.name}"`);break;}
-          let restore=h[0].date;
-          if(!restore){
-            const cur=parseDue(b.due)||today0();
-            const back={monthly:d=>addMonths(d,-1),quarterly:d=>addMonths(d,-3),annual:d=>addMonths(d,-12),weekly:d=>new Date(d.getTime()-7*DAY),biweekly:d=>new Date(d.getTime()-14*DAY)}[b.cadence];
-            restore=iso(back?back(cur):cur);
-          }
+          let restore=h[0].date||iso(cadPrev(b));
           b.due=restore;
+          if(b.type==='oneoff')b.paused=false;
           b.history=h.slice(1);
           results.push(`✓ Undid last ${b.income?'receipt':'payment'} on "${b.name}"`);
           break;
@@ -3900,8 +3964,8 @@ AVAILABLE OPERATIONS:
 - split: {op:"split",task:"match title",into:[{title,cat,pri,due}],delete_original:true}
 
 BILLS & INCOME (a "bill" is money you pay; set income:true for money received like rent or split rent):
-- add_bill: {op:"add_bill",name,amount,cadence:"monthly|weekly|biweekly|quarterly|annual",due:"YYYY-MM-DD",autopay:true/false,income:true/false,notes,paused:true/false}
-- update_bill: {op:"update_bill",bill:"match name",newName,amount,cadence,due,lead,autopay,income,paused,notes}
+- add_bill: {op:"add_bill",name,amount,type:"recurring|oneoff",cadence:"monthly|weekly|biweekly|quarterly|annual|custom",interval:2,unit:"day|week|month|year",due:"YYYY-MM-DD",autopay:true/false,income:true/false,notes,paused:true/false} ← use type:"oneoff" for a single non-recurring bill; for cadence:"custom" set interval+unit (e.g. every 2 weeks = cadence:"custom",interval:2,unit:"week")
+- update_bill: {op:"update_bill",bill:"match name",newName,amount,type,cadence,interval,unit,due,lead,autopay,income,paused,notes} ← can switch a bill between recurring and oneoff, or to a custom cadence
 - delete_bill: {op:"delete_bill",bill:"match name"}
 - pay_bill: {op:"pay_bill",bill:"match name"} ← logs a payment (or receipt for income) and advances the due date
 - undo_pay: {op:"undo_pay",bill:"match name"} ← reverses the most recent payment/receipt
@@ -5387,7 +5451,7 @@ function renderDashDetail(type,arg){
   if(bills.length){
     bills.forEach(b=>{
       html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-soft)">
-        <div style="flex:1"><div style="font-size:13.5px;font-weight:450">${esc(b.name)}</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px">${CAD[b.cadence]?.label||b.cadence} · due ${b.due||'—'}</div></div>
+        <div style="flex:1"><div style="font-size:13.5px;font-weight:450">${esc(b.name)}</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px">${cadLabel(b)} · due ${b.due||'—'}</div></div>
         <div style="font-family:var(--display);font-size:16px;font-weight:600;color:${billStatus(b)==='overdue'?'var(--rose)':'var(--amber)'}">${money(b.amount)}</div>
       </div>`;
     });
