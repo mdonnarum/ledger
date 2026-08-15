@@ -2,12 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ledger">
 <meta name="theme-color" content="#0E1116">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <title>Ledger — Live Demo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,15 +25,20 @@
  --radius:10px;
  --mono:'JetBrains Mono',monospace; --display:'Space Grotesk',sans-serif; --body:'Inter',sans-serif;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--void);color:var(--text);font-family:var(--body);-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+html,body{background:var(--void);color:var(--text);font-family:var(--body);-webkit-font-smoothing:antialiased;overscroll-behavior:none}
 body{min-height:100vh;font-size:14px}
+/* App-like touch: no long-press callout / accidental text selection on the UI chrome;
+   text stays selectable inside fields and note/content areas. */
+button,.tab,.tick,.icobtn,.fab,.sub-col,.pri,.badge,.chip-cat,.chip-due,.seg,.bucket-head,.kpi,.hz-col,.pmx-cell,.now-btn,.bill-sec{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+input,textarea,[contenteditable],.note-full,.note-preview,.t-notes,.sub-note-preview,.ics-box{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 input,select,textarea{font-family:inherit;color:inherit}
 input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
 ::selection{background:var(--mint-dim);color:#fff}
 :focus-visible{outline:2px solid var(--mint);outline-offset:2px;border-radius:4px}
-.app{max-width:1180px;margin:0 auto;padding:0 20px 100px}
+.app{max-width:1180px;margin:0 auto;padding:env(safe-area-inset-top) calc(20px + env(safe-area-inset-right)) calc(100px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left))}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:22px 0 18px;border-bottom:1px solid var(--line-soft);gap:14px}
 .logo{display:flex;align-items:baseline;gap:9px}
 .logo h1{font-family:var(--display);font-size:20px;font-weight:600;letter-spacing:-0.02em}
@@ -443,7 +451,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
  .hz-grid{gap:5px;height:96px}
  .hz-val{font-size:13px}
  .hz-lab{font-size:7.5px;letter-spacing:.04em}
- .app{padding:0 14px 90px}
+ .app{padding:env(safe-area-inset-top) calc(14px + env(safe-area-inset-right)) calc(90px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
  .donut-wrap{justify-content:center}
  .tabs{width:100%;max-width:100%}
  .tab{flex:1;text-align:center;padding:9px 4px;font-size:11.5px}
@@ -934,7 +942,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app"><div id="demoBanner" style="background:linear-gradient(90deg,var(--mint),var(--sky));color:#08120F;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.05em;text-align:center;padding:7px 12px;border-radius:0 0 10px 10px;margin-bottom:2px">✦ DEMO — sample data · your changes stay in this browser, nothing is saved online</div>
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v43</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v44</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -1591,6 +1599,16 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 </div>
 
 <div class="toast" id="toast"></div>
+<!-- Install / Add to Home Screen hint (first-time, non-installed only) -->
+<div id="installBar" style="display:none;position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:400;background:var(--panel-hi);border:1px solid var(--line);border-radius:13px;padding:11px 13px;box-shadow:0 10px 34px rgba(0,0,0,.55);align-items:center;gap:12px;max-width:460px;margin:0 auto">
+  <img src="icon-192.png" width="42" height="42" alt="" style="border-radius:11px;flex:none">
+  <div style="flex:1;min-width:0">
+    <div style="font-weight:600;font-size:13.5px">Install Ledger</div>
+    <div id="installMsg" style="font-size:12px;color:var(--text-dim);line-height:1.45;margin-top:1px">Add it to your Home Screen to use it like an app.</div>
+  </div>
+  <button id="installBtn" class="btn btn-go btn-sm" style="display:none;white-space:nowrap">Install</button>
+  <button id="installClose" class="btn btn-sm" style="color:var(--text-dim)">Later</button>
+</div>
 
 <script>
 const SKEY='ledger:v5:shared';
@@ -5674,6 +5692,30 @@ if(!navigator.onLine)updateConnStatus();
 
 initDraggableTabs();
 initTabs();
+
+/* ===== Install / Add-to-Home-Screen hint ===== */
+(function(){
+ const bar=$('installBar');if(!bar)return;
+ const KEY='ledger:install-dismissed';
+ const standalone=window.navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
+ if(standalone||localStorage.getItem(KEY))return; // already installed or dismissed
+ let deferred=null;
+ const show=()=>{bar.style.display='flex';};
+ const dismiss=()=>{bar.style.display='none';try{localStorage.setItem(KEY,'1')}catch(e){}};
+ window.addEventListener('beforeinstallprompt',e=>{ // Android/Chrome
+  e.preventDefault();deferred=e;
+  $('installBtn').style.display='';
+  $('installMsg').textContent='Add it to your Home Screen to use it like an app.';
+  show();
+ });
+ if(/iphone|ipad|ipod/i.test(navigator.userAgent)){ // iOS has no prompt — show steps
+  $('installBtn').style.display='none';
+  $('installMsg').innerHTML='Tap the <b>Share</b> button, then <b>Add to Home Screen</b>.';
+  setTimeout(show,1800);
+ }
+ $('installBtn').onclick=async()=>{if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch(e){}deferred=null;dismiss();};
+ $('installClose').onclick=dismiss;
+})();
 </script>
 </body>
 </html>
