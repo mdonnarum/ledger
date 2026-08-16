@@ -473,9 +473,13 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
  .kpis,.wk-scorecard{grid-template-columns:repeat(2,1fr)}
  .bill-kpis{grid-template-columns:repeat(2,1fr)}
  .grid2,.grid2b{grid-template-columns:1fr}
- .hz-grid{gap:5px;height:96px}
- .hz-val{font-size:13px}
- .hz-lab{font-size:7.5px;letter-spacing:.04em}
+ /* Give the horizon room to breathe on phones: taller bars, wider columns,
+    tighter padding so 6 stacked task/bill bars aren't crushed together. */
+ .horizon{padding:14px 10px}
+ .hz-grid{gap:3px;height:124px}
+ .hz-col{padding:2px 1px}
+ .hz-val{font-size:13px;margin-bottom:4px}
+ .hz-lab{font-size:8px;letter-spacing:.01em;margin-top:6px;line-height:1.25}
  .app{padding:env(safe-area-inset-top) calc(14px + env(safe-area-inset-right)) calc(90px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
  .donut-wrap{justify-content:center}
  .tabs{width:100%;max-width:100%}
@@ -786,23 +790,6 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 .streak-dot.on{background:var(--amber)}
 .streak-dot.today{background:var(--mint);box-shadow:0 0 6px var(--mint)}
 
-/* ---- BILL HISTORY CHART ---- */
-.bill-chart-wrap{margin-top:16px}
-.bchart-svg{width:100%;height:140px;display:block}
-/* full-width monthly bar chart */
-.bchart2{display:flex;align-items:flex-end;gap:12px;height:210px;padding:22px 4px 0}
-.bcol{flex:1;height:100%;display:flex;flex-direction:column;min-width:0}
-.bcol-track{flex:1;display:flex;align-items:flex-end;justify-content:center;min-height:0;border-bottom:1px solid var(--line-soft)}
-.bcol-bar{position:relative;width:100%;max-width:64px;min-height:3px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--mint),var(--mint-dim));transition:filter .15s,transform .15s;transform-origin:bottom}
-.bcol-bar.zero{background:var(--line);border-radius:4px 4px 0 0}
-.bcol:hover .bcol-bar:not(.zero){filter:brightness(1.18)}
-.bcol-val{position:absolute;top:-19px;left:-4px;right:-4px;text-align:center;font-family:var(--display);font-size:13px;font-weight:600;color:var(--mint);white-space:nowrap}
-.bcol-val.zero{color:var(--text-dim);font-family:var(--mono);font-size:11px;font-weight:400}
-.bcol-lab{flex:none;margin-top:9px;text-align:center;font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-dim)}
-.bchart-foot{display:flex;justify-content:space-between;margin-top:6px;font-family:var(--mono);font-size:10px;color:var(--text-dim)}
-.bchart-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}
-.bchart-leg{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-mid)}
-.bchart-leg .swatch{width:10px;height:4px;border-radius:2px}
 
 /* ---- PDF EXPORT ---- */
 .pdf-modal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(6,8,11,.8);backdrop-filter:blur(4px)}
@@ -967,7 +954,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v47</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v48</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -1289,15 +1276,6 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
     <div class="panel" id="dashPriPanel">
       <div class="p-head"><div class="p-title">Open by priority</div></div>
       <div class="p-body"><div class="pmx" id="pmx"></div></div>
-    </div>
-    <div class="panel" id="dashBillPanel" style="margin-top:16px">
-      <div class="p-head">
-        <div class="p-title">Monthly bill spend — last 6 months</div>
-        <div class="hint">Total recurring bills per month</div>
-      </div>
-      <div class="p-body">
-        <div class="bill-chart-wrap" id="billChart"></div>
-      </div>
     </div>
 
     <div id="dashDetail" style="display:none;margin-top:16px"></div>
@@ -3184,19 +3162,18 @@ function renderPmx(){
  document.querySelectorAll('[data-pri]').forEach(el=>el.onclick=()=>toggleDashDetail('pri',el.dataset.pri));
 }
 // Show only the panels that make sense for the selected source. The category/
-// completion/aging/momentum/priority analytics are task-only; the monthly spend
-// chart is bill-only. Horizon + the drill-down work for either.
+// completion/aging/momentum/priority analytics are task-only. Horizon + the
+// drill-down work for either.
 function applyDashSource(){
- const taskOnly=dashSource!=='bills', billOn=dashSource!=='tasks';
+ const taskOnly=dashSource!=='bills';
  const set=(id,show)=>{const el=$(id);if(el)el.style.display=show?'':'none';};
  set('dashCharts1',taskOnly); set('dashCharts2',taskOnly); set('dashPriPanel',taskOnly);
- set('dashBillPanel',billOn);
  const hint=$('dashSrcHint');
  if(hint)hint.textContent=dashSource==='bills'?'Showing bills only':dashSource==='tasks'?'Showing tasks only':'Tasks + bills';
  const seg=$('dashSrc');
  if(seg)seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.src===dashSource));
 }
-function renderDash(){applyDashSource();renderStreak();renderKPIs();renderHorizon();if(dashSource!=='bills'){renderDonut();renderPbars();renderAging();renderMomentum();renderPmx();}if(dashSource!=='tasks')renderBillChart();wireKpiTiles();if(dashSel){renderDashDetail(dashSel.type,dashSel.arg);}markDashActive();}
+function renderDash(){applyDashSource();renderStreak();renderKPIs();renderHorizon();if(dashSource!=='bills'){renderDonut();renderPbars();renderAging();renderMomentum();renderPmx();}wireKpiTiles();if(dashSel){renderDashDetail(dashSel.type,dashSel.arg);}markDashActive();}
 // Source filter: switching sources starts clean (drops any open drill-down/filter)
 if($('dashSrc'))$('dashSrc').querySelectorAll('button').forEach(btn=>btn.onclick=()=>{
  if(dashSource===btn.dataset.src)return;
@@ -4810,54 +4787,6 @@ function renderStreak(){
       <div class="streak-dots">
         ${days.map(d=>`<div class="streak-dot ${d.had?'on':''} ${d.isToday&&d.had?'today':''}" title="${d.d}"></div>`).join('')}
       </div>
-    </div>`;
-}
-
-/* ================= BILL HISTORY CHART ================= */
-function renderBillChart(){
-  const el=$('billChart');
-  if(!el)return;
-  // Build last 6 months of bill spend from payment history
-  const months=[];
-  for(let i=5;i>=0;i--){
-    const d=new Date();
-    d.setDate(1);d.setMonth(d.getMonth()-i);
-    const label=d.toLocaleDateString('en-US',{month:'short',year:'2-digit'});
-    const mStart=new Date(d.getFullYear(),d.getMonth(),1);
-    const mEnd=new Date(d.getFullYear(),d.getMonth()+1,0,23,59,59);
-    let total=0;
-    S.bills.forEach(b=>{
-      if(b.income)return;
-      (b.history||[]).forEach(h=>{
-        const pd=new Date(h.paid);
-        if(pd>=mStart&&pd<=mEnd)total+=Number(h.amount||0);
-      });
-    });
-    months.push({label,total});
-  }
-  const grand=months.reduce((a,b)=>a+b.total,0);
-  const max=Math.max(1,...months.map(m=>m.total));
-  if(grand<=0){
-    el.innerHTML=`<div style="text-align:center;padding:30px 10px;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.06em">NO PAYMENT HISTORY YET — MARK BILLS AS PAID TO SEE CHART</div>`;
-    return;
-  }
-  const paidMonths=months.filter(m=>m.total>0).length||1;
-  const avg=grand/paidMonths;
-  const bars=months.map(m=>{
-    const zero=m.total<=0;
-    const hpct=zero?0:Math.max(4,Math.round(m.total/max*100));
-    const valTxt=zero?'—':'$'+Math.round(m.total).toLocaleString();
-    return `<div class="bcol" title="${m.label}: ${money(m.total)}">
-      <div class="bcol-track"><div class="bcol-bar${zero?' zero':''}" style="height:${zero?3+'px':hpct+'%'}">
-        <span class="bcol-val${zero?' zero':''}">${valTxt}</span>
-      </div></div>
-      <div class="bcol-lab">${m.label}</div>
-    </div>`;
-  }).join('');
-  el.innerHTML=`<div class="bchart2">${bars}</div>
-    <div class="bchart-foot">
-      <span>Avg ${money(avg)} / month paid</span>
-      <span style="color:var(--mint)">Total: ${money(grand)}</span>
     </div>`;
 }
 
