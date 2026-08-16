@@ -315,6 +315,28 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
 .hz-col:hover .hz-bar,.hz-col.on .hz-bar{opacity:1}
 .hz-lab{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-top:8px;text-align:center;line-height:1.3}
 .hz-col.on .hz-lab{color:var(--text)}
+/* Dashboard source filter (All / Tasks / Bills) */
+.dash-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.dash-src-hint{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim)}
+/* Stacked horizon bar: task segment on top of bill segment */
+.hz-stack{width:100%;display:flex;flex-direction:column;justify-content:flex-end;flex:1;gap:0}
+.hz-seg{width:100%;min-height:0;transition:height .5s cubic-bezier(.4,0,.2,1),opacity .2s;opacity:.9}
+.hz-seg.task{border-radius:4px 4px 0 0}
+.hz-seg.bill{border-radius:0 0 2px 2px;opacity:.62}
+.hz-col:hover .hz-seg,.hz-col.on .hz-seg{opacity:1}
+.hz-col:hover .hz-seg.bill,.hz-col.on .hz-seg.bill{opacity:.8}
+.hz-key{display:flex;gap:16px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.hz-key-item{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim)}
+.hz-key-dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+/* Bill row inside the dashboard drill-down */
+.dash-bill{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line-soft)}
+.dash-bill:last-child{border-bottom:none}
+.dash-bill .db-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:var(--panel-hi)}
+.dash-bill .db-body{flex:1;min-width:0}
+.dash-bill .db-name{font-size:13.5px;font-weight:450;color:var(--text)}
+.dash-bill .db-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:3px}
+.dash-bill .db-amt{font-family:var(--display);font-size:16px;font-weight:600;white-space:nowrap}
+.dash-bill .db-acts{display:flex;gap:5px;flex-shrink:0}
 .grid2{display:grid;grid-template-columns:1.15fr 1fr;gap:16px;margin-bottom:16px}
 .grid2b{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
 .donut-wrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
@@ -942,7 +964,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app"><div id="demoBanner" style="background:linear-gradient(90deg,var(--mint),var(--sky));color:#08120F;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.05em;text-align:center;padding:7px 12px;border-radius:0 0 10px 10px;margin-bottom:2px">✦ DEMO — sample data · your changes stay in this browser, nothing is saved online</div>
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v46</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v47</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -1227,12 +1249,21 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
   <!-- ===== DASHBOARD ===== -->
   <div class="view" id="v-dash">
     <div class="streak-widget" id="streakWidget"></div>
+    <div class="dash-toolbar">
+      <div class="seg" id="dashSrc" title="Show tasks, bills, or both">
+        <button class="on" data-src="all">◇ All</button>
+        <button data-src="tasks">◔ Tasks</button>
+        <button data-src="bills">◈ Bills</button>
+      </div>
+      <div class="dash-src-hint" id="dashSrcHint"></div>
+    </div>
     <div class="kpis" id="kpis"></div>
     <div class="horizon">
-      <div class="hz-head"><div class="p-title">Horizon — load across time</div><div class="hint" id="hzHint">Click a column to filter</div></div>
+      <div class="hz-head"><div class="p-title" id="hzTitle">Horizon — load across time</div><div class="hint" id="hzHint">Click a column to filter</div></div>
       <div class="hz-grid" id="hzGrid"></div>
+      <div class="hz-key" id="hzKey" style="display:none"></div>
     </div>
-    <div class="grid2">
+    <div class="grid2" id="dashCharts1">
       <div class="panel">
         <div class="p-head"><div class="p-title">Distribution by category</div><div class="hint">Click a slice</div></div>
         <div class="p-body"><div class="donut-wrap"><div class="donut-svg" id="donut"></div><div class="legend" id="legend"></div></div></div>
@@ -1242,7 +1273,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
         <div class="p-body" id="pbars"></div>
       </div>
     </div>
-    <div class="grid2b">
+    <div class="grid2b" id="dashCharts2">
       <div class="panel">
         <div class="p-head"><div class="p-title">Aging — longest overdue</div><div class="hint">Oldest first</div></div>
         <div class="p-body" id="aging"></div>
@@ -1252,11 +1283,11 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
         <div class="p-body" id="momentum"></div>
       </div>
     </div>
-    <div class="panel">
+    <div class="panel" id="dashPriPanel">
       <div class="p-head"><div class="p-title">Open by priority</div></div>
       <div class="p-body"><div class="pmx" id="pmx"></div></div>
     </div>
-    <div class="panel" style="margin-top:16px">
+    <div class="panel" id="dashBillPanel" style="margin-top:16px">
       <div class="p-head">
         <div class="p-title">Monthly bill spend — last 6 months</div>
         <div class="hint">Total recurring bills per month</div>
@@ -1265,7 +1296,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
         <div class="bill-chart-wrap" id="billChart"></div>
       </div>
     </div>
-  
+
     <div id="dashDetail" style="display:none;margin-top:16px"></div>
   </div>
 
@@ -1689,6 +1720,8 @@ const DEFCATS=[
 let S={tasks:[],bills:[],cats:DEFCATS.slice(),notes:[],staples:[]};
 let staged=[], uiStatus='open', uiSort='due', uiQuery='', uiCat='', uiStatusFilter='all';
 let hzFilter=null, openTasks=new Set(), openBills=new Set(), openSubs=new Set(), editing=null, billEditing=null, dashSel=null, subExpanded=new Set();
+// Dashboard source filter: 'all' (tasks + bills), 'tasks', or 'bills'
+let dashSource='all';
 const $=id=>document.getElementById(id);
 const uid=()=>Math.random().toString(36).slice(2,10);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1712,6 +1745,15 @@ const BUCKETS=[
  {id:'tomorrow',label:'Tomorrow',color:'#48C4E0'},{id:'week',label:'This week',color:'#4DD9B0'},
  {id:'later',label:'Later',color:'#5BA8F5'},{id:'none',label:'Unscheduled',color:'#5A6673'}
 ];
+// Place a bill on the same time horizon as tasks (paused bills sit off-board).
+function bucketOfBill(b){
+ if(b.paused)return 'none';
+ const dd=parseDue(b.due);
+ if(!dd)return 'none';
+ const d=dayDiff(dd);
+ if(d<0)return 'overdue'; if(d===0)return 'today'; if(d===1)return 'tomorrow';
+ if(d<=7)return 'week'; return 'later';
+}
 function dueLabel(t){
  if(!t.due)return '';
  const d=dayDiff(parseDue(t.due));
@@ -2918,7 +2960,35 @@ function dashPool(){
  if(hzFilter)t=t.filter(x=>!x.done&&bucketOf(x)===hzFilter);
  return t;
 }
+// Bills that fall in "this period": overdue, within the reminder window, or
+// due by month-end — mirrors the split used on the Bills tab.
+function billsDueThisPeriod(){
+ const now=today0(),eop=new Date(now.getFullYear(),now.getMonth()+1,0);
+ return S.bills.filter(b=>!b.paused&&!b.income).filter(b=>{
+  const st=billStatus(b),d=parseDue(b.due);
+  return st==='overdue'||st==='soon'||st==='today'||(d&&d<=eop);
+ });
+}
 function renderKPIs(){
+ const k=(cls,lab,num,sub,type)=>`<div class="kpi ${cls}"${type?` data-kpi="${type}"`:''}><div class="k-lab">${lab}</div><div class="k-num">${num}</div><div class="k-sub">${sub}</div></div>`;
+ if(dashSource==='bills'){
+  const active=S.bills.filter(b=>!b.paused&&!b.income);
+  const income=S.bills.filter(b=>!b.paused&&b.income);
+  const due=billsDueThisPeriod();
+  const od=active.filter(b=>billStatus(b)==='overdue');
+  const up=active.filter(b=>!due.includes(b));
+  const burn=active.reduce((a,b)=>a+monthlyEquiv(b),0);
+  const inMo=income.reduce((a,b)=>a+monthlyEquiv(b),0);
+  const auto=active.filter(b=>b.autopay).length;
+  $('kpis').innerHTML=
+  k(due.length?'warn':'','Due this period',due.length,due.length?money(due.reduce((a,b)=>a+Number(b.amount||0),0)):'all caught up','bills_due')+
+  k(od.length?'alert':'','Overdue',od.length,od.length?money(od.reduce((a,b)=>a+Number(b.amount||0),0)):'nothing late','bills_overdue')+
+  k('','Coming up',up.length,up.length?money(up.reduce((a,b)=>a+Number(b.amount||0),0)):'nothing later','bills_up')+
+  k('','Monthly burn',money(burn),`${active.length} active bills`,'bills_active')+
+  k(income.length?'good':'','Incoming',money(inMo),income.length?`${income.length} income source${income.length>1?'s':''}`:'no income tracked','bills_income')+
+  k('good','On autopay',auto,`${active.length-auto} need action`);
+  return;
+ }
  const all=S.tasks,open=all.filter(t=>!t.done),done=all.filter(t=>t.done);
  const od=open.filter(t=>bucketOf(t)==='overdue');
  const wk=open.filter(t=>['today','tomorrow','week'].includes(bucketOf(t)));
@@ -2926,25 +2996,48 @@ function renderKPIs(){
  const bd=S.bills.filter(b=>!b.paused&&!b.income&&['overdue','soon'].includes(billStatus(b)));
  const rate=all.length?Math.round(done.length/all.length*100):0;
  const worst=od.length?Math.max(...od.map(t=>Math.abs(dayDiff(parseDue(t.due))))):0;
- const k=(cls,lab,num,sub,type)=>`<div class="kpi ${cls}"${type?` data-kpi="${type}"`:''}><div class="k-lab">${lab}</div><div class="k-num">${num}</div><div class="k-sub">${sub}</div></div>`;
  $('kpis').innerHTML=
  k('','Open',open.length,`${all.length} total`,'open')+
  k(od.length?'alert':'','Overdue',od.length,worst?`worst: ${worst}d late`:'all clear','overdue')+
  k(st.length?'warn b':'','Stalled',st.length,st.length?'not moving':'all moving','stalled')+
  k(wk.length?'warn':'','Next 7 days',wk.length,'incl. today','week')+
- k(bd.length?'alert':'','Bills due',bd.length,bd.length?money(bd.reduce((a,b)=>a+Number(b.amount||0),0)):'none pending','bills')+
+ (dashSource==='all'?k(bd.length?'alert':'','Bills due',bd.length,bd.length?money(bd.reduce((a,b)=>a+Number(b.amount||0),0)):'none pending','bills'):'')+
  k('good','Completion',rate+'%',`${done.length} done`);
 }
 function renderHorizon(){
+ const showTasks=dashSource!=='bills', showBills=dashSource!=='tasks';
  const open=S.tasks.filter(t=>!t.done);
- const counts=BUCKETS.map(b=>({...b,n:open.filter(t=>bucketOf(t)===b.id).length}));
+ const bills=S.bills.filter(b=>!b.paused);
+ const counts=BUCKETS.map(b=>({
+  ...b,
+  t:showTasks?open.filter(x=>bucketOf(x)===b.id).length:0,
+  b:showBills?bills.filter(x=>bucketOfBill(x)===b.id).length:0
+ })).map(c=>({...c,n:c.t+c.b}));
  const max=Math.max(1,...counts.map(c=>c.n));
- $('hzGrid').innerHTML=counts.map(c=>`
- <div class="hz-col ${hzFilter===c.id?'on':''}" data-hz="${c.id}">
- <div class="hz-val" style="color:${c.n?c.color:'#4A545F'}">${c.n}</div>
- <div class="hz-bar" style="height:${Math.max(3,Math.round(c.n/max*72))}px;background:${c.n?c.color:'#232B34'}"></div>
- <div class="hz-lab">${c.label}</div>
- </div>`).join('');
+ const barPx=n=>Math.round(n/max*84);
+ $('hzGrid').innerHTML=counts.map(c=>{
+  const tH=c.t?Math.max(3,barPx(c.t)):0, bH=c.b?Math.max(3,barPx(c.b)):0;
+  const stack=`<div class="hz-stack">`+
+   (c.t?`<div class="hz-seg task" style="height:${tH}px;background:${c.color}"></div>`:'')+
+   (c.b?`<div class="hz-seg bill" style="height:${bH}px;background:${c.color}"></div>`:'')+
+   (!c.n?`<div class="hz-seg" style="height:3px;background:#232B34"></div>`:'')+
+   `</div>`;
+  return `<div class="hz-col ${hzFilter===c.id?'on':''}" data-hz="${c.id}">
+   <div class="hz-val" style="color:${c.n?c.color:'#4A545F'}">${c.n}</div>
+   ${stack}
+   <div class="hz-lab">${c.label}</div>
+  </div>`;
+ }).join('');
+ // Legend only when both sources are on screen
+ const key=$('hzKey');
+ if(key){
+  if(showTasks&&showBills){
+   key.style.display='';
+   key.innerHTML=`<span class="hz-key-item"><span class="hz-key-dot" style="background:var(--mint)"></span>Tasks (solid)</span>`+
+    `<span class="hz-key-item"><span class="hz-key-dot" style="background:var(--mint);opacity:.55"></span>Bills (lower, faded)</span>`;
+  }else key.style.display='none';
+ }
+ const ht=$('hzTitle'); if(ht)ht.textContent=dashSource==='bills'?'Horizon — bills across time':(dashSource==='tasks'?'Horizon — tasks across time':'Horizon — tasks & bills across time');
  $('hzHint').textContent=hzFilter?'Filtering — click again to clear':'Click a column to filter';
  document.querySelectorAll('[data-hz]').forEach(el=>el.onclick=()=>{
  hzFilter=hzFilter===el.dataset.hz?null:el.dataset.hz;renderDash();
@@ -3087,7 +3180,28 @@ function renderPmx(){
  }).join('');
  document.querySelectorAll('[data-pri]').forEach(el=>el.onclick=()=>toggleDashDetail('pri',el.dataset.pri));
 }
-function renderDash(){renderStreak();renderKPIs();renderHorizon();renderDonut();renderPbars();renderAging();renderMomentum();renderPmx();renderBillChart();wireKpiTiles();if(dashSel){renderDashDetail(dashSel.type,dashSel.arg);}markDashActive();}
+// Show only the panels that make sense for the selected source. The category/
+// completion/aging/momentum/priority analytics are task-only; the monthly spend
+// chart is bill-only. Horizon + the drill-down work for either.
+function applyDashSource(){
+ const taskOnly=dashSource!=='bills', billOn=dashSource!=='tasks';
+ const set=(id,show)=>{const el=$(id);if(el)el.style.display=show?'':'none';};
+ set('dashCharts1',taskOnly); set('dashCharts2',taskOnly); set('dashPriPanel',taskOnly);
+ set('dashBillPanel',billOn);
+ const hint=$('dashSrcHint');
+ if(hint)hint.textContent=dashSource==='bills'?'Showing bills only':dashSource==='tasks'?'Showing tasks only':'Tasks + bills';
+ const seg=$('dashSrc');
+ if(seg)seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.src===dashSource));
+}
+function renderDash(){applyDashSource();renderStreak();renderKPIs();renderHorizon();if(dashSource!=='bills'){renderDonut();renderPbars();renderAging();renderMomentum();renderPmx();}if(dashSource!=='tasks')renderBillChart();wireKpiTiles();if(dashSel){renderDashDetail(dashSel.type,dashSel.arg);}markDashActive();}
+// Source filter: switching sources starts clean (drops any open drill-down/filter)
+if($('dashSrc'))$('dashSrc').querySelectorAll('button').forEach(btn=>btn.onclick=()=>{
+ if(dashSource===btn.dataset.src)return;
+ dashSource=btn.dataset.src;
+ hzFilter=null; dashSel=null;
+ const d=$('dashDetail'); if(d)d.style.display='none';
+ renderDash();
+});
 
 
 
@@ -5549,6 +5663,33 @@ $('bGenAll').onclick=async()=>{
 };
 
 /* ================= DASHBOARD TILE DETAIL ================= */
+// Jump from a dashboard bill row to that bill (open on the Bills tab).
+function dashOpenBill(id){
+  billEditing=id;
+  if(typeof renderBills==='function')renderBills();
+  const tab=$('tabBar')&&$('tabBar').querySelector('[data-v="bills"]');
+  if(tab)tab.click();
+  setTimeout(()=>{const el=document.querySelector(`.bill[data-bid="${id}"],[data-bedit="${id}"]`);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},70);
+}
+// Which bills belong to a given dashboard drill-down.
+function dashBillsFor(type,arg){
+  const active=S.bills.filter(b=>!b.paused);
+  const pay=active.filter(b=>!b.income);
+  switch(type){
+    case'bills': return pay.filter(b=>['overdue','soon','today'].includes(billStatus(b)));
+    case'bills_due': return billsDueThisPeriod();
+    case'bills_overdue': return pay.filter(b=>billStatus(b)==='overdue');
+    case'bills_up': {const due=billsDueThisPeriod(); return pay.filter(b=>!due.includes(b));}
+    case'bills_active': return pay;
+    case'bills_income': return active.filter(b=>b.income);
+    case'overdue': return active.filter(b=>bucketOfBill(b)==='overdue');
+    case'week': return active.filter(b=>['today','tomorrow','week'].includes(bucketOfBill(b)));
+    case'bucket': return active.filter(b=>bucketOfBill(b)===arg);
+    case'open': return active;
+    default: return [];
+  }
+}
+const BILL_TYPES=['bills','bills_due','bills_overdue','bills_up','bills_active','bills_income'];
 function renderDashDetail(type,arg){
   const detail=$('dashDetail');
   if(!detail)return;
@@ -5559,13 +5700,34 @@ function renderDashDetail(type,arg){
     case'overdue': tasks=open.filter(t=>bucketOf(t)==='overdue'); title=`Overdue (${tasks.length})`; break;
     case'stalled': tasks=open.filter(isStalled); title=`Stalled tasks (${tasks.length})`; break;
     case'week': tasks=open.filter(t=>['today','tomorrow','week','soon'].includes(bucketOf(t))); title=`Due next 7 days (${tasks.length})`; break;
-    case'bills': bills=S.bills.filter(b=>!b.paused&&!b.income&&['overdue','soon','today'].includes(billStatus(b))); title=`Bills needing attention (${bills.length})`; break;
+    case'bills': bills=dashBillsFor(type); title=`Bills needing attention (${bills.length})`; break;
+    case'bills_due': bills=dashBillsFor(type); title=`Bills due this period (${bills.length})`; break;
+    case'bills_overdue': bills=dashBillsFor(type); title=`Overdue bills (${bills.length})`; break;
+    case'bills_up': bills=dashBillsFor(type); title=`Bills coming up (${bills.length})`; break;
+    case'bills_active': bills=dashBillsFor(type); title=`All active bills (${bills.length})`; break;
+    case'bills_income': bills=dashBillsFor(type); title=`Income (${bills.length})`; break;
     case'cat': {const c=catOf(arg); tasks=S.tasks.filter(t=>t.cat===arg).slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)); title=`${esc(c.name)} — all tasks (${tasks.length})`; break;}
     case'pri': {const lbl={critical:'Critical',high:'High',med:'Medium',low:'Low'}[arg]||arg; tasks=open.filter(t=>t.pri===arg); title=`${lbl} priority — open (${tasks.length})`; break;}
-    case'bucket': {const b=BUCKETS.find(x=>x.id===arg); tasks=open.filter(t=>bucketOf(t)===arg); title=`${b?b.label:arg} (${tasks.length})`; break;}
+    case'bucket': {const b=BUCKETS.find(x=>x.id===arg); tasks=open.filter(t=>bucketOf(t)===arg); title=`${b?b.label:arg}`; break;}
     case'task': {const t=S.tasks.find(x=>x.id===arg); tasks=t?[t]:[]; title=t?`Task — ${esc(t.title.length>44?t.title.slice(0,44)+'…':t.title)}`:'Task'; break;}
     case'momentum': {const from=today0().getTime()-13*DAY; tasks=S.tasks.filter(t=>t.done&&t.completed&&t.completed>=from).slice().sort((a,b)=>(b.completed||0)-(a.completed||0)); title=`Completed — last 14 days (${tasks.length})`; break;}
     default: detail.style.display='none'; return;
+  }
+  const isBillType=BILL_TYPES.includes(type);
+  // Source gating: hide tasks when viewing bills-only; append bills to
+  // time-based task drill-downs when the source includes bills.
+  if(dashSource==='bills'&&!isBillType)tasks=[];
+  if(!isBillType&&dashSource!=='tasks'){
+    const extra=dashBillsFor(type,arg);
+    if(extra.length)bills=extra;
+  }
+  // For a shared bucket/overdue/week view, make the title reflect the mix.
+  if(!isBillType&&(bills.length||['bucket','overdue','week','open'].includes(type))){
+    const parts=[];
+    if(dashSource!=='bills')parts.push(`${tasks.length} task${tasks.length!==1?'s':''}`);
+    if(bills.length||dashSource==='bills')parts.push(`${bills.length} bill${bills.length!==1?'s':''}`);
+    const base={open:'Everything open',overdue:'Overdue',week:'Next 7 days',bucket:(BUCKETS.find(x=>x.id===arg)||{}).label||arg}[type]||title.replace(/\s*\(.*\)$/,'');
+    title=`${base} — ${parts.join(' · ')}`;
   }
   detail.style.display='block';
   let html=`<div class="panel"><div class="p-head"><div class="p-title">${title}</div><button class="btn btn-sm" id="dashDetailClose" style="color:var(--text-dim)">✕ Close</button></div>`;
@@ -5584,10 +5746,25 @@ function renderDashDetail(type,arg){
   }
   html+=`<div class="p-body">`;
   if(bills.length){
+    if(tasks.length)html+=`<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);padding:2px 0 8px">${bills.length} bill${bills.length!==1?'s':''}</div>`;
     bills.forEach(b=>{
-      html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-soft)">
-        <div style="flex:1"><div style="font-size:13.5px;font-weight:450">${esc(b.name)}</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px">${cadLabel(b)} · due ${b.due||'—'}</div></div>
-        <div style="font-family:var(--display);font-size:16px;font-weight:600;color:${billStatus(b)==='overdue'?'var(--rose)':'var(--amber)'}">${money(b.amount)}</div>
+      const inc=b.income, st=billStatus(b);
+      const col=inc?'var(--mint)':(st==='overdue'?'var(--rose)':(st==='soon'||st==='today'?'var(--amber)':'var(--text)'));
+      html+=`<div class="dash-bill">
+        <div class="db-icon">${inc?'💰':'🧾'}</div>
+        <div class="db-body">
+          <div class="db-name">${esc(b.name)}</div>
+          <div class="db-meta">
+            <span class="cadence" style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">${cadLabel(b)}</span>
+            <span class="chip-due ${st==='overdue'?'od':''}" style="font-size:10.5px">${billLabel(b)||'—'}</span>
+            ${b.autopay?`<span class="badge auto">Autopay</span>`:''}
+          </div>
+        </div>
+        <div class="db-amt" style="color:${col}">${inc?'+':''}${money(b.amount)}</div>
+        <div class="db-acts">
+          ${!b.paused?`<button class="btn btn-sm" data-dbpaid="${b.id}" style="color:var(--mint);border-color:rgba(77,217,176,.3)">${inc?'✓ Got':'✓ Paid'}</button>`:''}
+          <button class="btn btn-sm" data-dbedit="${b.id}" title="Open in Bills">✎</button>
+        </div>
       </div>`;
     });
   }
@@ -5645,6 +5822,16 @@ function renderDashDetail(type,arg){
     e.stopPropagation();
     openTaskEditor(el.dataset.tedit);
   });
+  // Wire bill rows: mark paid/received in place, or jump to the Bills tab
+  detail.querySelectorAll('[data-dbpaid]').forEach(el=>el.onclick=e=>{
+    e.stopPropagation();
+    const b=S.bills.find(x=>x.id===el.dataset.dbpaid);
+    if(b){markPaid(b);renderDashDetail(type,arg);}
+  });
+  detail.querySelectorAll('[data-dbedit]').forEach(el=>el.onclick=e=>{
+    e.stopPropagation();
+    dashOpenBill(el.dataset.dbedit);
+  });
 }
 
 // Current dashboard detail selection: dashSel {type,arg} declared with top-level state
@@ -5657,7 +5844,7 @@ function markDashActive(){
   if(!dashSel)return;
   const {type,arg}=dashSel;
   const add=sel=>document.querySelectorAll(sel).forEach(el=>el.classList.add('dash-active'));
-  if(['open','overdue','stalled','week','bills'].includes(type)){
+  if(['open','overdue','stalled','week','bills','bills_due','bills_overdue','bills_up','bills_active','bills_income'].includes(type)){
     const t=kpisEl&&kpisEl.querySelector(`.kpi[data-kpi="${type}"]`);
     if(t)t.classList.add('active-kpi');
   }else if(type==='cat'){ add(`[data-cat="${arg}"]`); add(`[data-pcat="${arg}"]`);
