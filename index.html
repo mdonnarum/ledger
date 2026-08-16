@@ -945,7 +945,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v45</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v46</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -1163,9 +1163,10 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
         <div style="flex:1">
           <div class="shop-add-row">
             <input id="stapleInput" placeholder="Add item (e.g. milk)…" maxlength="80">
-            <select id="stapleAisle">
+            <select id="stapleAisle" title="Leave on Auto and the aisle is picked from the item name">
+              <option value="auto" selected>✨ Auto aisle</option>
               <option value="produce">🥦 Produce</option>
-              <option value="dairy" selected>🥛 Dairy</option>
+              <option value="dairy">🥛 Dairy</option>
               <option value="proteins">🥩 Proteins</option>
               <option value="pantry">🥫 Pantry</option>
               <option value="frozen">🧊 Frozen</option>
@@ -1181,6 +1182,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
             <button data-sf="done">Checked off</button>
             <button data-sf="all">All</button>
           </div>
+          <button class="btn btn-sm" id="bStaplesSort" style="white-space:nowrap" title="Re-file every item into an aisle based on its name">✨ Auto-sort</button>
           <button class="btn btn-sm" id="bStaplesReset" style="white-space:nowrap">Uncheck all</button>
         </div>
       </div>
@@ -1201,6 +1203,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
           <div class="field" style="flex-direction:column;align-items:flex-start;gap:6px">
             <label style="font-size:12px;color:var(--text-dim)">Aisle / Category</label>
             <select id="shopEditAisle" style="width:100%;height:36px;background:var(--panel-hi);border:1px solid var(--line-soft);border-radius:7px;padding:0 10px;font-size:14px;color:var(--text);outline:none">
+              <option value="auto">✨ Auto (pick from name)</option>
               <option value="produce">🥦 Produce</option>
               <option value="dairy">🥛 Dairy</option>
               <option value="proteins">🥩 Proteins</option>
@@ -3616,7 +3619,7 @@ function findNote(match){
 function applyOps(ops){
   const results=[];
   // Confirmation guard: ask once before the assistant deletes whole items.
-  const DESTRUCTIVE=new Set(['delete','delete_bill','delete_note','delete_category']);
+  const DESTRUCTIVE=new Set(['delete','delete_bill','delete_note','delete_category','delete_grocery']);
   const dels=ops.filter(o=>DESTRUCTIVE.has(o.op));
   let skipDeletes=false;
   if(dels.length){
@@ -3625,6 +3628,7 @@ function applyOps(ops){
       if(o.op==='delete_bill'){const b=findBill(o.bill||o.name);return `bill “${b?b.name:(o.bill||o.name)}”`;}
       if(o.op==='delete_note'){const n=findNote(o.note||o.match||o.title);return `note “${n?n.title:(o.note||o.title)}”`;}
       if(o.op==='delete_category'){const c=findCatObj(o.category||o.name||o.match);return `category “${c?c.name:(o.category||o.name)}” (its tasks move to another category)`;}
+      if(o.op==='delete_grocery'){return `grocery item “${o.item||o.name}”`;}
       return o.op;
     });
     skipDeletes=!confirm(`The assistant wants to delete ${dels.length} item${dels.length>1?'s':''}:\n\n• ${names.join('\n• ')}\n\n${dels.length>1?'Delete them?':'Delete it?'}  Anything else it suggested is still applied either way.`);
@@ -3884,6 +3888,40 @@ function applyOps(ops){
           break;
         }
 
+        case 'add_grocery':case 'add_staple':{
+          const nm=(op.name||op.item||op.title||'').trim();
+          if(!nm){results.push('✗ Grocery item needs a name');break;}
+          const validAisle=SHOP_AISLES.includes(op.aisle);
+          const aisle=validAisle?op.aisle:guessAisle(nm);
+          staples.push({id:uid(),name:nm,aisle,done:false,manual:validAisle});
+          S.staples=staples;
+          results.push(`✓ Added to grocery list: "${nm}" → ${SHOP_LABELS[aisle]}`);
+          break;
+        }
+        case 'check_grocery':case 'uncheck_grocery':{
+          const q=(op.item||op.name||'').toLowerCase();
+          const s=staples.find(x=>x.name.toLowerCase()===q)||staples.find(x=>x.name.toLowerCase().includes(q));
+          if(!s){results.push(`✗ Grocery item not found: "${op.item||op.name}"`);break;}
+          s.done=op.op==='check_grocery'?(op.done!==false):false;
+          S.staples=staples;
+          results.push(`✓ ${s.done?'Checked off':'Unchecked'}: "${s.name}"`);
+          break;
+        }
+        case 'delete_grocery':case 'delete_staple':{
+          const q=(op.item||op.name||'').toLowerCase();
+          const s=staples.find(x=>x.name.toLowerCase()===q)||staples.find(x=>x.name.toLowerCase().includes(q));
+          if(!s){results.push(`✗ Grocery item not found: "${op.item||op.name}"`);break;}
+          const nm=s.name;staples=staples.filter(x=>x.id!==s.id);S.staples=staples;
+          results.push(`✓ Removed from grocery list: "${nm}"`);
+          break;
+        }
+        case 'sort_groceries':{
+          let moved=0;staples.forEach(s=>{if(s.manual)return;const a=guessAisle(s.name);if(a!==s.aisle){s.aisle=a;moved++;}});
+          S.staples=staples;
+          results.push(moved?`✓ Sorted ${moved} grocery item${moved>1?'s':''} by aisle`:'✓ Grocery list already sorted by name');
+          break;
+        }
+
         default:
           results.push(`✗ Unknown op: ${op.op}`);
       }
@@ -3938,6 +3976,9 @@ ${S.bills.map(b=>`- "${b.name}" ${b.income?'INCOME':'bill'} ${money(b.amount)} c
 NOTES (${(S.notes||[]).length}):
 ${(S.notes||[]).map(n=>`- "${n.title||'Untitled'}"${n.pinned?' PINNED':''} cat=${catOf(n.cat).name}${n.body?' — '+n.body.slice(0,140).replace(/\n/g,' '):''}`).join('\n')||'(none)'}
 
+GROCERY LIST (${(S.staples||[]).length} items; aisle in brackets, ✓ = already in cart):
+${(S.staples||[]).map(s=>`- ${s.done?'✓ ':''}"${s.name}" [${s.aisle||'other'}]`).join('\n')||'(empty)'}
+
 YOU CAN:
 1. ANSWER any question about the board
 2. EXECUTE board operations using this exact format at the end of your response:
@@ -3980,6 +4021,12 @@ CATEGORIES:
 - add_category: {op:"add_category",name,color:"#hex"}
 - update_category: {op:"update_category",category:"match name",newName,color:"#hex"}
 - delete_category: {op:"delete_category",category:"match name"} ← its tasks move to another category
+
+GROCERY LIST (the shopping list; each item is filed into an aisle):
+- add_grocery: {op:"add_grocery",name,aisle:"produce|dairy|proteins|pantry|frozen|household|other"} ← OMIT aisle to auto-file it from the name (preferred); the app knows milk→dairy, bananas→produce, etc.
+- check_grocery: {op:"check_grocery",item:"match name",done:true/false} ← check off / uncheck an item
+- delete_grocery: {op:"delete_grocery",item:"match name"}
+- sort_groceries: {op:"sort_groceries"} ← re-file every item into the right aisle from its name (skips ones the user set by hand)
 
 RULES:
 - Match tasks by partial title, bills by name, notes by title, categories by name — be fuzzy, pick the closest match
@@ -5123,6 +5170,31 @@ $('bRev').onclick=writeWeekReview;
 const STAPLES_KEY='ledger:staples-v2';
 const SHOP_AISLES=['produce','dairy','proteins','pantry','frozen','household','other'];
 const SHOP_LABELS={produce:'🥦 Produce',dairy:'🥛 Dairy',proteins:'🥩 Proteins',pantry:'🥫 Pantry',frozen:'🧊 Frozen',household:'🧹 Household',other:'📦 Other'};
+// Auto-categorize a grocery item into an aisle from its name. Runs locally
+// and instantly — no network call. Tiers are checked in order so ambiguous
+// words resolve the sensible way (e.g. "frozen pizza" → frozen before pantry,
+// "tomato sauce" → pantry before produce, "ice cream" → frozen before dairy).
+const AISLE_RULES=[
+ ['household',['paper towel','toilet paper','tissue','napkin','detergent','dish soap','hand soap','bar soap','body wash','shampoo','conditioner','toothpaste','toothbrush','mouthwash','floss','deodorant','sponge','trash bag','garbage bag','ziploc','sandwich bag','aluminum foil','tin foil','plastic wrap','saran wrap','cleaner','bleach','clorox','lysol','windex','swiffer','laundry','fabric softener','dryer sheet','wipe','baby wipe','diaper','razor','shaving','lotion','sanitizer','light bulb','lightbulb','battery','batteries','q tip','cotton ball','cotton swab','paper plate','paper cup','plastic cup','straw','candle','air freshener','pet food','dog food','cat food','litter']],
+ ['frozen',['frozen','ice cream','icecream','popsicle','popsicles','gelato','sorbet','frozen pizza','frozen waffle','frozen fruit','frozen veg','tater tot','french fries','frozen meal','tv dinner']],
+ // pantry_strong sits ahead of proteins & dairy so compound names resolve the
+ // right way: "peanut butter"→pantry (not dairy via butter), "chicken broth"→
+ // pantry (not proteins), "tomato sauce"→pantry (not produce).
+ ['pantry_strong',['sauce','soup','juice','canned','can of','dried','jam','jelly','paste','broth','stock','dressing','salsa','ketchup','mustard','mayo','mayonnaise','syrup','vinegar','pickle','olive','marinade','peanut butter','almond butter','nut butter','hummus','pesto']],
+ ['proteins',['chicken','beef','steak','pork','bacon','sausage','ham','turkey','lamb','veal','fish','salmon','tuna','shrimp','prawn','crab','lobster','tilapia','cod','halibut','ground beef','ground turkey','ground chicken','ground pork','tofu','tempeh','deli meat','lunch meat','hot dog','hotdog','ribs','bratwurst','chorizo','pepperoni','salami','prosciutto','meatball','drumstick','chicken breast','chicken thigh','chicken wing','pork chop','ground meat']],
+ ['dairy',['milk','half and half','heavy cream','whipping cream','sour cream','cream cheese','cottage cheese','butter','margarine','cheese','cheddar','mozzarella','parmesan','parmigiano','feta','gouda','swiss cheese','brie','yogurt','yoghurt','egg','eggs','creamer','ghee','buttermilk','oat milk','almond milk','soy milk','string cheese']],
+ ['produce',['apple','banana','orange','lemon','lime','grape','grapefruit','berry','berries','strawberr','blueberr','raspberr','blackberr','melon','watermelon','cantaloupe','honeydew','peach','pear','plum','mango','pineapple','kiwi','apricot','cherry','cherries','fig','pomegranate','clementine','tangerine','nectarine','avocado','tomato','potato','sweet potato','yam','onion','garlic','ginger','carrot','celery','lettuce','romaine','spinach','kale','arugula','cabbage','broccoli','cauliflower','brussels','bell pepper','jalapeno','habanero','cucumber','zucchini','squash','pumpkin','mushroom','sweet corn','green bean','snap pea','asparagus','eggplant','radish','turnip','beet','cilantro','parsley','basil','rosemary','thyme','scallion','green onion','shallot','leek','bean sprout','salad mix','spring mix','coleslaw','fresh herb']],
+ ['pantry',['bread','white bread','wheat bread','bun','buns','bagel','english muffin','tortilla','pita','naan','croissant','muffin','cake','rice','pasta','spaghetti','macaroni','noodle','ramen','couscous','quinoa','cereal','oat','oatmeal','granola','flour','sugar','brown sugar','powdered sugar','baking soda','baking powder','yeast','vanilla','cocoa','honey','oil','olive oil','vegetable oil','canola','cracker','chip','tortilla chip','pretzel','popcorn','cookie','candy','chocolate','snack','nut','almond','walnut','cashew','pecan','peanut','pistachio','raisin','trail mix','bean','black bean','kidney bean','chickpea','garbanzo','lentil','coffee','tea','soda','pop','cola','sparkling water','bottled water','seltzer','beer','wine','energy drink','sports drink','lemonade','spice','seasoning','salt','black pepper','cinnamon','paprika','cumin','oregano','garlic powder','protein bar','granola bar','fruit snack','applesauce','jerky','gum','mint','breadcrumb','stuffing','gravy','taco shell','cake mix','pancake mix','maple syrup']],
+];
+function guessAisle(rawName){
+ const n=' '+String(rawName||'').toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim()+' ';
+ const has=kw=>{
+  if(kw.indexOf(' ')>=0)return n.indexOf(kw)>=0;   // phrase: substring is fine
+  return new RegExp('\\b'+kw+'(s|es)?\\b').test(n); // single word: whole-word, tolerate plural (s/es)
+ };
+ for(const [aisle,words] of AISLE_RULES){ if(words.some(has))return aisle==='pantry_strong'?'pantry':aisle; }
+ return 'other';
+}
 let staples=[];
 let shopFilter='active'; // 'active' | 'done' | 'all'
 let shopEditId=null;
@@ -5200,7 +5272,7 @@ function renderShop(){
     if(!s)return;
     shopEditId=s.id;
     $('shopEditName').value=s.name;
-    $('shopEditAisle').value=s.aisle||'other';
+    $('shopEditAisle').value=s.manual?(s.aisle||'other'):'auto';
     $('shopEditModal').style.display='flex';
     setTimeout(()=>$('shopEditName').select(),50);
   });
@@ -5222,7 +5294,11 @@ function renderShop(){
 function addStaple(){
   const inp=$('stapleInput'),v=inp.value.trim();
   if(!v)return;
-  staples.push({id:uid(),name:v,aisle:$('stapleAisle').value,done:false});
+  const pick=$('stapleAisle').value;
+  // "auto" = let the name decide the aisle; anything else is a deliberate
+  // choice we remember (manual) so Auto-sort won't override it later.
+  const auto=pick==='auto';
+  staples.push({id:uid(),name:v,aisle:auto?guessAisle(v):pick,done:false,manual:!auto});
   inp.value='';saveShopData();renderShop();inp.focus();
 }
 
@@ -5237,6 +5313,21 @@ $('bStaplesReset').onclick=()=>{
   toast('All unchecked — ready for next trip');
 };
 
+// Wire auto-sort: re-file every item into an aisle from its name. Items you
+// filed by hand (manual) are left alone so a deliberate choice isn't undone.
+function autoSortStaples(silent){
+  let moved=0,skipped=0;
+  staples.forEach(s=>{
+    if(s.manual){skipped++;return;}
+    const a=guessAisle(s.name);
+    if(a!==s.aisle){s.aisle=a;moved++;}
+  });
+  saveShopData();renderShop();
+  if(!silent)toast(moved?`Sorted ${moved} item${moved>1?'s':''} by aisle${skipped?` · ${skipped} left as set`:''}`:'Everything already filed by name');
+  return moved;
+}
+if($('bStaplesSort'))$('bStaplesSort').onclick=()=>autoSortStaples(false);
+
 // Wire filter
 $('shopFilter').querySelectorAll('button').forEach(b=>b.onclick=()=>{
   $('shopFilter').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
@@ -5250,7 +5341,13 @@ $('shopEditSave').onclick=()=>{
   const name=$('shopEditName').value.trim();
   if(!name){toast('Name cannot be empty');return;}
   const s=staples.find(x=>x.id===shopEditId);
-  if(s){s.name=name;s.aisle=$('shopEditAisle').value;saveShopData();renderShop();}
+  if(s){
+    s.name=name;
+    const pick=$('shopEditAisle').value;
+    if(pick==='auto'){s.aisle=guessAisle(name);s.manual=false;}
+    else{s.aisle=pick;s.manual=true;}
+    saveShopData();renderShop();
+  }
   $('shopEditModal').style.display='none';shopEditId=null;
 };
 $('shopEditCancel').onclick=$('shopEditClose').onclick=()=>{
