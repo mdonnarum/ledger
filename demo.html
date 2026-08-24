@@ -951,7 +951,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app"><div id="demoBanner" style="background:linear-gradient(90deg,var(--mint),var(--sky));color:#08120F;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.05em;text-align:center;padding:7px 12px;border-radius:0 0 10px 10px;margin-bottom:2px">✦ DEMO — sample data · your changes stay in this browser, nothing is saved online</div>
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v48</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v49</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -3613,19 +3613,14 @@ $('pinScreen').classList.add('hidden');
 setTimeout(function(){load();},0);
 // else: wait for PIN — load is called from unlockApp()
 
-const CACHE_NAME='ledger-v5-shell';
-const FONT_URL='https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap';
-async function cacheShell(){
- try{
- if(!('caches' in window))return;
- const cache=await caches.open(CACHE_NAME);
- const pageUrl=location.href.split('?')[0];
- const existing=await cache.match(pageUrl);
- if(!existing){
- try{const resp=await fetch(pageUrl,{cache:'no-store'});if(resp.ok)await cache.put(pageUrl,resp)}catch(e){}
- try{const resp=await fetch(FONT_URL);if(resp.ok)await cache.put(FONT_URL,resp)}catch(e){}
- }
- }catch(e){}
+// Register the service worker: makes Ledger installable on desktop & phone,
+// works offline, and (via network-first navigation) always loads the latest
+// version when online. Relative path so it scopes to the app's own directory
+// (works under GitHub Pages project paths). Skipped on file:// (e.g. the demo).
+function registerSW(){
+ if(!('serviceWorker' in navigator))return;
+ if(!location.protocol.startsWith('http'))return;
+ try{navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}
 }
 function updateConnStatus(){
  if(!navigator.onLine){
@@ -5963,7 +5958,7 @@ function wireCalButtons(){
   });
 }
 
-cacheShell();
+/*demo:no-sw*/
 if(!navigator.onLine)updateConnStatus();
 
 
@@ -5979,10 +5974,13 @@ initTabs();
  let deferred=null;
  const show=()=>{bar.style.display='flex';};
  const dismiss=()=>{bar.style.display='none';try{localStorage.setItem(KEY,'1')}catch(e){}};
- window.addEventListener('beforeinstallprompt',e=>{ // Android/Chrome
+ const isDesktop=!/android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+ window.addEventListener('beforeinstallprompt',e=>{ // desktop Chrome/Edge + Android
   e.preventDefault();deferred=e;
   $('installBtn').style.display='';
-  $('installMsg').textContent='Add it to your Home Screen to use it like an app.';
+  $('installMsg').textContent=isDesktop
+   ?'Install Ledger as an app on your computer — opens in its own window.'
+   :'Add it to your Home Screen to use it like an app.';
   show();
  });
  if(/iphone|ipad|ipod/i.test(navigator.userAgent)){ // iOS has no prompt — show steps
