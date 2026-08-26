@@ -1,0 +1,17 @@
+{
+  "name": "ledger-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MCP connector that lets Claude read and update your Ledger tracker (Firestore ledger/main).",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "express": "^4.19.2",
+    "firebase-admin": "^12.6.0",
+    "zod": "^3.23.8"
+  }
+}
