@@ -954,7 +954,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v49</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v50</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -1376,7 +1376,8 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
     <span></span><span></span><span></span>
   </div>
   <div class="asst-input-row">
-    <textarea class="asst-input" id="asstInput" placeholder="Type — or use your keyboard's 🎤 to dictate…" rows="1"></textarea>
+    <textarea class="asst-input" id="asstInput" placeholder="Type, or tap 🎤 to talk…" rows="1"></textarea>
+    <button class="asst-mic" id="asstMic" title="Tap to talk — tap again to send">🎤</button>
     <button class="asst-mic" id="asstSpeak" title="Tap to hear replies aloud">🔈</button>
     <button class="asst-send" id="asstSend" disabled>
       <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -3515,7 +3516,7 @@ function pinUnlocked(){
 function unlockApp(){
  sessionStorage.setItem(PIN_SESSION,'1');
  $('pinScreen').classList.add('hidden');
- load().then(()=>{setTimeout(fireNotif,900);});
+ load().then(()=>{setTimeout(fireNotif,900);maybeVoiceDeeplink();});
 }
 function updateDots(){
  for(let i=0;i<CODE_LEN;i++){
@@ -3571,7 +3572,7 @@ document.addEventListener('keydown',e=>{
 // Check if already unlocked this session
 if(pinUnlocked()){
  $('pinScreen').classList.add('hidden');
- load().then(()=>{setTimeout(fireNotif,900);});
+ load().then(()=>{setTimeout(fireNotif,900);maybeVoiceDeeplink();});
 }
 // else: wait for PIN — load is called from unlockApp()
 
@@ -4267,6 +4268,63 @@ function setVoiceReplies(on){
  if(!on&&'speechSynthesis'in window)speechSynthesis.cancel();
 }
 if($('asstSpeak'))$('asstSpeak').onclick=()=>{setVoiceReplies(!voiceReplies);if(voiceReplies)toast('I\'ll read my replies aloud');};
+
+/* ---- Speech-to-TEXT: push-to-talk. Tap the mic to start, tap again to
+   send. Tap-to-stop (rather than auto-stop on silence) is what makes this
+   reliable — the browser engine used to cut off on natural pauses, but here
+   YOU decide when you're done, so pauses are fine. Using the mic also turns on
+   spoken replies, so it's a hands-free back-and-forth. ---- */
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recog=null, listening=false, sttBase='';
+function setMicUI(on){const b=$('asstMic');if(b)b.classList.toggle('listening',on);}
+function stopListening(sendAfter){
+ listening=false; setMicUI(false);
+ try{ if(recog){recog.onend=null;recog.stop();} }catch(e){}
+ if(sendAfter){
+  const txt=$('asstInput').value.trim();
+  if(txt&&!asstBusy) sendToAsst(txt);
+ }
+}
+function startListening(){
+ if(!SpeechRec){toast('Voice input isn’t supported here — use your keyboard’s 🎤');return;}
+ if(listening){stopListening(true);return;}          // second tap = stop + send
+ if(!voiceReplies) setVoiceReplies(true);            // spoken conversation
+ sttBase=$('asstInput').value ? $('asstInput').value.trim()+' ' : '';
+ recog=new SpeechRec();
+ recog.lang=navigator.language||'en-US';
+ recog.continuous=true;
+ recog.interimResults=true;
+ recog.onstart=()=>{listening=true;setMicUI(true);};
+ recog.onerror=(e)=>{ if(e.error&&e.error!=='no-speech'&&e.error!=='aborted') toast('Mic: '+e.error); };
+ recog.onend=()=>{ if(listening){ try{recog.start();}catch(e){listening=false;setMicUI(false);} } }; // keep going through pauses
+ recog.onresult=(ev)=>{
+  let interim='';
+  for(let i=ev.resultIndex;i<ev.results.length;i++){
+   const r=ev.results[i];
+   if(r.isFinal) sttBase+=r[0].transcript+' '; else interim+=r[0].transcript;
+  }
+  const ta=$('asstInput');
+  ta.value=(sttBase+interim).trim();
+  ta.dispatchEvent(new Event('input'));
+ };
+ try{recog.start();}catch(e){toast('Could not start the mic');}
+}
+if($('asstMic'))$('asstMic').onclick=startListening;
+
+/* One-tap voice: launched from the "Talk to Ledger" home-screen shortcut
+   (manifest ?talk=1). Opens the assistant and starts listening once the app
+   is unlocked and loaded. */
+function maybeVoiceDeeplink(){
+ try{
+  const p=new URLSearchParams(location.search);
+  if(p.get('talk')!=='1')return;
+  history.replaceState({},'',location.pathname); // don't re-trigger on refresh
+  setTimeout(()=>{
+   if(!asstOpen)toggleAsst();
+   setTimeout(startListening,600);
+  },400);
+ }catch(e){}
+}
 
 const THEME_KEY='ledger:theme';
 function applyTheme(t){
