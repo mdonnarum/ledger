@@ -1,66 +1,74 @@
-# Ledger ⇄ Gemini bridge
+# Ledger ⇄ Google Tasks (two-way) — the Gemini bridge
 
-Speak to **Gemini** and have the task land in **Ledger** — 100% inside Google,
-free, no server to host.
+Consumer Gemini can't connect to a custom database, but it **can** read and
+write **Google Tasks** natively. So this keeps Google Tasks as a live, two-way
+mirror of your Ledger tasks — and Google Tasks becomes your Gemini interface to
+Ledger:
 
 ```
-You: "Hey Gemini, add a task to call the dentist Friday"
-   → Gemini creates a Google Task (it does this natively)
-   → this Apps Script copies new Google Tasks into Ledger's database (ledger/main)
-   → it appears in the Ledger app on every device
+"Hey Google, add a task to call the dentist Friday"  → appears in Ledger
+"Hey Google, mark the dentist task done"             → completes it in Ledger
+"Hey Google, what are my tasks?"                     → reads the mirror
+...and adds/completions you make in the Ledger app flow back to Google Tasks.
 ```
 
-It is non-destructive (remembers what it already imported) and runs on a timer,
-so a task you dictate shows up in Ledger within a few minutes.
+100% inside Google, free, no server. Reuses the same Firebase service-account
+key as the Claude connector.
 
-> What this does and doesn't do: Gemini gives you fast **voice capture** — it
-> makes the task you dictate. It does **not** read a specific email and extract
-> the task (that's the Claude + Gmail path). Many people use both.
+## Sync rules (simple + loop-proof)
+
+| Action | Direction |
+|--------|-----------|
+| New task (either side) | created on the other |
+| Complete a task (either side) | completed on the other |
+| Edit title / due date | **Ledger wins** — pushed out to Google |
+| Delete | not hard-synced (safe): a Ledger delete leaves a completed item in Google; a Google delete leaves the Ledger task |
+
+The mapping is stored on the Ledger task itself (`gtask` field) in Firestore, so
+it's durable and there's no fragile external state to corrupt.
+
+> **Honest caveat:** the *write* path (Gemini adding/completing tasks) is solid.
+> Whether *"what are my tasks?"* reads them back depends on your Gemini build's
+> Google Tasks support, which varies — verify it early (below). Even if read-back
+> is limited, hands-free add/complete still works.
 
 ---
 
 ## One-time setup (~10 min)
 
-You need the **Firebase service-account JSON** (same one from the Claude
-connector's Step A: Firebase console → Project settings → Service accounts →
-Generate new private key).
+You need the **Firebase service-account JSON** (Firebase console → Project
+settings → Service accounts → Generate new private key).
 
-1. Go to **script.google.com** → **New project**. Name it "Ledger Gemini Bridge".
-2. Delete the sample code and paste in the contents of **`Code.gs`** from this folder.
-3. **Add the Tasks API:**
-   - Left sidebar → **Services** (the `+` next to Services) → find **Tasks API** → **Add**.
-4. **Add the Firestore library:**
-   - Left sidebar → **Libraries** (the `+`) → paste this Script ID and **Look up**, then **Add**:
-     ```
-     1VUSl4b1r1eoNcRWotZM3e87ygkxvXltOgyDZhixqncz9lQ3MjfT1iKFw
-     ```
-     (This is the well-known `FirestoreApp` library. Pick the latest version. Keep the identifier as `FirestoreApp`.)
-5. **Add your credentials** — ⚙ **Project Settings** → scroll to **Script Properties** → **Add script property** (add all three):
+1. **script.google.com → New project**, name it "Ledger Gemini Bridge".
+2. Delete the sample code, paste in **`Code.gs`** from this folder.
+3. **Services** (`+`) → add **Tasks API**.
+4. **Libraries** (`+`) → add **FirestoreApp** — paste this Script ID, Look up, Add (identifier stays `FirestoreApp`):
+   ```
+   1VUSl4b1r1eoNcRWotZM3e87ygkxvXltOgyDZhixqncz9lQ3MjfT1iKFw
+   ```
+5. ⚙ **Project Settings → Script properties** → add three (paste the private key straight here — never into a chat):
    | Property | Value |
    |----------|-------|
-   | `FIREBASE_CLIENT_EMAIL` | the `client_email` from the service-account JSON |
-   | `FIREBASE_PRIVATE_KEY` | the `private_key` from that JSON (include the `-----BEGIN…` / `…END-----` lines) |
+   | `FIREBASE_CLIENT_EMAIL` | `client_email` from the JSON |
+   | `FIREBASE_PRIVATE_KEY` | `private_key` from the JSON (incl. BEGIN/END lines) |
    | `FIREBASE_PROJECT_ID` | `ledger-app-732df` |
-6. **Authorize & test:** top bar → function dropdown → **importTasksToLedger** → **Run**. Approve the permission prompts (Tasks + external requests). First run with no new tasks just logs "No new Google Tasks to import."
-7. **Make it automatic:** left sidebar → **Triggers** (clock icon) → **Add Trigger**:
-   - Function: `importTasksToLedger`
-   - Event source: **Time-driven** → **Minutes timer** → **Every 10 minutes** → Save.
+6. Function dropdown → **syncTasks** → **Run**. Approve the permission prompts.
+7. **Triggers** (clock) → **Add Trigger** → `syncTasks`, Time-driven → Minutes → **Every minute** → Save.
 
-Done. Now say to Gemini: *"add a task to …"* → wait a few minutes → check Ledger.
+## Verify (2 quick tests)
 
----
+1. **Ledger → Google:** open the Ledger app, confirm your existing open tasks
+   appear in Google Tasks (tasks.google.com) within a minute.
+2. **Gemini → Ledger:** say *"Hey Google, add a task to test Ledger tomorrow"* →
+   confirm it lands in Google Tasks, then in Ledger a minute later.
+3. **Read-back:** say *"Hey Google, what are my tasks?"* — if it lists them, you
+   have the full loop. If not, that's the Gemini-read limitation; add/complete
+   still work.
 
-## Notes & options (top of `Code.gs`)
+## Notes
 
-- `COMPLETE_AFTER_IMPORT` (default `true`): after importing, marks the Google
-  Task done so it leaves your active list. Set `false` to keep it in Google Tasks.
-- `TASK_LIST` (default `@default`): the list Gemini writes to. Leave as-is unless
-  you deliberately use a different list.
-- **Category guessing:** imported tasks get a best-guess category from keywords
-  (e.g. "dentist" → Health, "pay rent" → Finance), priority defaults to `med`,
-  and the due date comes from the Google Task. Refine anything in the app.
-- **Tip for phrasing:** say *"add a task to X on Friday"* so Gemini captures a
-  due date. If Gemini ever routes your request to Calendar instead of Tasks,
-  tell me — I can add a calendar-watching variant.
-- **Cost/limits:** free. Apps Script time triggers and the Tasks/Firestore
-  calls are well within Google's free quotas for personal use.
+- Mirrors the **`@default`** Google Tasks list (what Gemini uses). If you'd
+  rather isolate Ledger to its own list, tell me and I'll switch it.
+- Reopening a *completed* task on the Google side isn't synced back (Ledger is
+  the source of truth for completion) — reopen it in Ledger instead.
+- Free within Google's quotas for personal use, even at a 1-minute cadence.

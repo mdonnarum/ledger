@@ -1,107 +1,139 @@
 /**
- * Ledger ⇄ Gemini bridge (Google Apps Script)
+ * Ledger ⇄ Google Tasks — TWO-WAY sync (Google Apps Script)
  * ------------------------------------------------------------------
- * Lets you SPEAK TO GEMINI to add tasks to Ledger.
+ * Makes Google Tasks a live mirror of your Ledger tasks, so you can manage
+ * Ledger by talking to Gemini (which speaks Google Tasks natively):
  *
- * How it works:
- *   You: "Hey Gemini, add a task to call the dentist Friday"
- *      → Gemini creates a Google Task (native)
- *      → this script (on a timer) copies NEW Google Tasks into Ledger's
- *        Firestore document (ledger/main) — the same one the app uses
- *      → the task shows up in the Ledger app on every device.
+ *   "Hey Google, add a task to call the dentist Friday"  → shows up in Ledger
+ *   "Hey Google, mark the dentist task done"             → completes in Ledger
+ *   "Hey Google, what are my tasks?"                     → reads the mirror
+ *   ...and anything you add/finish in the Ledger app flows back to Google Tasks.
  *
- * It is non-destructive: it remembers which Google Tasks it has already
- * imported (in Script Properties) and won't duplicate them. Optionally it
- * can mark the Google Task complete after import (see COMPLETE_AFTER_IMPORT).
+ * DESIGN (kept simple + loop-proof):
+ *   • The mapping lives on the Ledger task itself (t.gtask = Google Task id),
+ *     stored in Firestore — durable, no fragile external state.
+ *   • New task on EITHER side  → created on the other.
+ *   • Complete on EITHER side  → completed on the other.
+ *   • Content edits (title/due) → Ledger is the source of truth, pushed OUT to
+ *     Google. (Editing wording in Gemini is rare; Ledger wins to avoid ping-pong.)
+ *   • Deletes are NOT hard-synced (safe by design): deleting in Ledger leaves a
+ *     completed item in Google; deleting in Google leaves the Ledger task.
  *
- * SETUP: see README.md in this folder. In short —
- *   1) Services (+) → add "Tasks API".
- *   2) Libraries (+) → add FirestoreApp
- *      (script id: 1VUSl4b1r1eoNcRWotZM3e87ygkxvXltOgyDZhixqncz9lQ3MjfT1iKFw)
- *   3) Project Settings → Script properties → add:
- *        FIREBASE_CLIENT_EMAIL   (client_email from the service-account JSON)
- *        FIREBASE_PRIVATE_KEY    (private_key from that JSON, incl. BEGIN/END lines)
- *        FIREBASE_PROJECT_ID     ledger-app-732df
- *   4) Run importTasksToLedger once (authorize), then add a time trigger
- *      (Triggers → add → importTasksToLedger → every 10 minutes).
+ * SETUP: see README.md. Services → Tasks API. Libraries → FirestoreApp. Add the
+ * FIREBASE_* script properties. Run syncTasks once to authorize, then add a
+ * time trigger (Every minute).
  */
 
-// If true, imported Google Tasks are marked done in Google Tasks so they leave
-// your active list. If false, they stay (we still won't re-import them).
-var COMPLETE_AFTER_IMPORT = true;
-
-// Which Google Tasks list to watch. '@default' is the one Gemini writes to.
+// Which Google Tasks list to mirror. '@default' is the list Gemini reads/writes.
 var TASK_LIST = '@default';
-
-// Default Ledger fields for imported tasks.
 var DEFAULT_PRIORITY = 'med';
 
-// Tiny keyword → Ledger category guess (matches the app's default categories).
-// Falls back to the first category in your board.
+// Light keyword → Ledger category guess (matches the app's default categories).
 var CATEGORY_HINTS = [
   ['finance', ['bill','pay','invoice','tax','bank','rent','mortgage','insurance','budget','refund']],
   ['health',  ['doctor','dentist','appointment','prescription','pharmacy','gym','therapy','medical','vaccine']],
   ['home',    ['clean','repair','fix','grocery','groceries','laundry','yard','trash','furniture','landlord']],
-  ['work',    ['meeting','email','client','report','deadline','project','invoice','presentation','deploy']]
+  ['work',    ['meeting','email','client','report','deadline','project','presentation','deploy']]
 ];
 
-function importTasksToLedger() {
-  var props = PropertiesService.getScriptProperties();
-  var seen = JSON.parse(props.getProperty('SEEN_TASK_IDS') || '{}');
-
-  // 1) Pull open Google Tasks (created by Gemini / you).
-  var resp = Tasks.Tasks.list(TASK_LIST, { showCompleted: false, maxResults: 100 });
-  var items = (resp && resp.items) || [];
-  var fresh = items.filter(function (t) { return t.title && !seen[t.id]; });
-  if (!fresh.length) { Logger.log('No new Google Tasks to import.'); return; }
-
-  // 2) Load the Ledger board once.
+function syncTasks() {
   var fs = getFirestore_();
   var doc = fs.getDocument('ledger/main');
   var board = doc.obj || {};
   board.tasks = board.tasks || [];
-  board.cats  = (board.cats && board.cats.length) ? board.cats : [{ id: 'personal', name: 'Personal' }];
+  board.cats = (board.cats && board.cats.length) ? board.cats : [{ id: 'personal', name: 'Personal' }];
 
-  // 3) Convert and prepend each new Google Task.
-  var added = 0;
-  fresh.forEach(function (t) {
-    board.tasks.unshift(googleTaskToLedger_(t, board.cats));
-    seen[t.id] = Date.now();
-    added++;
-    if (COMPLETE_AFTER_IMPORT) {
-      try {
-        t.status = 'completed';
-        Tasks.Tasks.update(t, TASK_LIST, t.id);
-      } catch (e) { Logger.log('Could not complete task ' + t.id + ': ' + e); }
+  var gtasks = listAllTasks_(TASK_LIST);
+  var gById = {}; gtasks.forEach(function (g) { gById[g.id] = g; });
+  var lByGid = {}; board.tasks.forEach(function (t) { if (t.gtask) lByGid[t.gtask] = t; });
+
+  var changed = false;
+
+  // ---------- Google → Ledger ----------
+  gtasks.forEach(function (g) {
+    if (!g.title) return;
+    var lt = lByGid[g.id];
+    if (!lt) {
+      // Brand-new Google Task (e.g. dictated to Gemini) → import into Ledger.
+      var nt = gToLedger_(g, board.cats);
+      nt.gtask = g.id;
+      if (g.status === 'completed') { nt.done = true; nt.completed = Date.now(); }
+      board.tasks.unshift(nt);
+      lByGid[g.id] = nt;
+      changed = true;
+    } else if (g.status === 'completed' && !lt.done) {
+      // Completed in Google → complete in Ledger.
+      lt.done = true; lt.completed = Date.now(); lt.touched = Date.now();
+      changed = true;
     }
   });
 
-  // 4) Write back only the fields we touched.
-  board.savedAt = Date.now();
-  fs.updateDocument('ledger/main', { tasks: board.tasks, savedAt: board.savedAt }, true);
+  // ---------- Ledger → Google ----------
+  board.tasks.forEach(function (t) {
+    var g = t.gtask ? gById[t.gtask] : null;
+    if (!t.done) {
+      if (!t.gtask) {
+        // New Ledger task → create its Google mirror.
+        var created = Tasks.Tasks.insert(ledgerToG_(t), TASK_LIST);
+        t.gtask = created.id; changed = true;
+      } else if (g && g.status !== 'completed') {
+        // Keep Google title/due matching Ledger (Ledger wins on content).
+        var patch = contentPatch_(t, g);
+        if (patch) { try { Tasks.Tasks.patch(patch, TASK_LIST, g.id); } catch (e) { Logger.log('patch: ' + e); } }
+      }
+      // if mapped but missing in Google (deleted there) → leave Ledger as-is.
+    } else if (g && g.status !== 'completed') {
+      // Ledger task done → complete the Google mirror.
+      try { g.status = 'completed'; Tasks.Tasks.update(g, TASK_LIST, g.id); } catch (e) { Logger.log('complete: ' + e); }
+    }
+  });
 
-  props.setProperty('SEEN_TASK_IDS', JSON.stringify(pruneSeen_(seen)));
-  Logger.log('Imported ' + added + ' task(s) into Ledger.');
+  if (changed) {
+    board.savedAt = Date.now();
+    fs.updateDocument('ledger/main', { tasks: board.tasks, savedAt: board.savedAt }, true);
+  }
+  Logger.log('Sync ok — ' + board.tasks.length + ' Ledger tasks, ' + gtasks.length + ' Google tasks.');
 }
 
-function googleTaskToLedger_(t, cats) {
+// ---------- conversions ----------
+function gToLedger_(g, cats) {
   return {
     id: uid_(),
-    title: t.title,
-    cat: guessCat_(t.title + ' ' + (t.notes || ''), cats),
+    title: g.title,
+    cat: guessCat_(g.title + ' ' + (g.notes || ''), cats),
     pri: DEFAULT_PRIORITY,
-    due: t.due ? t.due.slice(0, 10) : '',   // RFC3339 → YYYY-MM-DD
+    due: g.due ? g.due.slice(0, 10) : '',       // RFC3339 → YYYY-MM-DD
     repeat: 'none',
-    notes: (t.notes || '') + (t.notes ? '\n' : '') + 'Added by voice via Gemini',
-    done: false,
-    status: 'todo',
-    created: Date.now(),
-    touched: Date.now(),
-    pushes: 0,
+    notes: g.notes || '',
+    done: false, status: 'todo',
+    created: Date.now(), touched: Date.now(), pushes: 0,
     subtasks: []
   };
 }
+function ledgerToG_(t) {
+  var g = { title: t.title || 'Task', notes: t.notes || '', status: 'needsAction' };
+  if (t.due) g.due = t.due + 'T00:00:00.000Z';
+  return g;
+}
+// Return a patch only if Google's title/due drifted from Ledger's.
+function contentPatch_(t, g) {
+  var p = {}, need = false;
+  if ((g.title || '') !== (t.title || '')) { p.title = t.title || ''; need = true; }
+  var gDue = g.due ? g.due.slice(0, 10) : '';
+  if (gDue !== (t.due || '')) { p.due = t.due ? t.due + 'T00:00:00.000Z' : null; need = true; }
+  return need ? p : null;
+}
 
+// ---------- helpers ----------
+function listAllTasks_(list) {
+  var out = [], token = null;
+  do {
+    var resp = Tasks.Tasks.list(list, { showCompleted: true, showHidden: true, maxResults: 100, pageToken: token });
+    if (resp.items) out = out.concat(resp.items);
+    token = resp.nextPageToken;
+  } while (token);
+  return out;
+}
 function guessCat_(text, cats) {
   var s = (text || '').toLowerCase();
   for (var i = 0; i < CATEGORY_HINTS.length; i++) {
@@ -113,25 +145,13 @@ function guessCat_(text, cats) {
   }
   return cats[0].id;
 }
-
 function uid_() { return Math.random().toString(36).slice(2, 10); }
-
-// Keep the seen-set from growing forever: drop entries older than 60 days.
-function pruneSeen_(seen) {
-  var cutoff = Date.now() - 60 * 86400000, out = {};
-  Object.keys(seen).forEach(function (k) { if (seen[k] > cutoff) out[k] = seen[k]; });
-  return out;
-}
-
 function getFirestore_() {
   var p = PropertiesService.getScriptProperties();
   var email = p.getProperty('FIREBASE_CLIENT_EMAIL');
-  var key   = p.getProperty('FIREBASE_PRIVATE_KEY');
-  var proj  = p.getProperty('FIREBASE_PROJECT_ID');
-  if (!email || !key || !proj) {
-    throw new Error('Missing FIREBASE_* script properties — see README.md');
-  }
-  // Script Properties often store the key with literal \n — restore real newlines.
+  var key = p.getProperty('FIREBASE_PRIVATE_KEY');
+  var proj = p.getProperty('FIREBASE_PROJECT_ID');
+  if (!email || !key || !proj) throw new Error('Missing FIREBASE_* script properties — see README.md');
   key = key.replace(/\\n/g, '\n');
   return FirestoreApp.getFirestore(email, key, proj);
 }
