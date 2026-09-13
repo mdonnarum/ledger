@@ -638,6 +638,30 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
 .task-suggestion .ts-meta{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px}
 .task-suggestion button{width:100%;height:30px;border-radius:6px;background:rgba(77,217,176,.12);border:1px solid rgba(77,217,176,.3);color:var(--mint);font-size:12px;font-weight:600}
 .task-suggestion button:hover{background:rgba(77,217,176,.2)}
+/* ---- Proposal / confirm card ---- */
+.proposal{margin-top:2px;background:var(--panel);border:1px solid var(--line-soft);border-radius:3px 10px 10px 10px;overflow:hidden}
+.prop-head{padding:8px 12px;font-size:11px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);background:var(--panel-hi);border-bottom:1px solid var(--line-soft)}
+.prop-rows{padding:6px 4px;display:flex;flex-direction:column}
+.prop-row{display:flex;gap:9px;align-items:flex-start;padding:7px 9px;border-radius:7px}
+.prop-row+.prop-row{border-top:1px solid var(--line-soft)}
+.prop-row.danger .prop-t{color:var(--rose)}
+.prop-ico{flex-shrink:0;width:20px;text-align:center;font-size:13px;line-height:1.5;opacity:.9}
+.prop-txt{min-width:0;flex:1}
+.prop-t{font-size:12.5px;font-weight:550;color:var(--text);line-height:1.4;word-break:break-word}
+.prop-d{font-size:11.5px;color:var(--text-dim);margin-top:3px;line-height:1.55;word-break:break-word}
+.prop-actions{display:flex;gap:8px;padding:9px 12px 4px}
+.prop-confirm{flex:1;height:34px;border-radius:7px;background:var(--mint);border:none;color:#08120F;font-size:13px;font-weight:650;cursor:pointer;transition:.15s}
+.prop-confirm:hover{background:#5FE8C0}
+.prop-cancel{height:34px;padding:0 14px;border-radius:7px;background:transparent;border:1px solid var(--line);color:var(--text-dim);font-size:13px;cursor:pointer}
+.prop-cancel:hover{background:var(--panel-hi)}
+.prop-hint{padding:2px 12px 10px;font-size:10.5px;color:var(--text-dim);font-style:italic;text-align:center}
+.proposal.done{opacity:.6}.proposal.done .prop-head::after{content:' ✓ applied';color:var(--mint)}
+.proposal.cancelled{opacity:.5}.proposal.cancelled .prop-rows{text-decoration:line-through}
+/* ---- Proactive greeting quick chips ---- */
+.asst-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.asst-chip{padding:7px 12px;border-radius:16px;background:rgba(77,217,176,.12);border:1px solid rgba(77,217,176,.3);color:var(--mint);font-size:12px;font-weight:550;cursor:pointer;transition:.15s}
+.asst-chip:hover{background:rgba(77,217,176,.22)}
+.asst-chip.ghost{background:var(--panel-hi);border-color:var(--line-soft);color:var(--text-mid)}
 .asst-typing{display:none;align-items:center;gap:5px;padding:4px 12px}
 .asst-typing.on{display:flex}
 .asst-typing span{width:6px;height:6px;border-radius:50%;background:var(--text-dim);animation:bounce 1.2s ease-in-out infinite}
@@ -954,7 +978,7 @@ body.light .msg.claude .msg-bubble{background:var(--panel-hi);border-color:var(-
 <div class="app">
 
   <div class="topbar">
-    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v50</span></div>
+    <div class="logo"><div class="mark"></div><h1>Ledger</h1><span class="ver">TASK COMMAND · v51</span></div>
     <div class="tb-right">
       <div class="clock"><span id="cDate">—</span><br><span id="cStat">—</span></div>
       <button class="theme-btn" id="bTheme" title="Toggle light/dark">🌙</button>
@@ -1699,7 +1723,7 @@ const DEFCATS=[
  {id:'home',name:'Home',color:'#9B8CFF'},{id:'finance',name:'Finance',color:'#F0A23C'},
  {id:'health',name:'Health',color:'#F2586A'}
 ];
-let S={tasks:[],bills:[],cats:DEFCATS.slice(),notes:[],staples:[]};
+let S={tasks:[],bills:[],cats:DEFCATS.slice(),notes:[],staples:[],memory:[]};
 let staged=[], uiStatus='open', uiSort='due', uiQuery='', uiCat='', uiStatusFilter='all';
 let hzFilter=null, openTasks=new Set(), openBills=new Set(), openSubs=new Set(), editing=null, billEditing=null, dashSel=null, subExpanded=new Set();
 // Dashboard source filter: 'all' (tasks + bills), 'tasks', or 'bills'
@@ -1906,6 +1930,7 @@ async function load(){
  S.bills=data.bills||[];
  S.notes=data.notes||[];
  S.staples=data.staples||[];
+ S.memory=data.memory||[];
  staples=S.staples; // keep local ref in sync
  if(data.cats&&data.cats.length)S.cats=data.cats;
  }else if(!fbOk||authOk){
@@ -1925,6 +1950,7 @@ async function load(){
  S.bills=fbData.bills||[];
  S.notes=fbData.notes||[];
  S.staples=fbData.staples||[];
+ S.memory=fbData.memory||[];
  staples=S.staples; // keep local ref in sync
  if(fbData.cats&&fbData.cats.length)S.cats=fbData.cats;
  try{localStorage.setItem('ledger:local-snapshot',JSON.stringify({savedAt:Date.now(),...fbData}));}catch(e){}
@@ -1937,7 +1963,7 @@ let saveT;
 async function save(){
  clearTimeout(saveT);
  saveT=setTimeout(async()=>{
- const payload={tasks:S.tasks,bills:S.bills,cats:S.cats,notes:S.notes,staples:S.staples,savedAt:Date.now()};
+ const payload={tasks:S.tasks,bills:S.bills,cats:S.cats,notes:S.notes,staples:S.staples,memory:S.memory,savedAt:Date.now()};
  await sharedStorage.set(payload);
  // Also keep local copy for offline
  try{localStorage.setItem('ledger:local-snapshot',JSON.stringify(payload))}catch(e){}
@@ -3598,16 +3624,69 @@ window.addEventListener('offline',()=>{updateConnStatus();toast('Offline — sho
    (Due this period / Coming up / Paused). */
 
 let asstOpen=false, asstHistory=[], asstBusy=false;
+
+// A proactive, locally-computed briefing shown when the assistant opens —
+// no API call, so it's instant and free. Sets up the "assistant that checks
+// in" feel, with one-tap chips to go deeper (those do call the model).
+function proactiveSummary(){
+ const open=S.tasks.filter(t=>!t.done);
+ const overdue=open.filter(t=>bucketOf(t)==='overdue').length;
+ const today=open.filter(t=>bucketOf(t)==='today').length;
+ const stalled=open.filter(isStalled).length;
+ const billsSoon=S.bills.filter(b=>!b.paused&&!b.income&&['overdue','soon'].includes(billStatus(b))).length;
+ const h=new Date().getHours();
+ const hello=h<12?'Good morning':h<18?'Good afternoon':'Good evening';
+ const bits=[];
+ if(overdue)bits.push(`${overdue} overdue`);
+ if(today)bits.push(`${today} due today`);
+ if(billsSoon)bits.push(`${billsSoon} bill${billsSoon>1?'s':''} coming up`);
+ if(stalled&&!overdue&&!today)bits.push(`${stalled} task${stalled>1?'s':''} stalled`);
+ let line;
+ if(bits.length)line=`${hello}. You've got ${bits.join(', ')}. Want me to help you tackle it?`;
+ else if(open.length)line=`${hello}. Nothing overdue — ${open.length} open task${open.length>1?'s':''} on the board. What are we working on?`;
+ else line=`${hello}. Your board's clear. Tell me what's going on and I'll set it up.`;
+ return line;
+}
+function renderGreeting(){
+ const line=proactiveSummary();
+ const chips=[
+  ['📋 Plan my day','Plan my day — walk me through what to focus on in order, and reschedule anything unrealistic.'],
+  ['⚠️ What\'s slipping?','What\'s slipping or overdue, and what should I do about it?'],
+  ['🧠 What you remember','__memory__']
+ ];
+ $('asstMsgs').innerHTML=`<div class="msg claude"><div class="msg-avatar">✦</div><div style="flex:1;min-width:0">`
+  +`<div class="msg-bubble">${esc(line)}</div>`
+  +`<div class="asst-chips">${chips.map((c,i)=>`<button class="asst-chip${i>0?' ghost':''}" data-chip="${i}">${esc(c[0])}</button>`).join('')}</div>`
+  +`</div></div>`;
+ $('asstMsgs').querySelectorAll('[data-chip]').forEach(btn=>{
+  btn.onclick=()=>{
+   const c=chips[+btn.dataset.chip];
+   if(c[1]==='__memory__'){showMemory();return;}
+   sendToAsst(c[1]);
+  };
+ });
+ // Speak the check-in if the user arrived hands-free (voice on).
+ if(voiceReplies)speakReply(line);
+}
+function showMemory(){
+ const mem=S.memory||[];
+ if(!mem.length){addAsstMsg('system','I haven\'t saved anything about you yet. As we talk, I\'ll remember the things that matter.');return;}
+ const list=mem.map(m=>`<div class="prop-row"><span class="prop-ico">🧠</span><div class="prop-txt"><div class="prop-t" style="font-weight:450">${esc(m.text)}</div></div></div>`).join('');
+ addAsstMsg('claude',`<div style="font-weight:550;margin-bottom:4px">Here's what I remember about you:</div><div class="proposal"><div class="prop-rows">${list}</div></div><div style="font-size:11.5px;color:var(--text-dim);margin-top:6px">Say “forget …” to remove anything.</div>`);
+}
 function toggleAsst(){
  asstOpen=!asstOpen;
  $('asstPanel').classList.toggle('on',asstOpen);
- if(asstOpen)$('asstInput').focus();
+ if(asstOpen){
+  if(!asstHistory.length)renderGreeting(); // fresh check-in each time the chat is empty
+  $('asstInput').focus();
+ }
  else if('speechSynthesis'in window)speechSynthesis.cancel(); // stop any spoken reply on close
 }
 $('fabBtn').onclick=toggleAsst;
 $('bClearChat').onclick=()=>{
- asstHistory=[];
- $('asstMsgs').innerHTML=`<div class="msg system"><div class="msg-bubble">Ask me anything about your board — or just tell me what needs doing and I'll add it to your list.</div></div>`;
+ asstHistory=[];pendingProposal=null;
+ renderGreeting();
 };
 // Auto-resize textarea
 $('asstInput').oninput=function(){
@@ -3703,13 +3782,16 @@ function findNote(match){
       || N.find(n=>(n.body||'').toLowerCase().includes(q));
 }
 
-function applyOps(ops){
+function applyOps(ops,opts){
+  opts=opts||{};
   const results=[];
   // Confirmation guard: ask once before the assistant deletes whole items.
+  // When the ops already came through the proposal card, the user has
+  // reviewed them there, so we skip the native confirm() entirely.
   const DESTRUCTIVE=new Set(['delete','delete_bill','delete_note','delete_category','delete_grocery']);
   const dels=ops.filter(o=>DESTRUCTIVE.has(o.op));
   let skipDeletes=false;
-  if(dels.length){
+  if(dels.length&&!opts.skipConfirm){
     const names=dels.map(o=>{
       if(o.op==='delete'){const t=findTask(o.task);return `task “${t?t.title:o.task}”`;}
       if(o.op==='delete_bill'){const b=findBill(o.bill||o.name);return `bill “${b?b.name:(o.bill||o.name)}”`;}
@@ -3734,6 +3816,64 @@ function applyOps(ops){
             subtasks:(op.subtasks||[]).map(s=>({id:uid(),title:s,done:false,notes:''}))};
           S.tasks.unshift(task);
           results.push(`✓ Added task: "${task.title}"`);
+          break;
+        }
+
+        case 'add_project':{
+          // Turn a described situation into a whole project at once: an
+          // optional new category + a batch of related tasks (each of which
+          // can carry its own subtasks). This is the "explain it, get a
+          // project" flow — no more typing every line by hand.
+          let catId;
+          if(op.new_category&&op.new_category.name){
+            const existing=findCatObj(op.new_category.name);
+            if(existing){catId=existing.id;}
+            else{
+              catId=uid();
+              const used=S.cats.map(c=>c.color);
+              const color=op.new_category.color||PALETTE.find(c=>!used.includes(c))||PALETTE[S.cats.length%PALETTE.length];
+              S.cats.push({id:catId,name:op.new_category.name,color});
+              results.push(`✓ New category: "${op.new_category.name}"`);
+            }
+          }else{
+            catId=findCat(op.cat);
+          }
+          const items=Array.isArray(op.tasks)?op.tasks:[];
+          let n=0;
+          // Preserve the order the agent proposed them in.
+          for(let i=items.length-1;i>=0;i--){
+            const td=items[i]; if(!td||!(td.title))continue;
+            S.tasks.unshift({id:uid(),title:td.title,
+              cat:td.cat?findCat(td.cat):catId,pri:td.pri||'med',due:td.due||'',
+              repeat:td.repeat||'none',notes:td.notes||'',
+              done:false,status:td.status||'todo',
+              created:Date.now(),touched:Date.now(),pushes:0,
+              subtasks:(td.subtasks||[]).map(s=>({id:uid(),title:s,done:false,notes:''}))});
+            n++;
+          }
+          results.push(`✓ Created project "${op.title||'Project'}" — ${n} task${n===1?'':'s'}`);
+          break;
+        }
+
+        case 'remember':{
+          const text=(op.text||op.fact||'').trim();
+          if(!text){results.push('✗ Nothing to remember');break;}
+          if(!S.memory)S.memory=[];
+          if(S.memory.some(m=>m.text.toLowerCase()===text.toLowerCase())){
+            results.push(`• Already knew: "${text}"`);break;
+          }
+          S.memory.unshift({id:uid(),text,created:Date.now()});
+          results.push(`🧠 Noted: "${text}"`);
+          break;
+        }
+
+        case 'forget':{
+          const q=(op.match||op.text||'').toLowerCase().trim();
+          if(!q){results.push('✗ Nothing specified to forget');break;}
+          const before=(S.memory||[]).length;
+          S.memory=(S.memory||[]).filter(m=>!m.text.toLowerCase().includes(q));
+          const gone=before-(S.memory||[]).length;
+          results.push(gone?`🧠 Forgot ${gone} note${gone>1?'s':''} matching "${op.match||op.text}"`:`✗ Nothing in memory matched "${op.match||op.text}"`);
           break;
         }
 
@@ -4021,6 +4161,23 @@ function applyOps(ops){
 
 async function sendToAsst(msg){
  if(!msg||asstBusy)return;
+ // Voice/typed confirm-or-cancel when a proposal is on the table, so a
+ // hands-free "yes, do it" / "no, cancel" resolves the pending changes
+ // instead of being sent to the model as a fresh request.
+ if(pendingProposal){
+   const m=msg.toLowerCase().trim();
+   if(/^(y|yes|yeah|yep|yup|sure|ok|okay|confirm|do it|go ahead|apply|approve|sounds good|please do|make it so)\b/.test(m)){
+     $('asstInput').value='';$('asstInput').style.height='auto';
+     addAsstMsg('user',msg); commitProposal(); return;
+   }
+   if(/^(n|no|nope|cancel|stop|nevermind|never mind|don'?t|discard|scrap)\b/.test(m)){
+     $('asstInput').value='';$('asstInput').style.height='auto';
+     addAsstMsg('user',msg); cancelProposal(); return;
+   }
+   // Anything else means the user is refining — drop the stale proposal
+   // and let the model reconsider with the new instruction.
+   dismissProposalUI();
+ }
  const key=getAKey();
  if(!key){
  addAsstMsg('system','No API key set. Open ⚙ Settings and add your Anthropic API key to use the assistant.');
@@ -4044,10 +4201,14 @@ async function sendToAsst(msg){
 
  const cats=S.cats.map(c=>c.name.toLowerCase()).join('|');
  const pressing=(typeof nowItems==='function'?nowItems():[]).slice(0,10).map(t=>`- "${t.title}" [${t.pri}]${bucketOf(t)==='overdue'?' OVERDUE':(t.due?' due '+t.due:'')}${((t.snoozeCount||0)+(t.pushes||0))>=1?` (pushed ${(t.snoozeCount||0)+(t.pushes||0)}×)`:''}`).join('\n')||'(nothing pressing right now)';
- const system=`You are the board intelligence for a task manager called Ledger. You have full read/write access to the user's board.
+ const memBlock=(S.memory||[]).length?(S.memory||[]).map(m=>`- ${m.text}`).join('\n'):'(nothing remembered yet)';
+ const system=`You are Ledger — a proactive personal assistant, not a passive command box. You manage the user's task board for them: you create and combine tasks, break big projects into concrete steps, propose next steps, and remind them what needs attention. Talk like a capable human assistant: warm, brief, direct. You have full read/write access to the board.
 
 TODAY: ${new Date().toDateString()}
 CATEGORIES AVAILABLE: ${cats}
+
+WHAT YOU KNOW ABOUT THE USER (long-term memory — use it to personalize, and keep it current with the remember/forget ops):
+${memBlock}
 
 IMPORTANT: Each task below includes its full notes field. Notes often contain status updates, context, waiting-on info, and progress. Read them carefully — they are essential for understanding what's actually happening with each task.
 
@@ -4081,6 +4242,7 @@ CRITICAL JSON RULES — the OPS block MUST be valid JSON:
 
 AVAILABLE OPERATIONS:
 - add_task: {op:"add_task",title,cat,pri:"low|med|high|critical",due:"YYYY-MM-DD",notes,subtasks:["item1"]}
+- add_project: {op:"add_project",title,cat,new_category:{name,color:"#hex"},tasks:[{title,pri,due:"YYYY-MM-DD",notes,subtasks:["step1","step2"]}]} ← THE BIG ONE. When the user describes a project, an initiative, or a messy situation, DON'T make one vague task — decompose it into a real project: 3–8 concrete, actionable tasks, each with a sensible priority and due date, and subtasks where a task has clear steps. Use "cat" to file the whole project under an existing category, OR "new_category" to create a dedicated one when it deserves its own space (e.g. "Apartment move"). This is the user's #1 need — turning "here's what's going on" into a fully built-out plan they approve in one tap.
 - update: {op:"update",task:"match title",title,cat,pri,due,status:"todo|inprogress|blocked",notes,done:true/false}
 - complete: {op:"complete",task:"match title"}
 - delete: {op:"delete",task:"match title"}
@@ -4098,6 +4260,10 @@ BILLS & INCOME (a "bill" is money you pay; set income:true for money received li
 - pay_bill: {op:"pay_bill",bill:"match name"} ← logs a payment (or receipt for income) and advances the due date
 - undo_pay: {op:"undo_pay",bill:"match name"} ← reverses the most recent payment/receipt
 - pause_bill: {op:"pause_bill",bill:"match name",paused:true/false}
+
+MEMORY (durable facts about the user — their goals, people, preferences, ongoing situations, how they like to work; these persist across every conversation and device):
+- remember: {op:"remember",text:"a concise fact worth keeping"} ← save something the user tells you about themselves or their world, or a preference you infer. Keep each fact short and standalone. Don't remember one-off task details (those live on the tasks).
+- forget: {op:"forget",match:"words identifying the fact"} ← remove a fact that's stale or wrong.
 
 NOTES:
 - add_note: {op:"add_note",title,body,cat,pinned:true/false}
@@ -4122,7 +4288,15 @@ RULES:
 - For notes_to_subtasks: read the task's notes field and convert each line/item into a checklist item
 - For due dates: interpret "next Friday", "next week", "tomorrow" relative to today
 - Never invent tasks that weren't mentioned
-- If unclear which task, ask for clarification before executing`;
+- If unclear which task, ask for clarification before executing
+
+HOW TO BE A GOOD ASSISTANT:
+- PROPOSE, don't just execute. Every OPS block you emit is shown to the user as a reviewable proposal they approve with one tap (or by saying "confirm"). So it's fine to be bold and draft a whole plan — they get the final say. Briefly describe what you're proposing in your natural reply.
+- DECOMPOSE big things. If the user explains a situation, a project, or something stressful, your instinct should be add_project with real, ordered steps and due dates — not a single fuzzy to-do. Think through what actually has to happen and lay it out.
+- COMBINE and tidy. If you notice duplicate, overlapping, or stale tasks, propose merging or cleaning them up.
+- BE PROACTIVE. Surface what's slipping, what's overdue, what's been pushed repeatedly, and suggest concrete next steps or reschedules. When asked to "plan my day" or "check in", give a short spoken-style briefing of what matters most today and propose a sensible ordering, rescheduling anything unrealistic.
+- REMEMBER. When the user reveals something durable about themselves, their people, their goals, or how they like to work, quietly save it with a remember op so you get more personal over time.
+- Keep replies short and human. Lead with the answer or the plan, not a preamble.`;
 
  try{
  const resp=await fetch('https://api.anthropic.com/v1/messages',{
@@ -4138,9 +4312,12 @@ RULES:
  }
  const raw=data.content?.filter(x=>x.type==='text').map(x=>x.text).join('')||'Something went wrong.';
 
- // Extract and execute OPS
+ // Extract OPS — but PARSE only. Nothing touches the board until the user
+ // approves the proposal card (or says "confirm"). This is the
+ // propose-and-confirm contract.
  const opsMatch=raw.match(/<<<OPS:([\s\S]*?)>>>/);
  let opsResults=[];
+ let parsedOps=null;
  let displayText=raw.replace(/<<<OPS:[\s\S]*?>>>/g,'').trim();
 
  if(opsMatch){
@@ -4159,20 +4336,17 @@ RULES:
      // 4. Fix unescaped newlines in strings
      opsRaw=opsRaw.replace(/("(?:[^"\\]|\\.)*")/g,m=>m.replace(/\n/g,'\\n').replace(/\r/g,'\\r'));
      const opsArr=JSON.parse(opsRaw);
-     const result=Array.isArray(opsArr)?opsArr:[opsArr];
-     opsResults=applyOps(result);
-     save();renderAll();
+     parsedOps=Array.isArray(opsArr)?opsArr:[opsArr];
    }catch(e){
      // Last resort: try extractJSON
      try{
        const opsArr2=extractJSON(opsMatch[1]);
-       const result2=Array.isArray(opsArr2)?opsArr2:[opsArr2];
-       opsResults=applyOps(result2);
-       save();renderAll();
+       parsedOps=Array.isArray(opsArr2)?opsArr2:[opsArr2];
      }catch(e2){
        opsResults=[`✗ Could not parse operations: ${e2.message.slice(0,60)}`];
      }
    }
+   if(parsedOps&&!parsedOps.length)parsedOps=null;
  }
 
  // Also handle legacy TASK/UPDATE formats for backwards compat
@@ -4214,7 +4388,15 @@ RULES:
    fullDisplay+=`<div style="margin-top:10px;padding:8px 10px;background:var(--panel-hi);border-radius:7px;font-family:var(--mono);font-size:11.5px;color:var(--text-dim);line-height:1.7">${opsResults.map(r=>esc(r)).join('<br>')}</div>`;
  }
  addAsstMsg('claude',fullDisplay,taskData);
- speakReply(displayText);
+
+ // If the model proposed board changes, show them as a card to approve —
+ // and speak a short prompt to review, rather than reading the raw plan.
+ if(parsedOps){
+   showProposal(parsedOps);
+   speakReply(displayText+' '+proposalVoicePrompt(parsedOps));
+ }else{
+   speakReply(displayText);
+ }
 
  }catch(e){
  $('asstTyping').classList.remove('on');
@@ -4223,6 +4405,122 @@ RULES:
  }
  asstBusy=false;
  $('asstSend').disabled=false;
+}
+
+/* ================= PROPOSAL / CONFIRM GATE =================
+   The assistant never writes to the board directly. It stages ops here as a
+   card the user approves (tap or say "confirm") or rejects. This is the
+   core of the propose-and-confirm assistant. */
+let pendingProposal=null; // { ops:[...], el:HTMLElement }
+
+// Plain-English one-liner for a single op, for the proposal card.
+function describeOp(op){
+  const catName=id=>{const c=(S.cats.find(x=>x.id===id)||findCatObj(id));return c?c.name:(id||'Personal');};
+  const due=d=>{if(!d)return '';const dt=parseDue(d);return dt?' · due '+dt.toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';};
+  const pri=p=>p?` · ${p}`:'';
+  switch(op.op){
+    case 'add_task':return {i:'＋',t:`Add task: “${op.title||'Untitled'}”`,d:`${catName(findCat(op.cat))}${pri(op.pri)}${due(op.due)}${(op.subtasks||[]).length?` · ${op.subtasks.length} steps`:''}`};
+    case 'add_project':{
+      const n=(op.tasks||[]).length;
+      const steps=(op.tasks||[]).map(t=>`• ${esc(t.title)}${t.due?' ('+esc(t.due)+')':''}`).join('<br>');
+      const catlabel=op.new_category&&op.new_category.name?`new category “${esc(op.new_category.name)}”`:esc(catName(findCat(op.cat)));
+      return {i:'📁',t:`New project: “${op.title||'Project'}” — ${n} task${n===1?'':'s'}`,d:`Filed under ${catlabel}<br>${steps}`};
+    }
+    case 'update':return {i:'✎',t:`Update: “${op.task}”`,d:[op.title&&`title → ${op.title}`,op.pri&&`priority → ${op.pri}`,op.due&&`due → ${op.due}`,op.status&&`status → ${op.status}`,op.cat&&`category → ${catName(findCat(op.cat))}`,op.done===true&&'mark done',op.done===false&&'reopen',op.notes!==undefined&&'update notes'].filter(Boolean).join(' · ')};
+    case 'complete':return {i:'✓',t:`Complete: “${op.task}”`,d:''};
+    case 'delete':return {i:'🗑',t:`Delete task: “${op.task}”`,d:'',danger:true};
+    case 'add_subtask':return {i:'＋',t:`Add steps to “${op.task}”`,d:(Array.isArray(op.items)?op.items:[op.item]).filter(Boolean).map(s=>'• '+esc(s)).join('<br>')};
+    case 'set_subtasks':return {i:'☑',t:`Set checklist on “${op.task}”`,d:(op.items||[]).map(s=>'• '+esc(s)).join('<br>')};
+    case 'check_subtask':return {i:'☑',t:`${op.done===false?'Uncheck':'Check off'} “${op.item}” on “${op.task}”`,d:''};
+    case 'delete_subtask':return {i:'－',t:`Remove step “${op.item}” from “${op.task}”`,d:'',danger:true};
+    case 'notes_to_subtasks':return {i:'☑',t:`Turn notes into a checklist on “${op.task}”`,d:''};
+    case 'split':return {i:'⑃',t:`Split “${op.task}” into ${(op.into||[]).length} tasks`,d:(op.into||[]).map(t=>'• '+esc(t.title)).join('<br>'),danger:!!op.delete_original};
+    case 'add_bill':return {i:'💲',t:`Add ${op.income?'income':'bill'}: “${op.name}”`,d:`${money(op.amount)} · ${op.cadence||op.type||'monthly'}${due(op.due)}`};
+    case 'update_bill':return {i:'✎',t:`Update bill: “${op.bill}”`,d:[op.amount!==undefined&&`amount → ${money(op.amount)}`,op.due&&`due → ${op.due}`,op.cadence&&`cadence → ${op.cadence}`].filter(Boolean).join(' · ')};
+    case 'delete_bill':return {i:'🗑',t:`Delete bill: “${op.bill||op.name}”`,d:'',danger:true};
+    case 'pay_bill':return {i:'💲',t:`Log payment: “${op.bill}”`,d:'advances the due date'};
+    case 'undo_pay':return {i:'↩',t:`Undo last payment: “${op.bill}”`,d:''};
+    case 'pause_bill':return {i:'⏸',t:`${op.paused===false?'Resume':'Pause'} bill: “${op.bill}”`,d:''};
+    case 'add_note':return {i:'📝',t:`Add note: “${op.title||'Untitled'}”`,d:op.pinned?'pinned':''};
+    case 'update_note':return {i:'✎',t:`Update note: “${op.note}”`,d:''};
+    case 'delete_note':return {i:'🗑',t:`Delete note: “${op.note}”`,d:'',danger:true};
+    case 'add_category':return {i:'🏷',t:`New category: “${op.name}”`,d:''};
+    case 'update_category':return {i:'✎',t:`Rename category: “${op.category}”→“${op.newName||''}”`,d:''};
+    case 'delete_category':return {i:'🗑',t:`Delete category: “${op.category||op.name}”`,d:'its tasks move elsewhere',danger:true};
+    case 'add_grocery':return {i:'🛒',t:`Add to grocery list: “${op.name}”`,d:op.aisle||''};
+    case 'check_grocery':return {i:'☑',t:`${op.done===false?'Uncheck':'Check off'} “${op.item}”`,d:''};
+    case 'delete_grocery':return {i:'－',t:`Remove grocery item: “${op.item||op.name}”`,d:'',danger:true};
+    case 'sort_groceries':return {i:'↕',t:`Sort grocery list by aisle`,d:''};
+    case 'remember':return {i:'🧠',t:`Remember: “${op.text||op.fact||''}”`,d:''};
+    case 'forget':return {i:'🧠',t:`Forget: “${op.match||op.text||''}”`,d:''};
+    default:return {i:'•',t:op.op,d:''};
+  }
+}
+
+function proposalVoicePrompt(ops){
+  const n=ops.length;
+  const proj=ops.find(o=>o.op==='add_project');
+  if(proj)return `I've drafted a plan with ${(proj.tasks||[]).length} tasks. Say confirm to add it, or tell me what to change.`;
+  return `That's ${n} change${n===1?'':'s'}. Say confirm to apply, or cancel.`;
+}
+
+function showProposal(ops){
+  dismissProposalUI(); // clear any earlier card
+  const msgs=$('asstMsgs');
+  const div=document.createElement('div');
+  div.className='msg claude';
+  const rows=ops.map(op=>{
+    const d=describeOp(op);
+    return `<div class="prop-row${d.danger?' danger':''}"><span class="prop-ico">${d.i}</span><div class="prop-txt"><div class="prop-t">${esc(d.t)}</div>${d.d?`<div class="prop-d">${d.d}</div>`:''}</div></div>`;
+  }).join('');
+  div.innerHTML=`<div class="msg-avatar">✦</div><div style="flex:1;min-width:0">
+    <div class="proposal">
+      <div class="prop-head">Proposed changes · ${ops.length}</div>
+      <div class="prop-rows">${rows}</div>
+      <div class="prop-actions">
+        <button class="prop-confirm" data-confirm="1">✓ Confirm</button>
+        <button class="prop-cancel" data-cancel="1">Cancel</button>
+      </div>
+      <div class="prop-hint">or just say “confirm” / “cancel”</div>
+    </div></div>`;
+  msgs.appendChild(div);
+  div.querySelector('[data-confirm]').addEventListener('click',commitProposal);
+  div.querySelector('[data-cancel]').addEventListener('click',cancelProposal);
+  pendingProposal={ops,el:div};
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+// Remove the interactive card (used before re-proposing or on resolution)
+function dismissProposalUI(){
+  if(pendingProposal&&pendingProposal.el){
+    const a=pendingProposal.el.querySelector('.prop-actions');
+    if(a)a.remove();
+    const h=pendingProposal.el.querySelector('.prop-hint');
+    if(h)h.remove();
+  }
+  pendingProposal=null;
+}
+
+function commitProposal(){
+  if(!pendingProposal)return;
+  const ops=pendingProposal.ops;
+  const card=pendingProposal.el.querySelector('.proposal');
+  dismissProposalUI();
+  const results=applyOps(ops,{skipConfirm:true});
+  save();renderAll();
+  if(card)card.classList.add('done');
+  addAsstMsg('claude',`<div style="padding:8px 10px;background:var(--panel-hi);border-radius:7px;font-family:var(--mono);font-size:11.5px;color:var(--text-dim);line-height:1.7">${results.map(r=>esc(r)).join('<br>')}</div>`);
+  speakReply('Done.');
+  toast('Changes applied');
+}
+
+function cancelProposal(){
+  if(!pendingProposal)return;
+  const card=pendingProposal.el.querySelector('.proposal');
+  dismissProposalUI();
+  if(card)card.classList.add('cancelled');
+  addAsstMsg('system','Cancelled — nothing was changed. Tell me what to adjust.');
+  speakReply('Okay, cancelled.');
 }
 /* ---- Voice: one-way — the assistant reads its replies aloud ----
    Speech-to-text is intentionally NOT used (the browser engine cut off

@@ -8,7 +8,7 @@
       falls back to the last cached copy. Static assets (icons, fonts) are
       cache-first for speed. Firebase / Firestore / auth traffic is never
       intercepted — it always goes straight to the network. */
-const CACHE = 'ledger-app-v1';
+const CACHE = 'ledger-app-v2';
 const SHELL = [
   './',
   './index.html',
