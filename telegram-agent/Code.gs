@@ -341,7 +341,9 @@ function buildSystemPrompt_(b) {
     '',
     'HOW TO ACT:',
     '- You have full autonomy over the BOARD. Just make the change with a tool — never ask "should I add this?". Do it, then tell them plainly what you did.',
-    '- When the user describes a project, a situation, or something stressful, use add_project to lay out a real plan: 3–8 concrete, ordered tasks with sensible due dates and subtasks — not one vague to-do. This is the thing they value most.',
+    '- FILL IN THE BLANKS with your own knowledge. When the user names a project, do NOT just echo their words — think through what that undertaking actually involves and build the real plan. "Doing my taxes" → gather W-2s/1099s, last year\'s return, deductions, file federal, file state, pay any balance. "Renting a house" → budget, application + fee, credit/income proof, deposit, lease review, renter\'s insurance, utilities setup, moving. "Passport renewal" → form DS-82, photo, current passport, fee, mail/appointment. "Job search" → resume, target list, applications, follow-ups, interview prep. Supply the concrete steps, documents, and realistic due dates the user didn\'t spell out.',
+    '- Use add_project for anything bigger than one to-do: 3–8 concrete, ordered tasks with sensible due dates and subtasks. This is the thing they value most.',
+    '- BILLS ARE THE PRIORITY. Treat anything about money owed as important. When asked what\'s pressing / due / going on today, give a short prioritized read-back — overdue bills first ("you haven\'t paid X"), then bills due soon, then overdue tasks, then what\'s due today. Keep it tight and scannable in a chat.',
     '- Interpret "tomorrow", "next Friday", "in two weeks" relative to TODAY and pass real YYYY-MM-DD dates.',
     '- Match tasks/bills fuzzily by name; pick the closest one.',
     '- When the user reveals something durable about themselves, quietly call remember.',
@@ -474,7 +476,7 @@ function handleUserMessage_(chatId, text) {
 // warm nudge — a real reminder to the phone, not a calendar alert.
 
 function pressing_(b) {
-  var out = { overdue: [], today: [], soonBills: [], stalled: [] };
+  var out = { overdueBills: [], soonBills: [], overdue: [], today: [], stalled: [] };
   b.tasks.filter(function (t) { return !t.done; }).forEach(function (t) {
     var d = dayDiff_(t.due);
     if (d != null && d < 0) out.overdue.push(t);
@@ -482,9 +484,14 @@ function pressing_(b) {
     // "stalled": old and untouched for a while, no due date pressure
     else if (d == null && t.touched && (Date.now() - t.touched) > 10 * 86400000) out.stalled.push(t);
   });
-  b.bills.filter(function (x) { return !x.paused && !x.income && x.due; }).forEach(function (x) {
+  // Bills: an unpaid bill whose due date has passed is the "you forgot to pay
+  // this" case — the thing the user cares about most. Autopay bills are skipped
+  // for nagging (they pay themselves). pay_bill advances the due date, so a
+  // past due date means this cycle hasn't been paid.
+  b.bills.filter(function (x) { return !x.paused && !x.income && x.due && !x.autopay; }).forEach(function (x) {
     var d = dayDiff_(x.due);
-    if (d != null && d <= 3) out.soonBills.push(x);
+    if (d != null && d < 0) out.overdueBills.push(x);
+    else if (d != null && d >= 0 && d <= 4) out.soonBills.push(x);
   });
   return out;
 }
@@ -494,25 +501,29 @@ function heartbeat() {
   if (!owner) return; // nobody has connected yet
   var b = getBoard_();
   var p = pressing_(b);
-  var count = p.overdue.length + p.today.length + p.soonBills.length + p.stalled.length;
+  var count = p.overdueBills.length + p.soonBills.length + p.overdue.length + p.today.length + p.stalled.length;
   if (!count) return; // nothing worth interrupting them for
 
-  // De-dupe: don't send the same situation twice in a row.
-  var sig = [p.overdue.length, p.today.length, p.soonBills.length, p.stalled.length,
+  // De-dupe: don't send the same situation twice in a row. Include bill ids so a
+  // newly-overdue bill always triggers a fresh alert.
+  var sig = [p.overdueBills.length, p.soonBills.length, p.overdue.length, p.today.length, p.stalled.length,
+    p.overdueBills.concat(p.soonBills).map(function (x) { return x.id + ':' + x.due; }).join(','),
     p.overdue.concat(p.today).map(function (t) { return t.id; }).join(',')].join('|');
   if (props_().getProperty('LAST_HEARTBEAT_SIG') === sig) return;
 
+  // Bills lead — that's the user's top priority.
   var facts = [];
-  if (p.overdue.length) facts.push(p.overdue.length + ' overdue: ' + p.overdue.slice(0, 5).map(function (t) { return t.title; }).join('; '));
+  if (p.overdueBills.length) facts.push('UNPAID / PAST DUE bills (they may have forgotten these): ' + p.overdueBills.slice(0, 5).map(function (x) { return x.name + ' ($' + (x.amount || 0) + ', was due ' + x.due + ')'; }).join('; '));
+  if (p.soonBills.length) facts.push('bills due soon: ' + p.soonBills.slice(0, 5).map(function (x) { return x.name + ' ($' + (x.amount || 0) + ', due ' + x.due + ')'; }).join('; '));
+  if (p.overdue.length) facts.push(p.overdue.length + ' overdue task(s): ' + p.overdue.slice(0, 5).map(function (t) { return t.title; }).join('; '));
   if (p.today.length) facts.push(p.today.length + ' due today: ' + p.today.slice(0, 5).map(function (t) { return t.title; }).join('; '));
-  if (p.soonBills.length) facts.push('bills due soon: ' + p.soonBills.slice(0, 5).map(function (x) { return x.name + ' ($' + (x.amount || 0) + ', ' + x.due + ')'; }).join('; '));
   if (p.stalled.length) facts.push(p.stalled.length + ' stalled task(s): ' + p.stalled.slice(0, 3).map(function (t) { return t.title; }).join('; '));
 
   var mem = (b.memory || []).map(function (m) { return '- ' + m.text; }).join('\n') || '(none)';
   var text;
   try {
     var data = callAnthropic_(
-      'You are Ledger, a warm personal assistant sending a brief proactive check-in over text. Given what needs the user\'s attention, write 1–3 short, natural sentences that gently flag what matters most and nudge them to act. No lists, no markdown, no greeting fluff. You may reference what you know about them. What you know:\n' + mem,
+      'You are Ledger, a warm personal assistant sending a brief proactive check-in over text. Bills are the user\'s top priority: if any bill is past due, LEAD with a direct but kind heads-up that they may have forgotten to pay it. Then briefly note anything else pressing. Write 1–3 short, natural sentences — no lists, no markdown, no greeting fluff. You may reference what you know about them. What you know:\n' + mem,
       [{ role: 'user', content: "Here's what needs attention right now:\n" + facts.join('\n') + "\n\nWrite the check-in message." }],
       null
     );
