@@ -121,7 +121,15 @@ function buildReport_(b) {
   var overdueTasks = open.filter(function (t) { var d = dayDiff_(t.due); return d != null && d < 0; })
     .sort(function (a, c) { return dayDiff_(a.due) - dayDiff_(c.due); });
   var todayTasks = open.filter(function (t) { return dayDiff_(t.due) === 0; });
-  return { missed: missed, soon: soon, overdueTasks: overdueTasks, todayTasks: todayTasks };
+  var weekTasks = open.filter(function (t) { var d = dayDiff_(t.due); return d != null && d >= 1 && d <= 7; })
+    .sort(function (a, c) { return dayDiff_(a.due) - dayDiff_(c.due); });
+  // "Stalled": open, no due-date pressure, untouched for two weeks — the big
+  // projects and tasks that quietly go cold. Named by category so a whole
+  // project stalling is obvious.
+  var stalledTasks = open.filter(function (t) {
+    return dayDiff_(t.due) == null && t.touched && (Date.now() - t.touched) > 14 * 86400000;
+  }).sort(function (a, c) { return (a.touched || 0) - (c.touched || 0); }).slice(0, 8);
+  return { missed: missed, soon: soon, overdueTasks: overdueTasks, todayTasks: todayTasks, weekTasks: weekTasks, stalledTasks: stalledTasks, cats: b.cats };
 }
 
 /* ============================ EMAIL ============================ */
@@ -154,6 +162,17 @@ function formatEmail_(r) {
     r.todayTasks.slice(0, 8).forEach(function (t) { lines.push('  • ' + t.title); });
     lines.push('');
   }
+  if (r.weekTasks.length) {
+    lines.push('🗓  COMING UP THIS WEEK');
+    r.weekTasks.slice(0, 10).forEach(function (t) { lines.push('  • ' + t.title + ' (' + t.due + ')'); });
+    lines.push('');
+  }
+  if (r.stalledTasks.length) {
+    lines.push('💤  STALLED — no movement in 2+ weeks (a project going cold?)');
+    var catName = function (id) { var c = (r.cats || []).filter(function (x) { return x.id === id; })[0]; return c ? c.name : ''; };
+    r.stalledTasks.forEach(function (t) { var cn = catName(t.cat); lines.push('  • ' + t.title + (cn ? ' [' + cn + ']' : '')); });
+    lines.push('');
+  }
   var url = props_().getProperty('LEDGER_URL');
   if (url) lines.push('Talk it through in Ledger: ' + url + (url.indexOf('?') >= 0 ? '&' : '?') + 'talk=1');
   return lines.join('\n');
@@ -162,9 +181,11 @@ function formatEmail_(r) {
 function subject_(r) {
   if (r.missed.length) {
     var totalPayments = r.missed.reduce(function (a, m) { return a + m.count; }, 0);
-    return 'Ledger ⚠️ ' + totalPayments + ' missed payment' + (totalPayments === 1 ? '' : 's') + ' need attention';
+    return 'Ledger ⚠️ ' + totalPayments + ' missed payment' + (totalPayments === 1 ? '' : 's') + ' + your rundown';
   }
-  if (r.soon.length) return 'Ledger 📅 ' + r.soon.length + ' bill' + (r.soon.length === 1 ? '' : 's') + ' due soon';
+  var items = r.soon.length + r.overdueTasks.length + r.todayTasks.length;
+  if (r.overdueTasks.length) return 'Ledger — ' + r.overdueTasks.length + ' overdue, ' + r.todayTasks.length + ' due today';
+  if (r.todayTasks.length || r.soon.length) return 'Ledger — your daily rundown (' + items + ' pressing)';
   return 'Ledger — your daily rundown';
 }
 
@@ -172,7 +193,7 @@ function subject_(r) {
 function sendBillReminder() {
   var b = getBoard_();
   var r = buildReport_(b);
-  var count = r.missed.length + r.soon.length + r.overdueTasks.length + r.todayTasks.length;
+  var count = r.missed.length + r.soon.length + r.overdueTasks.length + r.todayTasks.length + r.weekTasks.length + r.stalledTasks.length;
   if (!count) return; // nothing worth an email
 
   // De-dupe: don't resend an identical situation on every run. But if a bill is
@@ -181,7 +202,7 @@ function sendBillReminder() {
   var sig = JSON.stringify({
     m: r.missed.map(function (m) { return m.name + ':' + m.count; }),
     s: r.soon.map(function (s) { return s.name + ':' + s.due; }),
-    ot: r.overdueTasks.length, tt: r.todayTasks.length
+    ot: r.overdueTasks.length, tt: r.todayTasks.length, wk: r.weekTasks.length, st: r.stalledTasks.length
   });
   var todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
   var lastSig = props_().getProperty('LAST_BILL_SIG');

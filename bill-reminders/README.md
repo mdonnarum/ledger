@@ -1,8 +1,18 @@
-# Ledger Bill Reminders (email)
+# Ledger Daily Briefing + Reminders (email)
 
-The proactive "hey, you forgot to pay this" nudge — the piece that matters most.
-Runs on a schedule, reads your Ledger board, and **emails you** when a bill is
-past due or coming up, plus a short "what's pressing" rundown.
+Your proactive assistant that reaches out — covering your **whole board, not just
+bills**. Runs on a schedule, reads your Ledger board, and **emails you** a
+rundown of everything pressing:
+
+- ⚠️ **Missed / past-due bills** — named by the actual months (see below)
+- 📅 **Bills due soon**
+- ❗ **Overdue tasks** and ◷ **due today**
+- 🗓 **Coming up this week**
+- 💤 **Stalled** tasks/projects — open items with no movement in 2+ weeks, so a
+  big project (a move, taxes, a job search) can't quietly go cold
+
+The "hey, you forgot to pay this" nudge is the piece you flagged as most
+important, so bills lead — but this is a full life rundown, not just bills.
 
 It names the **actual months** you missed. Because a bill's due date only moves
 forward when you pay it, a monthly bill still sitting on its September due date is
